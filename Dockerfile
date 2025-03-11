@@ -9,9 +9,7 @@ RUN apk add --no-cache python3 make g++
 
 # Install dependencies and rebuild bcrypt
 RUN npm install --legacy-peer-deps
-RUN npm cache clean --force && \
-    npm ci && \
-    npm rebuild bcrypt --build-from-source
+RUN npm rebuild bcrypt --build-from-source
 
 COPY . .
 
