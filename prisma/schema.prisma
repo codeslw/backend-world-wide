@@ -21,3 +21,57 @@ enum Role {
   CLIENT
   PARTNER
 }
+
+model Program {
+  id          String    @id @default(uuid())
+  titleUz     String
+  titleRu     String
+  titleEn     String?
+  descriptionUz String?
+  descriptionRu String?
+  descriptionEn String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Parent-child relationship
+  parentId    String?
+  parent      Program?  @relation("ProgramToProgram", fields: [parentId], references: [id])
+  children    Program[] @relation("ProgramToProgram")
+
+  @@map("programs")
+}
+
+model Country {
+  id            String    @id @default(uuid())
+  nameUz        String
+  nameRu        String
+  nameEn        String?
+  descriptionUz String?
+  descriptionRu String?
+  descriptionEn String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relation to cities
+  cities        City[]
+
+  @@map("countries")
+}
+
+model City {
+  id            String    @id @default(uuid())
+  nameUz        String
+  nameRu        String
+  nameEn        String?
+  descriptionUz String?
+  descriptionRu String?
+  descriptionEn String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relation to country
+  countryId     String
+  country       Country   @relation(fields: [countryId], references: [id])
+
+  @@map("cities")
+}
