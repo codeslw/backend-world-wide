@@ -43,6 +43,32 @@ export class UsersService {
     });
   }
 
+
+  async createMany(createUserDto: CreateUserDto[]) {
+    // Check if user already exists
+    const existingUsers = await this.prisma.user.findMany({
+      where: { email: { in: createUserDto.map(user => user.email) } },
+    });
+
+    if (existingUsers.length > 0) {
+      throw new ConflictException('Some emails are already in use');
+    }
+    //hash passwords
+    const hashedPasswords = await Promise.all(createUserDto.map(async (user) => { 
+      return await bcrypt.hash(user.password, 10);
+    }));
+
+    //create users
+    const users = await this.prisma.user.createMany({
+      data: createUserDto.map((user, index) => ({
+        ...user,
+        password: hashedPasswords[index],
+      }))
+    });
+
+    return users;
+  }
+
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({
       where: { email },
@@ -67,7 +93,7 @@ export class UsersService {
           transform: (value) => new Date(value)
         }
       ],
-      searchFields: ['email', 'name'],
+      searchFields: ['email'],
       searchMode: 'contains',
       caseSensitive: false
     };
@@ -94,7 +120,7 @@ export class UsersService {
     );
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: {
@@ -113,7 +139,7 @@ export class UsersService {
     return user;
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
+  async update(id: string, updateUserDto: UpdateUserDto) {
     try {
       // If password is being updated, hash it
       if (updateUserDto.password) {
@@ -136,7 +162,7 @@ export class UsersService {
     }
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     try {
       return await this.prisma.user.delete({
         where: { id },

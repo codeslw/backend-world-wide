@@ -34,19 +34,19 @@ export class FilterService {
           case 'contains':
             where[field] = { 
               contains: value,
-              ...(caseSensitive ? {} : { mode: Prisma.QueryMode.insensitive })
+              ...(caseSensitive ? {} : { mode: 'insensitive' })
             };
             break;
           case 'startsWith':
             where[field] = { 
               startsWith: value,
-              ...(caseSensitive ? {} : { mode: Prisma.QueryMode.insensitive })
+              ...(caseSensitive ? {} : { mode: 'insensitive' })
             };
             break;
           case 'endsWith':
             where[field] = { 
               endsWith: value,
-              ...(caseSensitive ? {} : { mode: Prisma.QueryMode.insensitive })
+              ...(caseSensitive ? {} : { mode: 'insensitive' })
             };
             break;
           case 'in':
@@ -81,7 +81,7 @@ export class FilterService {
       const searchConditions = searchFields.map(field => ({
         [field]: { 
           contains: query.search,
-          ...(caseSensitive ? {} : { mode: Prisma.QueryMode.insensitive })
+          ...(caseSensitive ? {} : { mode: 'insensitive' })
         }
       }));
       

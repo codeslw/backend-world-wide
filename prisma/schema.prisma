@@ -8,12 +8,16 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        String      @id @default(uuid())
   email     String   @unique
   password  String
   role      Role     @default(CLIENT)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  clientChats Chat[]    @relation("ClientChats")
+  adminChats  Chat[]    @relation("AdminChats")
+  messages    Message[]
+  @@map("users")
 }
 
 enum Role {
@@ -38,6 +42,8 @@ model Program {
   parent      Program?  @relation("ProgramToProgram", fields: [parentId], references: [id])
   children    Program[] @relation("ProgramToProgram")
 
+  universities University[]
+
   @@map("programs")
 }
 
@@ -54,6 +60,8 @@ model Country {
   
   // Relation to cities
   cities        City[]
+
+  universities University[]
 
   @@map("countries")
 }
@@ -73,5 +81,99 @@ model City {
   countryId     String
   country       Country   @relation(fields: [countryId], references: [id])
 
+  universities University[]
+
   @@map("cities")
+}
+
+model University {
+  id                   String     @id @default(uuid())
+  nameUz               String
+  nameRu               String
+  photoUrl             String
+  nameEn               String
+  established          Int        // Year of establishment
+  type                 UniversityType // Type of university (enum)
+  avgApplicationFee    Float      // Average application fee
+  countryId            String     // Relation to Country
+  country              Country    @relation(fields: [countryId], references: [id])
+  cityId               String     // Relation to City
+  city                 City       @relation(fields: [cityId], references: [id])
+  descriptionUz        String     // Description (Uzbek)
+  descriptionRu        String     // Description (Russian)
+  descriptionEn        String     // Description (English)
+  programs             Program[]  // Relation to Program (one-to-many)
+  winterIntakeDeadline DateTime?  // Winter intake deadline
+  autumnIntakeDeadline DateTime?  // Autumn intake deadline
+  ranking              Int
+  studentsCount        Int
+  acceptanceRate       Float
+  website              String
+  tuitionFee           TuitionFee @relation(fields: [tuitionFeeId], references: [id])
+  tuitionFeeId         Int        @unique
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+}
+
+enum UniversityType {
+  PUBLIC
+  PRIVATE
+}
+
+model TuitionFee {
+  id          Int        @id @default(autoincrement())
+  minAmount   Float
+  maxAmount   Float
+  currency    String
+  university  University?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+
+model File {
+  id        String      @id @default(uuid())
+  filename  String
+  url       String
+  createdAt DateTime @default(now())
+}
+
+enum ChatStatus {
+  ACTIVE
+  CLOSED
+  PENDING
+}
+
+model Chat {
+  id        String     @id @default(uuid())
+  clientId  String        // Reference to User model
+  client    User       @relation("ClientChats", fields: [clientId], references: [id])
+  adminId   String?       // Optional admin ID (null until assigned)
+  admin     User?      @relation("AdminChats", fields: [adminId], references: [id])
+  status    ChatStatus @default(ACTIVE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  messages  Message[]
+
+  @@index([clientId])
+  @@index([adminId])
+  @@index([status])
+}
+
+model Message {
+  id         String    @id @default(uuid())
+  chatId     String
+  chat       Chat      @relation(fields: [chatId], references: [id])
+  senderId   String       // Reference to User model
+  sender     User      @relation(fields: [senderId], references: [id])
+  text       String?
+  fileUrl    String?
+  replyToId  String?   // Self-reference for replies
+  replyTo    Message?  @relation("Replies", fields: [replyToId], references: [id])
+  replies    Message[] @relation("Replies")
+  createdAt  DateTime  @default(now())
+  
+  @@index([chatId])
+  @@index([senderId])
+  @@index([replyToId])
 }

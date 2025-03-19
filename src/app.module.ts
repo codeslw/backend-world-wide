@@ -7,6 +7,14 @@ import { ProgramsModule } from './programs/programs.module';
 import { CountriesModule } from './countries/countries.module';
 import { CitiesModule } from './cities/cities.module';
 import { CommonModule } from './common/common.module';
+import { UniversitiesModule } from './universities/universities.module';
+import { TuitionFeesModule } from './tuition-fees/tuition-fees.module';
+import { DigitalOceanService } from './digital-ocean/digital-ocean.service';
+import { DigitalOceanModule } from './digital-ocean/digital-ocean.module';
+import { FilesController } from './files/files.controller';
+import { FilesModule } from './files/files.module';
+import { FilesService } from './files/files.service';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -17,7 +25,13 @@ import { CommonModule } from './common/common.module';
     ProgramsModule,
     CountriesModule,
     CitiesModule,
+    UniversitiesModule,
+    TuitionFeesModule,
+    DigitalOceanModule,
+    FilesModule,
+    ChatModule,
   ],
-  providers: [PrismaService],
+  providers: [PrismaService, DigitalOceanService, FilesService],
+  controllers: [FilesController],
 })
 export class AppModule {}
