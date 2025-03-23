@@ -87,10 +87,9 @@ model City {
 }
 
 model University {
-  id                   String     @id @default(uuid())
+  id                   String    @id @default(uuid())
   nameUz               String
   nameRu               String
-  photoUrl             String
   nameEn               String
   established          Int        // Year of establishment
   type                 UniversityType // Type of university (enum)
@@ -109,27 +108,20 @@ model University {
   studentsCount        Int
   acceptanceRate       Float
   website              String
-  tuitionFee           TuitionFee @relation(fields: [tuitionFeeId], references: [id])
-  tuitionFeeId         Int        @unique
+  // Direct tuition fee fields
+  tuitionFeeMin        Float
+  tuitionFeeMax        Float
+  tuitionFeeCurrency   String     @default("USD")
   createdAt            DateTime   @default(now())
   updatedAt            DateTime   @updatedAt
+
+  @@map("universities")
 }
 
 enum UniversityType {
   PUBLIC
   PRIVATE
 }
-
-model TuitionFee {
-  id          Int        @id @default(autoincrement())
-  minAmount   Float
-  maxAmount   Float
-  currency    String
-  university  University?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-}
-
 
 model File {
   id        String      @id @default(uuid())

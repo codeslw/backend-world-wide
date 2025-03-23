@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsInt, IsEnum, IsNumber, IsUUID, IsUrl, IsOptional, IsDateString, Min, Max } from 'class-validator';
+import { IsString, IsInt, IsEnum, IsNumber, IsUrl, IsOptional, IsDate, Min, Max } from 'class-validator';
 import { UniversityType } from '../../common/enum/university-type.enum';
 
 export class CreateUniversityDto {
@@ -17,65 +17,55 @@ export class CreateUniversityDto {
 
   @ApiProperty({ description: 'Year of establishment' })
   @IsInt()
-  @Min(1000)
-  @Max(new Date().getFullYear())
   established: number;
 
-
-  @ApiProperty({ description: 'University photo URL', type: "string" })
-  @IsUrl()
-  photoUrl: string;
-
-  @ApiProperty({ description: 'University type', enum: UniversityType })
+  @ApiProperty({ enum: UniversityType, description: 'Type of university' })
   @IsEnum(UniversityType)
   type: UniversityType;
 
   @ApiProperty({ description: 'Average application fee' })
   @IsNumber()
-  @Min(0)
   avgApplicationFee: number;
 
   @ApiProperty({ description: 'Country ID' })
-  @IsUUID()
+  @IsString()
   countryId: string;
 
   @ApiProperty({ description: 'City ID' })
-  @IsUUID()
+  @IsString()
   cityId: string;
 
-  @ApiProperty({ description: 'University description in Uzbek' })
+  @ApiProperty({ description: 'Description in Uzbek' })
   @IsString()
   descriptionUz: string;
 
-  @ApiProperty({ description: 'University description in Russian' })
+  @ApiProperty({ description: 'Description in Russian' })
   @IsString()
   descriptionRu: string;
 
-  @ApiProperty({ description: 'University description in English' })
+  @ApiProperty({ description: 'Description in English' })
   @IsString()
   descriptionEn: string;
 
   @ApiProperty({ description: 'Winter intake deadline', required: false })
   @IsOptional()
-  @IsDateString()
-  winterIntakeDeadline?: string;
+  @IsDate()
+  winterIntakeDeadline?: Date;
 
   @ApiProperty({ description: 'Autumn intake deadline', required: false })
   @IsOptional()
-  @IsDateString()
-  autumnIntakeDeadline?: string;
+  @IsDate()
+  autumnIntakeDeadline?: Date;
 
   @ApiProperty({ description: 'University ranking' })
   @IsInt()
-  @Min(1)
   ranking: number;
 
   @ApiProperty({ description: 'Number of students' })
   @IsInt()
-  @Min(0)
   studentsCount: number;
 
-  @ApiProperty({ description: 'Acceptance rate (percentage)' })
+  @ApiProperty({ description: 'Acceptance rate (0-100)' })
   @IsNumber()
   @Min(0)
   @Max(100)
@@ -85,7 +75,16 @@ export class CreateUniversityDto {
   @IsUrl()
   website: string;
 
-  @ApiProperty({ description: 'Tuition fee ID' })
-  @IsInt()
-  tuitionFeeId: number;
+  @ApiProperty({ description: 'Minimum tuition fee' })
+  @IsNumber()
+  tuitionFeeMin: number;
+
+  @ApiProperty({ description: 'Maximum tuition fee' })
+  @IsNumber()
+  tuitionFeeMax: number;
+
+  @ApiProperty({ description: 'Tuition fee currency', default: 'USD' })
+  @IsString()
+  @IsOptional()
+  tuitionFeeCurrency?: string;
 } 

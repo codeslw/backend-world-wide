@@ -1,103 +1,75 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { UniversityType } from '../../common/enum/university-type.enum';
+import { UniversityType } from 'src/common/enum/university-type.enum';
 import { PaginatedResponseDto } from '../../common/dto/pagination-response.dto';
 
 export class UniversityResponseDto {
-  @ApiProperty({ description: 'University ID' })
+  @ApiProperty()
   id: string;
 
-  @ApiProperty({ description: 'University name in Uzbek' })
+  @ApiProperty()
   nameUz: string;
 
-  @ApiProperty({ description: 'University name in Russian' })
+  @ApiProperty()
   nameRu: string;
 
-  @ApiProperty({ description: 'University name in English' })
+  @ApiProperty()
   nameEn: string;
 
-  @ApiProperty({ description: 'Localized university name based on language preference' })
-  name: string;
-
-  @ApiProperty({ description: 'Year of establishment' })
+  @ApiProperty()
   established: number;
 
-  @ApiProperty({ description: 'University type', enum: UniversityType })
+  @ApiProperty({ enum: UniversityType })
   type: UniversityType;
 
-  @ApiProperty({ description: 'University photo URL', type: "string" })
-  photoUrl: string;
-
-  @ApiProperty({ description: 'Average application fee' })
+  @ApiProperty()
   avgApplicationFee: number;
 
-  @ApiProperty({ description: 'Country ID' })
+  @ApiProperty()
   countryId: string;
 
-  @ApiProperty({ 
-    description: 'Country information', 
-    type: () => 'CountryResponseDto',
-    required: false 
-  })
-  country?: any;
-
-  @ApiProperty({ description: 'City ID' })
+  @ApiProperty()
   cityId: string;
 
-  @ApiProperty({ 
-    description: 'City information', 
-    type: () => 'CityResponseDto',
-    required: false 
-  })
-  city?: any;
-
-  @ApiProperty({ description: 'University description in Uzbek' })
+  @ApiProperty()
   descriptionUz: string;
 
-  @ApiProperty({ description: 'University description in Russian' })
+  @ApiProperty()
   descriptionRu: string;
 
-  @ApiProperty({ description: 'University description in English' })
+  @ApiProperty()
   descriptionEn: string;
 
-  @ApiProperty({ description: 'Localized university description based on language preference' })
-  description: string;
-
-  @ApiProperty({ description: 'Winter intake deadline', required: false })
+  @ApiProperty({ required: false })
   winterIntakeDeadline?: Date;
 
-  @ApiProperty({ description: 'Autumn intake deadline', required: false })
+  @ApiProperty({ required: false })
   autumnIntakeDeadline?: Date;
 
-  @ApiProperty({ description: 'University ranking' })
+  @ApiProperty()
   ranking: number;
 
-  @ApiProperty({ description: 'Number of students' })
+  @ApiProperty()
   studentsCount: number;
 
-  @ApiProperty({ description: 'Acceptance rate (percentage)' })
+  @ApiProperty()
   acceptanceRate: number;
 
-  @ApiProperty({ description: 'University website URL' })
+  @ApiProperty()
   website: string;
 
-  @ApiProperty({ description: 'Tuition fee ID' })
-  tuitionFeeId: number;
+  @ApiProperty()
+  tuitionFeeMin: number;
 
-  @ApiProperty({ description: 'Tuition fee information', required: false })
-  tuitionFee?: any;
+  @ApiProperty()
+  tuitionFeeMax: number;
 
-  @ApiProperty({ 
-    description: 'Programs offered by the university', 
-    type: () => 'ProgramResponseDto',
-    isArray: true,
-    required: false 
-  })
-  programs?: any[];
+  @ApiProperty()
+  tuitionFeeCurrency: string;
 
-  @ApiProperty({ description: 'Creation date' })
+  @ApiProperty()
   createdAt: Date;
 
-  @ApiProperty({ description: 'Last update date' })
+  @ApiProperty()
   updatedAt: Date;
 }
 

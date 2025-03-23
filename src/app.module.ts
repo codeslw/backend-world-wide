@@ -8,7 +8,6 @@ import { CountriesModule } from './countries/countries.module';
 import { CitiesModule } from './cities/cities.module';
 import { CommonModule } from './common/common.module';
 import { UniversitiesModule } from './universities/universities.module';
-import { TuitionFeesModule } from './tuition-fees/tuition-fees.module';
 import { DigitalOceanService } from './digital-ocean/digital-ocean.service';
 import { DigitalOceanModule } from './digital-ocean/digital-ocean.module';
 import { FilesController } from './files/files.controller';
@@ -26,7 +25,6 @@ import { ChatModule } from './chat/chat.module';
     CountriesModule,
     CitiesModule,
     UniversitiesModule,
-    TuitionFeesModule,
     DigitalOceanModule,
     FilesModule,
     ChatModule,

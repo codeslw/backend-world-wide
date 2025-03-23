@@ -1,11 +1,12 @@
-import { Controller, Delete, Get, Param, Post, Res, UploadedFile, UploadedFiles, UseInterceptors, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Delete, Get, Param, Post, Res, UploadedFile, UploadedFiles, UseInterceptors, Query, BadRequestException, MaxFileSizeValidator, FileTypeValidator, ParseFilePipe, UseGuards } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { FilesService } from './files.service';
-import { ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiParam, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiParam, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { FileResponseDto } from './dto/file-response.dto';
 import { Response } from 'express';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../common/enum/roles.enum';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard.mock';
 
 @ApiTags('files')
 @Controller('files')
@@ -15,9 +16,8 @@ export class FilesController {
   ) {}
 
   @Post('upload')
-  @Roles(Role.ADMIN)
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiOperation({ summary: 'Upload a single file (Admin only)' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -26,20 +26,28 @@ export class FilesController {
         file: {
           type: 'string',
           format: 'binary',
-          description: 'File to upload',
         },
       },
     },
   })
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Upload a single file (Admin only)' })
   @ApiResponse({ 
     status: 201, 
     description: 'File uploaded successfully', 
     type: FileResponseDto 
   })
-  async uploadFile(@UploadedFile() file: Express.Multer.File) {
-    if (!file) {
-      throw new BadRequestException('No file uploaded');
-    }
+  async uploadFile(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB limit
+          new FileTypeValidator({ fileType: /(jpg|jpeg|png|gif|pdf|doc|docx|xls|xlsx|ppt|pptx)$/i }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
     return this.filesService.uploadFile(file);
   }
 

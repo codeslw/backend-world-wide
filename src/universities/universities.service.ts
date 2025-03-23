@@ -14,23 +14,31 @@ export class UniversitiesService {
   ) {}
 
   async create(createUniversityDto: CreateUniversityDto) {
-    // Separate relation connections from direct field assignments
-    const { countryId, cityId, tuitionFeeId, ...otherData } = createUniversityDto;
-    
-    const data = {
-      ...otherData,
-      winterIntakeDeadline: createUniversityDto.winterIntakeDeadline 
-        ? new Date(createUniversityDto.winterIntakeDeadline) 
-        : null,
-      autumnIntakeDeadline: createUniversityDto.autumnIntakeDeadline 
-        ? new Date(createUniversityDto.autumnIntakeDeadline) 
-        : null,
-      country: { connect: { id: countryId } },
-      city: { connect: { id: cityId } },
-      tuitionFee: { connect: { id: tuitionFeeId } }
-    };
-
-    return this.prisma.university.create({ data });
+    return this.prisma.university.create({
+      data: {
+        nameUz: createUniversityDto.nameUz,
+        nameRu: createUniversityDto.nameRu,
+        nameEn: createUniversityDto.nameEn,
+        established: createUniversityDto.established,
+        type: createUniversityDto.type,
+        avgApplicationFee: createUniversityDto.avgApplicationFee,
+        countryId: createUniversityDto.countryId,
+        cityId: createUniversityDto.cityId,
+        descriptionUz: createUniversityDto.descriptionUz,
+        descriptionRu: createUniversityDto.descriptionRu,
+        descriptionEn: createUniversityDto.descriptionEn,
+        winterIntakeDeadline: createUniversityDto.winterIntakeDeadline,
+        autumnIntakeDeadline: createUniversityDto.autumnIntakeDeadline,
+        ranking: createUniversityDto.ranking,
+        studentsCount: createUniversityDto.studentsCount,
+        acceptanceRate: createUniversityDto.acceptanceRate,
+        website: createUniversityDto.website,
+        tuitionFeeMax : createUniversityDto.tuitionFeeMax,
+        tuitionFeeMin : createUniversityDto.tuitionFeeMin,
+        tuitionFeeCurrency : createUniversityDto.tuitionFeeCurrency
+        
+      },
+    });
   }
 
   async findAll(
@@ -170,7 +178,6 @@ export class UniversitiesService {
       include: {
         country: true,
         city: true,
-        tuitionFee: true,
         programs: true
       },
     });
