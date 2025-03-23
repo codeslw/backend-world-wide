@@ -1,0 +1,60 @@
+name: Deploy to Digital Ocean
+
+on:
+  push:
+    branches: [main] # Trigger on push to main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Set up Node.js (for Prisma and npm commands)
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      # Install dependencies and build
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build application
+        run: npm run build
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      # Deploy to Droplet via SSH
+      - name: Deploy to Digital Ocean Droplet
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd /home/${{ secrets.DROPLET_USER }}/your-app # Adjust path
+            git pull origin main
+            export DATABASE_URL="${{ secrets.DATABASE_URL }}"
+            export DIGITAL_OCEAN_ACCESS_KEY="${{ secrets.DIGITAL_OCEAN_ACCESS_KEY }}"
+            export DIGITAL_OCEAN_SECRET_KEY="${{ secrets.DIGITAL_OCEAN_SECRET_KEY }}"
+            export DIGITAL_OCEAN_BUCKET="${{ secrets.DIGITAL_OCEAN_BUCKET }}"
+            export DIGITAL_OCEAN_ENDPOINT="${{ secrets.DIGITAL_OCEAN_ENDPOINT }}"
+            docker-compose down
+            docker-compose up -d --build
+            docker-compose exec -T api npx prisma migrate deploy
+
+      # Cleanup (optional)
+      - name: Cleanup Docker images
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            docker image prune -f

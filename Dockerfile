@@ -1,18 +1,21 @@
-FROM node:20-alpine
-
+# Build Stage
+FROM node:20-alpine AS builder
 WORKDIR /app
-
 COPY package*.json ./
-
-# Install python and build dependencies
-RUN apk add --no-cache python3 make g++ 
-
-# Install dependencies and rebuild bcrypt
-RUN npm install --legacy-peer-deps
-RUN npm rebuild bcrypt --build-from-source
-
+RUN apk add --no-cache python3 make g++ && \
+    npm install --legacy-peer-deps && \
+    npm rebuild bcrypt --build-from-source
 COPY . .
+RUN npm run build && npx prisma generate
 
-RUN npm run build
-
-CMD ["npm", "run", "start:dev"]
+# Production Stage
+FROM node:20-alpine
+WORKDIR /app
+RUN apk add --no-cache dumb-init
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/prisma ./prisma
+USER node
+EXPOSE 3000
+ENTRYPOINT ["dumb-init", "node", "dist/main.js"]
