@@ -38,7 +38,7 @@ jobs:
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /home/${{ secrets.DROPLET_USER }}/your-app # Adjust path
+            cd /home/${{ secrets.DROPLET_USER }}/backend-world-wide # Adjust path
             git pull origin main
             export DATABASE_URL="${{ secrets.DATABASE_URL }}"
             export DIGITAL_OCEAN_ACCESS_KEY="${{ secrets.DIGITAL_OCEAN_ACCESS_KEY }}"
