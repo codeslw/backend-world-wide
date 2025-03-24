@@ -160,7 +160,7 @@ export class UniversitiesService {
         programs: true
       },
       undefined,
-      paginationOptions as PaginationOptions
+      paginationOptions as PaginationOptions,
     );
     
     // Localize results
