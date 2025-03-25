@@ -30,20 +30,11 @@ async function bootstrap() {
   
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-  //i want to send the swagger-spec.json file to the frontend when the swagger is opened
   
-  app.getHttpAdapter().get('/swagger-spec.json', (req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(document);
-  });
 
-  // Ensure the Swagger UI fetches the spec when opened
-  app.getHttpAdapter().use('/api', (req, res, next) => {
-    if (req.path === '/swagger-ui.html') {
-      res.redirect('/swagger-spec.json');
-    } else {
-      next();
-    }
+   // Expose Swagger document at /swagger-spec endpoint
+   app.getHttpAdapter().get('/swagger-spec', (req, res) => {
+    res.json(document);
   });
   
   // Enable CORS
