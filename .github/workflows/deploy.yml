@@ -39,7 +39,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/${{ secrets.DROPLET_USER }}/backend-world-wide # Adjust path
-            git pull origin main
+            git pull origin master
             export DATABASE_URL="${{ secrets.DATABASE_URL }}"
             export DIGITAL_OCEAN_ACCESS_KEY="${{ secrets.DIGITAL_OCEAN_ACCESS_KEY }}"
             export DIGITAL_OCEAN_SECRET_KEY="${{ secrets.DIGITAL_OCEAN_SECRET_KEY }}"
