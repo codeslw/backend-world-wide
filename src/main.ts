@@ -9,7 +9,9 @@ async function bootstrap() {
   
   // Apply global validation pipe
   app.useGlobalPipes(new ValidationPipe({ transform: true }));
-  
+  //Apply base context for apis api/v1
+  app.setGlobalPrefix('api/v1');
+
   // Configure Swagger
   const config = new DocumentBuilder()
     .setTitle('EduWorldWide API')
