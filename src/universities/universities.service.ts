@@ -156,7 +156,6 @@ export class UniversitiesService {
       { 
         country: true, 
         city: true, 
-        tuitionFee: true,
         programs: true
       },
       undefined,
