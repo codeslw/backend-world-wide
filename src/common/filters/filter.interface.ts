@@ -14,6 +14,8 @@ export interface FilterOptions {
   caseSensitive?: boolean;
 }
 
+
+
 export interface SortConfig {
   field: string;
   direction: 'asc' | 'desc';
