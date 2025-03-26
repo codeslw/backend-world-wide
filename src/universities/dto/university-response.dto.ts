@@ -66,6 +66,9 @@ export class UniversityResponseDto {
   @ApiProperty()
   tuitionFeeCurrency: string;
 
+  @ApiProperty({ required: false })
+  photoUrl?: string;
+
   @ApiProperty()
   createdAt: Date;
 

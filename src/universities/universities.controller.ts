@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Headers, UseG
 import { UniversitiesService } from './universities.service';
 import { CreateUniversityDto } from './dto/create-university.dto';
 import { UpdateUniversityDto } from './dto/update-university.dto';
-import { ApiTags, ApiOperation, ApiParam, ApiQuery, ApiHeader, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiParam, ApiQuery, ApiHeader, ApiBearerAuth, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -24,6 +24,17 @@ export class UniversitiesController {
   @ApiResponse({ status: 201, description: 'University successfully created', type: UniversityResponseDto })
   create(@Body() createUniversityDto: CreateUniversityDto) {
     return this.universitiesService.create(createUniversityDto);
+  }
+
+  @Post('create/many')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create multiple universities at once (Admin only)' })
+  @ApiBody({ type: [CreateUniversityDto] })
+  @ApiResponse({ status: 201, description: 'Universities successfully created', type: [UniversityResponseDto] })
+  createMany(@Body() createUniversityDtos: CreateUniversityDto[]) {
+    return this.universitiesService.createMany(createUniversityDtos);
   }
 
   @Get()

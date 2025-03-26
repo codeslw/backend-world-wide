@@ -33,10 +33,10 @@ export class UniversitiesService {
         studentsCount: createUniversityDto.studentsCount,
         acceptanceRate: createUniversityDto.acceptanceRate,
         website: createUniversityDto.website,
-        tuitionFeeMax : createUniversityDto.tuitionFeeMax,
-        tuitionFeeMin : createUniversityDto.tuitionFeeMin,
-        tuitionFeeCurrency : createUniversityDto.tuitionFeeCurrency
-        
+        tuitionFeeMax: createUniversityDto.tuitionFeeMax,
+        tuitionFeeMin: createUniversityDto.tuitionFeeMin,
+        tuitionFeeCurrency: createUniversityDto.tuitionFeeCurrency,
+        photoUrl: createUniversityDto.photoUrl
       },
     });
   }
@@ -190,36 +190,12 @@ export class UniversitiesService {
 
   async update(id: string, updateUniversityDto: UpdateUniversityDto) {
     try {
-      const data: any = { ...updateUniversityDto };
-      
-      // Handle date fields
-      if (data.winterIntakeDeadline) {
-        data.winterIntakeDeadline = new Date(data.winterIntakeDeadline);
-      }
-      
-      if (data.autumnIntakeDeadline) {
-        data.autumnIntakeDeadline = new Date(data.autumnIntakeDeadline);
-      }
-      
-      // Handle relations
-      if (data.countryId) {
-        data.country = { connect: { id: data.countryId } };
-        delete data.countryId;
-      }
-      
-      if (data.cityId) {
-        data.city = { connect: { id: data.cityId } };
-        delete data.cityId;
-      }
-      
-      if (data.tuitionFeeId) {
-        data.tuitionFee = { connect: { id: data.tuitionFeeId } };
-        delete data.tuitionFeeId;
-      }
-
       return await this.prisma.university.update({
         where: { id },
-        data,
+        data: {
+          ...updateUniversityDto,
+          // Make sure to include photoUrl in the update
+        },
       });
     } catch (error) {
       throw new NotFoundException(`University with ID ${id} not found`);
@@ -313,5 +289,44 @@ export class UniversitiesService {
                          program.descriptionRu;
     
     return result;
+  }
+
+  async createMany(createUniversityDtos: CreateUniversityDto[]) {
+    // Use a transaction to ensure all universities are created or none
+    return this.prisma.$transaction(async (prisma) => {
+      const createdUniversities = [];
+      
+      for (const dto of createUniversityDtos) {
+        const university = await prisma.university.create({
+          data: {
+            nameUz: dto.nameUz,
+            nameRu: dto.nameRu,
+            nameEn: dto.nameEn,
+            established: dto.established,
+            type: dto.type,
+            avgApplicationFee: dto.avgApplicationFee,
+            countryId: dto.countryId,
+            cityId: dto.cityId,
+            descriptionUz: dto.descriptionUz,
+            descriptionRu: dto.descriptionRu,
+            descriptionEn: dto.descriptionEn,
+            winterIntakeDeadline: dto.winterIntakeDeadline,
+            autumnIntakeDeadline: dto.autumnIntakeDeadline,
+            ranking: dto.ranking,
+            studentsCount: dto.studentsCount,
+            acceptanceRate: dto.acceptanceRate,
+            website: dto.website,
+            tuitionFeeMax: dto.tuitionFeeMax,
+            tuitionFeeMin: dto.tuitionFeeMin,
+            tuitionFeeCurrency: dto.tuitionFeeCurrency,
+            photoUrl: dto.photoUrl
+          },
+        });
+        
+        createdUniversities.push(university);
+      }
+      
+      return createdUniversities;
+    });
   }
 } 

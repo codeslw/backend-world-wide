@@ -87,4 +87,9 @@ export class CreateUniversityDto {
   @IsString()
   @IsOptional()
   tuitionFeeCurrency?: string;
+
+  @ApiProperty({ description: 'University photo URL', required: false })
+  @IsUrl()
+  @IsOptional()
+  photoUrl?: string;
 } 
