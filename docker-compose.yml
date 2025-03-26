@@ -13,6 +13,7 @@ services:
       - DIGITAL_OCEAN_SECRET_KEY=${DIGITAL_OCEAN_SECRET_KEY}
       - DIGITAL_OCEAN_BUCKET=${DIGITAL_OCEAN_BUCKET}
       - DIGITAL_OCEAN_ENDPOINT=${DIGITAL_OCEAN_ENDPOINT}
+      - JWT_SECRET=${JWT_SECRET}
     depends_on:
       postgres:
         condition: service_healthy

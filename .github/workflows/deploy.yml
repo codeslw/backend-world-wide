@@ -2,23 +2,20 @@ name: Deploy to Digital Ocean
 
 on:
   push:
-    branches: [master] # Trigger on push to main branch
+    branches: [master]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # Checkout code
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Set up Node.js (for Prisma and npm commands)
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      # Install dependencies and build
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
@@ -30,7 +27,6 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      # Deploy to Droplet via SSH
       - name: Deploy to Digital Ocean Droplet
         uses: appleboy/ssh-action@master
         with:
@@ -38,23 +34,34 @@ jobs:
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /home/${{ secrets.DROPLET_USER }}/backend-world-wide # Adjust path
+            cd /home/${{ secrets.DROPLET_USER }}/backend-world-wide
             git pull origin master
+            
+            # Set environment variables securely
             export DATABASE_URL="${{ secrets.DATABASE_URL }}"
             export DIGITAL_OCEAN_ACCESS_KEY="${{ secrets.DIGITAL_OCEAN_ACCESS_KEY }}"
             export DIGITAL_OCEAN_SECRET_KEY="${{ secrets.DIGITAL_OCEAN_SECRET_KEY }}"
             export DIGITAL_OCEAN_BUCKET="${{ secrets.DIGITAL_OCEAN_BUCKET }}"
             export DIGITAL_OCEAN_ENDPOINT="${{ secrets.DIGITAL_OCEAN_ENDPOINT }}"
+            
+            # Stop existing containers
             docker-compose down
+            
+            # Pull latest images and rebuild
+            docker-compose pull
             docker-compose up -d --build
+            
+            # Run migrations safely
             docker-compose exec -T api npx prisma migrate deploy
+            
+            # Optional: Add a health check
+            docker-compose ps
 
-      # Cleanup (optional)
-      - name: Cleanup Docker images
+      - name: Cleanup Docker resources
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.DROPLET_IP }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            docker image prune -f
+            docker system prune -af --filter "label!=keep"
