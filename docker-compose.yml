@@ -17,6 +17,7 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    mem_limit: 512m
     command: sh -c "npx prisma migrate deploy && node dist/main.js"
 
   postgres:
@@ -35,6 +36,7 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    mem_limit: 512m
 
   chat:
     build:
@@ -49,6 +51,7 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    mem_limit: 256m
     command: sh -c "node dist/chat.js" # Adjust based on your chat entry point
 
 volumes:
