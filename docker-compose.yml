@@ -17,7 +17,6 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
-    mem_limit: 768m
     command: sh -c "npx prisma migrate deploy && node dist/main.js"
 
   postgres:
@@ -36,6 +35,5 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
-    mem_limit: 512m
 volumes:
   postgres_data:
