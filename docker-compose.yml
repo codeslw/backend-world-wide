@@ -17,7 +17,7 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
-    mem_limit: 512m
+    mem_limit: 768m
     command: sh -c "npx prisma migrate deploy && node dist/main.js"
 
   postgres:
@@ -37,22 +37,5 @@ services:
       retries: 5
     restart: unless-stopped
     mem_limit: 512m
-
-  chat:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "3001:3001" # Separate port for WebSocket
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/world-wide-db?schema=public
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
-    mem_limit: 256m
-    command: sh -c "node dist/chat.js" # Adjust based on your chat entry point
-
 volumes:
   postgres_data:
