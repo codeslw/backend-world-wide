@@ -2,8 +2,8 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Install system dependencies and node modules
-RUN apk add --no-cache python3 make g++ dumb-init
+# Install system dependencies
+RUN apk add --no-cache python3 make g++
 
 # Copy package files first for better caching
 COPY package*.json ./
@@ -39,5 +39,5 @@ USER node
 # Expose port
 EXPOSE 3000
 
-# Entrypoint
-ENTRYPOINT ["dumb-init", "node", "dist/main.js"]
+# Default command
+CMD ["node", "dist/main.js"]
