@@ -1,22 +1,43 @@
 # Build Stage
 FROM node:20-alpine AS builder
 WORKDIR /app
+
+# Install system dependencies and node modules
+RUN apk add --no-cache python3 make g++ dumb-init
+
+# Copy package files first for better caching
 COPY package*.json ./
-RUN apk add --no-cache python3 make g++ && \
-    npm install --legacy-peer-deps && \
+COPY prisma ./prisma
+
+# Install dependencies
+RUN npm install --legacy-peer-deps && \
     npm rebuild bcrypt --build-from-source
+
+# Copy the rest of the application
 COPY . .
-RUN npm run build && npx prisma generate
+
+# Generate Prisma client and build the application
+RUN npx prisma generate && \
+    npm run build
 
 # Production Stage
 FROM node:20-alpine
 WORKDIR /app
-RUN apk add --no-cache dumb-init
+
+# Copy necessary files from builder stage
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma ./prisma
+
+# Ensure correct permissions
+RUN chown -R node:node /app
+
+# Switch to non-root user
 USER node
-RUN npx prisma generate
+
+# Expose port
 EXPOSE 3000
+
+# Entrypoint
 ENTRYPOINT ["dumb-init", "node", "dist/main.js"]
