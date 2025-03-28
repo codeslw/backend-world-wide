@@ -112,7 +112,7 @@ model University {
   tuitionFeeMin        Float
   tuitionFeeMax        Float
   tuitionFeeCurrency   String     @default("USD")
-  photoUrl             String?   // Added photoUrl field
+  photoUrl             String?   
   createdAt            DateTime   @default(now())
   updatedAt            DateTime   @updatedAt
 
