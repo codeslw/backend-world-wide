@@ -28,6 +28,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=world-wide-db
+      - POSTGRES_INITDB_ARGS=--locale=C --encoding=UTF8
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

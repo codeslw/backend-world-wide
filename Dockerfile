@@ -18,8 +18,8 @@ COPY . .
 
 
 # Generate Prisma client and build the application
-RUN npx prisma generate && \
-    npm run build
+RUN npx prisma generate 
+RUN npm run build
 
 # Production Stage
 FROM node:20-alpine
