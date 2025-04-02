@@ -1,7 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 export class CreateCountryDto {
+  @ApiProperty({ description: 'Country code' })
+  @IsNumber()
+  @Min(1)
+  @Max(999)
+  code: number;
+
   @ApiProperty({ description: 'Country name in Uzbek' })
   @IsString()
   @MinLength(2)
