@@ -42,7 +42,7 @@ export class CountriesService {
       ],
       searchFields: [
         'nameUz', 'nameRu', 'nameEn', 
-        'descriptionUz', 'descriptionRu', 'descriptionEn'
+        'descriptionUz', 'descriptionRu', 'descriptionEn', 'code'
       ],
       searchMode: 'contains',
       caseSensitive: false
