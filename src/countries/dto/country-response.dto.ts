@@ -6,6 +6,9 @@ export class CountryResponseDto {
   @ApiProperty({ description: 'Country ID' })
   id: string;
 
+  @ApiProperty({ description: 'Country code' })
+  code: number;
+
   @ApiProperty({ description: 'Country name in Uzbek' })
   nameUz: string;
 
@@ -30,13 +33,13 @@ export class CountryResponseDto {
   @ApiProperty({ description: 'Localized country description based on language preference' })
   description: string;
 
-  @ApiProperty({ 
-    description: 'Cities in this country', 
-    type: () => 'CityResponseDto', // Use lazy loading to break circular dependency
-    isArray: true,
-    required: false 
-  })
-  cities?: any[]; // We'll use any[] here to avoid the import
+  // @ApiProperty({ 
+  //   description: 'Cities in this country', 
+  //   type: () => 'CityResponseDto', // Use lazy loading to break circular dependency
+  //   isArray: true,
+  //   required: false 
+  // })
+  // cities?: any[]; // We'll use any[] here to avoid the import
 }
 
 export class PaginatedCountryResponseDto extends PaginatedResponseDto<CountryResponseDto> {

@@ -64,7 +64,7 @@ export class CountriesService {
       this.prisma.country,
       where,
       paginationDto,
-      { cities: true },
+      { cities: false },
       undefined,
       paginationOptions as PaginationOptions
     );
@@ -128,18 +128,18 @@ export class CountriesService {
                          country.descriptionRu;
     
     // Localize cities if they exist
-    if (result.cities && result.cities.length > 0) {
-      result.cities = result.cities.map(city => {
-        const localizedCity = { ...city };
-        localizedCity.name = city[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || 
-                            city.nameUz || 
-                            city.nameRu;
-        localizedCity.description = city[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || 
-                                   city.descriptionUz || 
-                                   city.descriptionRu;
-        return localizedCity;
-      });
-    }
+    // if (result.cities && result.cities.length > 0) {
+    //   result.cities = result.cities.map(city => {
+    //     const localizedCity = { ...city };
+    //     localizedCity.name = city[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || 
+    //                         city.nameUz || 
+    //                         city.nameRu;
+    //     localizedCity.description = city[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || 
+    //                                city.descriptionUz || 
+    //                                city.descriptionRu;
+    //     return localizedCity;
+    //   });
+    // }
     
     return result;
   }

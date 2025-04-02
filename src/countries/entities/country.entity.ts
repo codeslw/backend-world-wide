@@ -5,6 +5,9 @@ export class Country {
   @ApiProperty({ description: 'Unique identifier (UUID)' })
   id: string;
 
+  @ApiProperty({ description: 'Country code' })
+  code: number;
+
   @ApiProperty({ description: 'Country name in Uzbek' })
   nameUz: string;
 

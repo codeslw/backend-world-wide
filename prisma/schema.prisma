@@ -55,6 +55,7 @@ model Country {
   descriptionUz String?
   descriptionRu String?
   descriptionEn String?
+  code          Int
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
