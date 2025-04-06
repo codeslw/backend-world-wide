@@ -14,6 +14,7 @@ import { FilesController } from './files/files.controller';
 import { FilesModule } from './files/files.module';
 import { FilesService } from './files/files.service';
 import { ChatModule } from './chat/chat.module';
+import { CatalogModule } from './catalog/catalog.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { ChatModule } from './chat/chat.module';
     DigitalOceanModule,
     FilesModule,
     ChatModule,
+    CatalogModule,
   ],
   providers: [PrismaService, DigitalOceanService, FilesService],
   controllers: [FilesController],

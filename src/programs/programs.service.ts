@@ -29,6 +29,19 @@ export class ProgramsService {
     return this.prisma.program.create({ data });
   }
 
+  async createMany(programs: CreateProgramDto[]) {
+    const createdPrograms = await Promise.all(
+      programs.map(programDto => {
+        return this.create(programDto);
+      })
+    );
+    
+    return { 
+      count: createdPrograms.length,
+      programs: createdPrograms
+    };
+  }
+
   async findAll(parentId?: string, lang: string = 'uz', paginationDto?: PaginationDto) {
     // Define filter options
     const filterOptions = {

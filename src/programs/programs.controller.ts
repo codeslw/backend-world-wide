@@ -9,6 +9,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../common/enum/roles.enum';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { ProgramResponseDto, PaginatedProgramResponseDto } from './dto/program-response.dto';
+import { CreateManyProgramsDto } from './dto/create-many-programs.dto';
 
 @ApiTags('programs')
 @Controller('programs')
@@ -23,6 +24,16 @@ export class ProgramsController {
   @ApiResponse({ status: 201, description: 'Program successfully created', type: ProgramResponseDto })
   create(@Body() createProgramDto: CreateProgramDto) {
     return this.programsService.create(createProgramDto);
+  }
+
+  @Post('create/many')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create multiple programs at once (Admin only)' })
+  @ApiResponse({ status: 201, description: 'Programs successfully created' })
+  createMany(@Body() createManyProgramsDto: CreateManyProgramsDto) {
+    return this.programsService.createMany(createManyProgramsDto.programs);
   }
 
   @Get()
