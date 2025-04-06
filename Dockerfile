@@ -9,13 +9,13 @@ RUN apk add --no-cache python3 make g++
 COPY package*.json ./
 COPY prisma ./prisma
 
-# Install dependencies
-RUN npm install --legacy-peer-deps && \
+# Install dependencies with clean npm cache
+RUN npm cache clean --force && \
+    npm install --legacy-peer-deps && \
     npm rebuild bcrypt --build-from-source
 
 # Copy the rest of the application
 COPY . .
-
 
 # Generate Prisma client and build the application
 RUN npx prisma generate 
@@ -31,6 +31,9 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma ./prisma
 
+# Set production environment
+ENV NODE_ENV=production
+
 # Ensure correct permissions
 RUN chown -R node:node /app
 
@@ -41,4 +44,4 @@ USER node
 EXPOSE 3000
 
 # Default command
-CMD ["node", "dist/main.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]

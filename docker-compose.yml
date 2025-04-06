@@ -1,6 +1,16 @@
 version: '3.8'
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: postgres-data
+
 services:
   api:
+    container_name: worldwidedb-api
     build:
       context: .
       dockerfile: Dockerfile
@@ -9,18 +19,27 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/world-wide-db?schema=public
+      - SHADOW_DATABASE_URL=postgresql://postgres:password@postgres:5432/world-wide-shadow?schema=public
       - DIGITAL_OCEAN_ACCESS_KEY=${DIGITAL_OCEAN_ACCESS_KEY}
       - DIGITAL_OCEAN_SECRET_KEY=${DIGITAL_OCEAN_SECRET_KEY}
       - DIGITAL_OCEAN_BUCKET=${DIGITAL_OCEAN_BUCKET}
       - DIGITAL_OCEAN_ENDPOINT=${DIGITAL_OCEAN_ENDPOINT}
       - JWT_SECRET=${JWT_SECRET}
+    networks:
+      - app-network
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
-    command: sh -c "npx prisma migrate deploy && node dist/main.js"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/v1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   postgres:
+    container_name: worldwidedb-postgres
     image: postgres:15-alpine
     ports:
       - "5432:5432"
@@ -31,12 +50,11 @@ services:
       - POSTGRES_INITDB_ARGS=--locale=C --encoding=UTF8
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
     restart: unless-stopped
-
-volumes:
-  postgres_data:
