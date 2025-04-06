@@ -17,6 +17,19 @@ export class CountriesService {
     return this.prisma.country.create({ data: createCountryDto });
   }
 
+  async createMany(countries: CreateCountryDto[]) {
+    const createdCountries = await Promise.all(
+      countries.map(countryDto => {
+        return this.create(countryDto);
+      })
+    );
+    
+    return { 
+      count: createdCountries.length,
+      countries: createdCountries
+    };
+  }
+
   async findAll(lang: string = 'uz', paginationDto?: PaginationDto) {
     // Define filter options
     const filterOptions = {

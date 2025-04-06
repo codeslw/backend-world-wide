@@ -9,6 +9,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../common/enum/roles.enum';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { CountryResponseDto, PaginatedCountryResponseDto } from './dto/country-response.dto';
+import { CreateManyCountriesDto } from './dto/create-many-countries.dto';
 
 @ApiTags('countries')
 @Controller('countries')
@@ -23,6 +24,16 @@ export class CountriesController {
   @ApiResponse({ status: 201, description: 'Country successfully created', type: CountryResponseDto })
   create(@Body() createCountryDto: CreateCountryDto) {
     return this.countriesService.create(createCountryDto);
+  }
+
+  @Post('create/many')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create multiple countries at once (Admin only)' })
+  @ApiResponse({ status: 201, description: 'Countries successfully created' })
+  createMany(@Body() createManyCountriesDto: CreateManyCountriesDto) {
+    return this.countriesService.createMany(createManyCountriesDto.countries);
   }
 
   @Get()

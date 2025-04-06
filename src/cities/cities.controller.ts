@@ -9,6 +9,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../common/enum/roles.enum';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { CityResponseDto, PaginatedCityResponseDto } from './dto/city-response.dto';
+import { CreateManyCitiesDto } from './dto/create-many-cities.dto';
 
 @ApiTags('cities')
 @Controller('cities')
@@ -23,6 +24,16 @@ export class CitiesController {
   @ApiResponse({ status: 201, description: 'City successfully created', type: CityResponseDto })
   create(@Body() createCityDto: CreateCityDto) {
     return this.citiesService.create(createCityDto);
+  }
+
+  @Post('create/many')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create multiple cities at once (Admin only)' })
+  @ApiResponse({ status: 201, description: 'Cities successfully created' })
+  createMany(@Body() createManyCitiesDto: CreateManyCitiesDto) {
+    return this.citiesService.createMany(createManyCitiesDto.cities);
   }
 
   @Get()

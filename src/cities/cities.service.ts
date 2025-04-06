@@ -27,6 +27,19 @@ export class CitiesService {
     return this.prisma.city.create({ data });
   }
 
+  async createMany(cities: CreateCityDto[]) {
+    const createdCities = await Promise.all(
+      cities.map(cityDto => {
+        return this.create(cityDto);
+      })
+    );
+    
+    return { 
+      count: createdCities.length,
+      cities: createdCities
+    };
+  }
+
   async findAll(countryId?: string, lang: string = 'uz', paginationDto?: PaginationDto) {
     // Define filter options
     const filterOptions = {
