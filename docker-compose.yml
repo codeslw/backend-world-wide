@@ -8,7 +8,7 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/world-wide-db?schema=public
+      - DATABASE_URL=postgresql://saidkamol:password@postgres:5432/world-wide-db?schema=public
       - DIGITAL_OCEAN_ACCESS_KEY=${DIGITAL_OCEAN_ACCESS_KEY}
       - DIGITAL_OCEAN_SECRET_KEY=${DIGITAL_OCEAN_SECRET_KEY}
       - DIGITAL_OCEAN_BUCKET=${DIGITAL_OCEAN_BUCKET}
@@ -25,7 +25,7 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=postgres
+      - POSTGRES_USER=saidkamol
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=world-wide-db
       - POSTGRES_INITDB_ARGS=--locale=C --encoding=UTF8

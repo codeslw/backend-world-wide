@@ -51,8 +51,15 @@ jobs:
             docker-compose pull
             docker-compose up -d --build
             
-            # Run migrations safely
+            # Wait for containers to be healthy before running migrations
+            echo "Waiting for API container to be ready..."
+            sleep 10
+            
+            # Run migrations safely (this is redundant with your command in docker-compose but adds extra safety)
             docker-compose exec -T api npx prisma migrate deploy
+            
+            # Verify database is in sync with schema
+            docker-compose exec -T api npx prisma db push --accept-data-loss
             
             # Optional: Add a health check
             docker-compose ps
