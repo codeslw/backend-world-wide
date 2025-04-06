@@ -34,42 +34,72 @@ jobs:
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            echo "Deploying latest changes..."
             cd /home/${{ secrets.DROPLET_USER }}/backend-world-wide
-            git pull origin master
             
-            # Set environment variables securely
-            export DATABASE_URL="${{ secrets.DATABASE_URL }}"
-            export DIGITAL_OCEAN_ACCESS_KEY="${{ secrets.DIGITAL_OCEAN_ACCESS_KEY }}"
-            export DIGITAL_OCEAN_SECRET_KEY="${{ secrets.DIGITAL_OCEAN_SECRET_KEY }}"
-            export DIGITAL_OCEAN_BUCKET="${{ secrets.DIGITAL_OCEAN_BUCKET }}"
-            export DIGITAL_OCEAN_ENDPOINT="${{ secrets.DIGITAL_OCEAN_ENDPOINT }}"
+            # Ensure git is properly configured
+            git config --global --add safe.directory /home/${{ secrets.DROPLET_USER }}/backend-world-wide
+            
+            # Fetch all changes and force reset to latest master
+            git fetch --all
+            git reset --hard origin/master
+            
+            # Verify latest commit
+            echo "Latest commit:"
+            git log -1 --pretty=format:"%h - %an, %ar : %s"
+            
+            # Create .env file for docker-compose
+            echo "Creating environment variables..."
+            cat > .env << EOF
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            DIGITAL_OCEAN_ACCESS_KEY=${{ secrets.DIGITAL_OCEAN_ACCESS_KEY }}
+            DIGITAL_OCEAN_SECRET_KEY=${{ secrets.DIGITAL_OCEAN_SECRET_KEY }}
+            DIGITAL_OCEAN_BUCKET=${{ secrets.DIGITAL_OCEAN_BUCKET }}
+            DIGITAL_OCEAN_ENDPOINT=${{ secrets.DIGITAL_OCEAN_ENDPOINT }}
+            EOF
             
             # Stop existing containers
+            echo "Stopping existing containers..."
             docker-compose down -v
             
-            # Pull latest images and rebuild
-            docker-compose pull
-            docker-compose up -d --build
+            # Clean up Docker resources
+            echo "Cleaning up Docker resources..."
+            docker system prune -af --volumes
             
-            # Wait longer for containers to be healthy before running migrations
-            echo "Waiting for database and API containers to be ready..."
+            # Pull latest images and rebuild
+            echo "Building and starting containers..."
+            docker-compose build --no-cache
+            docker-compose up -d
+            
+            # Wait for containers to be ready
+            echo "Waiting for containers to be ready..."
             sleep 15
             
-            # Verify database connection before running migrations
+            # Verify database connection
+            echo "Verifying database connection..."
             docker-compose exec -T postgres pg_isready -U postgres || (echo "Database not ready!" && exit 1)
             
-            # Run migrations safely (this is redundant with your command in docker-compose but adds extra safety)
+            # Run migrations
+            echo "Running database migrations..."
             docker-compose exec -T api npx prisma migrate deploy
             
-            # Remove db push command as it could cause issues
-            # Verify app is running
+            # Verify containers are running
+            echo "Deployed containers:"
             docker-compose ps
+            
+            echo "Deployment completed successfully!"
 
-      - name: Cleanup Docker resources
+      - name: Verify Deployment
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.DROPLET_IP }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            docker system prune -af --filter "label!=keep"
+            cd /home/${{ secrets.DROPLET_USER }}/backend-world-wide
+            echo "Current git commit:"
+            git log -1 --pretty=format:"%h - %an, %ar : %s"
+            
+            echo "Container status:"
+            docker-compose ps

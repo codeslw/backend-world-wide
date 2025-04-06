@@ -22,7 +22,11 @@
     "migrate:dev": "./scripts/migrate-dev.sh",
     "migrate:deploy": "prisma migrate deploy",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "deploy:fix": "./scripts/deploy-fix.sh",
+    "docker:debug": "./scripts/docker-debug.sh",
+    "docker:compose": "docker-compose up -d",
+    "deploy:manual": "./scripts/manual-deploy.sh"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.758.0",

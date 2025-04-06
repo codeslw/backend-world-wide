@@ -60,16 +60,68 @@ $ npm run test:cov
 
 ## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+This project uses Docker Compose for streamlined deployment. The deployment process is:
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+1. Ensure you have Docker and Docker Compose installed
+2. Clone the repository
+3. Create an `.env` file with the required environment variables
+4. Run `docker-compose up -d` to start the services
 
-```bash
-$ npm install -g mau
-$ mau deploy
+### Environment Variables
+
+The following environment variables are required:
+
+```
+DATABASE_URL=postgresql://postgres:password@postgres:5432/world-wide-db?schema=public
+JWT_SECRET=your_jwt_secret
+DIGITAL_OCEAN_ACCESS_KEY=your_digital_ocean_access_key
+DIGITAL_OCEAN_SECRET_KEY=your_digital_ocean_secret_key
+DIGITAL_OCEAN_BUCKET=your_digital_ocean_bucket
+DIGITAL_OCEAN_ENDPOINT=your_digital_ocean_endpoint
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### CI/CD Pipeline
+
+The CI/CD pipeline automatically:
+
+1. Runs tests on pull requests
+2. Deploys to the production environment on merge to master
+3. Uses Docker Compose for consistent deployments
+4. Performs health checks to ensure successful deployment
+
+### Manual Deployment
+
+If you need to manually deploy the application:
+
+```bash
+# Run the manual deployment script
+npm run deploy:manual
+```
+
+This script will:
+1. Update your git repository to the latest master
+2. Clean Docker resources
+3. Rebuild and restart containers
+4. Run database migrations
+
+### Troubleshooting Deployment Issues
+
+If you're experiencing deployment issues:
+
+1. **Git not showing latest commits**
+   ```bash
+   # Run the deployment fix script
+   npm run deploy:fix
+   ```
+
+2. **Container startup failures**
+   - Check logs: `docker-compose logs -f`
+   - Verify `.env` file exists with correct values
+   - Ensure docker service is running: `systemctl status docker`
+
+3. **Database connection issues**
+   - Check if PostgreSQL container is running: `docker-compose ps`
+   - Verify database credentials in `.env` match docker-compose.yml
 
 ## Resources
 
