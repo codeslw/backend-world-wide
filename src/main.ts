@@ -31,7 +31,19 @@ async function bootstrap() {
     .build();
   
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  
+  // Add Swagger UI options for auth persistence
+  const customOptions = {
+    swaggerOptions: {
+      persistAuthorization: true, // Keep authorization data between page refreshes
+      defaultModelsExpandDepth: 0, // Hide schemas section by default
+      tagsSorter: 'alpha', // Sort tags alphabetically
+      operationsSorter: 'alpha', // Sort operations alphabetically
+    },
+    customSiteTitle: 'EduWorldWide API Docs',
+  };
+  
+  SwaggerModule.setup('api', app, document, customOptions);
   
 
    // Expose Swagger document at /swagger-spec endpoint

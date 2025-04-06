@@ -19,7 +19,7 @@ export class CitiesController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a new city (Admin only)' })
   @ApiResponse({ status: 201, description: 'City successfully created', type: CityResponseDto })
   create(@Body() createCityDto: CreateCityDto) {
@@ -29,7 +29,7 @@ export class CitiesController {
   @Post('create/many')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create multiple cities at once (Admin only)' })
   @ApiResponse({ status: 201, description: 'Cities successfully created' })
   createMany(@Body() createManyCitiesDto: CreateManyCitiesDto) {

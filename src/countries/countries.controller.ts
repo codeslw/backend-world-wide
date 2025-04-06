@@ -19,7 +19,7 @@ export class CountriesController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a new country (Admin only)' })
   @ApiResponse({ status: 201, description: 'Country successfully created', type: CountryResponseDto })
   create(@Body() createCountryDto: CreateCountryDto) {
@@ -29,7 +29,7 @@ export class CountriesController {
   @Post('create/many')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create multiple countries at once (Admin only)' })
   @ApiResponse({ status: 201, description: 'Countries successfully created' })
   createMany(@Body() createManyCountriesDto: CreateManyCountriesDto) {

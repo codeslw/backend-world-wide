@@ -19,7 +19,7 @@ export class ProgramsController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a new program (Admin only)' })
   @ApiResponse({ status: 201, description: 'Program successfully created', type: ProgramResponseDto })
   create(@Body() createProgramDto: CreateProgramDto) {
@@ -29,7 +29,7 @@ export class ProgramsController {
   @Post('create/many')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create multiple programs at once (Admin only)' })
   @ApiResponse({ status: 201, description: 'Programs successfully created' })
   createMany(@Body() createManyProgramsDto: CreateManyProgramsDto) {
