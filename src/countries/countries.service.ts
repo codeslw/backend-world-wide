@@ -14,7 +14,14 @@ export class CountriesService {
   ) {}
 
   async create(createCountryDto: CreateCountryDto) {
-    return this.prisma.country.create({ data: createCountryDto });
+    return this.prisma.country.create({ 
+      data: {
+        code: createCountryDto.code,
+        nameUz: createCountryDto.nameUz,
+        nameRu: createCountryDto.nameRu,
+        nameEn: createCountryDto.nameEn
+      } 
+    });
   }
 
   async createMany(countries: CreateCountryDto[]) {

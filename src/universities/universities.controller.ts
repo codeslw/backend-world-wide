@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Headers, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Headers, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { UniversitiesService } from './universities.service';
 import { CreateUniversityDto } from './dto/create-university.dto';
 import { UpdateUniversityDto } from './dto/update-university.dto';
@@ -42,7 +42,7 @@ export class UniversitiesController {
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
   @ApiQuery({ name: 'search', required: false, description: 'Search term' })
-  @ApiQuery({ name: 'countryId', required: false, description: 'Filter by country ID' })
+  @ApiQuery({ name: 'countryCode', required: false, description: 'Filter by country code' })
   @ApiQuery({ name: 'cityId', required: false, description: 'Filter by city ID' })
   @ApiQuery({ name: 'type', required: false, enum: UniversityType, description: 'Filter by university type' })
   @ApiQuery({ name: 'minRanking', required: false, description: 'Filter by minimum ranking' })
@@ -58,13 +58,13 @@ export class UniversitiesController {
   @ApiHeader({ name: 'Accept-Language', enum: ['uz', 'ru', 'en'], description: 'Language preference' })
   @ApiResponse({ status: 200, description: 'List of universities', type: PaginatedUniversityResponseDto })
   findAll(
-    @Query('countryId') countryId?: string,
+    @Query('countryCode', new ParseIntPipe({ optional: true })) countryCode?: number,
     @Query('cityId') cityId?: string,
     @Query('type') type?: string,
     @Headers('Accept-Language') lang: string = 'uz',
     @Query() paginationDto?: PaginationDto,
   ) {
-    return this.universitiesService.findAll(countryId, cityId, type, lang, paginationDto);
+    return this.universitiesService.findAll(countryCode, cityId, type, lang, paginationDto);
   }
 
   @Get(':id')

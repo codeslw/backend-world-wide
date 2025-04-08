@@ -20,11 +20,11 @@ export class CreateCountryDto {
   @MaxLength(100)
   nameRu: string;
 
-  @ApiProperty({ description: 'Country name in English', required: false })
+  @ApiProperty({ description: 'Country name in English' })
   @IsString()
-  @IsOptional()
+  @MinLength(2)
   @MaxLength(100)
-  nameEn?: string;
+  nameEn: string;
 
   @ApiProperty({ description: 'Country description in Uzbek', required: false })
   @IsString()
