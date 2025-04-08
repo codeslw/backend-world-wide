@@ -21,7 +21,7 @@ export class CitiesService {
       descriptionUz: createCityDto.descriptionUz,
       descriptionRu: createCityDto.descriptionRu,
       descriptionEn: createCityDto.descriptionEn,
-      country: { connect: { id: createCityDto.countryId } }
+      country: { connect: { code: createCityDto.countryCode } }
     };
 
     return this.prisma.city.create({ data });
@@ -40,11 +40,11 @@ export class CitiesService {
     };
   }
   //check comment
-  async findAll(countryId?: string, lang: string = 'uz', paginationDto?: PaginationDto) {
+  async findAll(countryCode?: number, lang: string = 'uz', paginationDto?: PaginationDto) {
     // Define filter options
     const filterOptions = {
       filters: [
-        { field: 'countryId', queryParam: 'countryId' },
+        { field: 'countryCode', queryParam: 'countryCode' },
         { 
           field: 'createdAt', 
           queryParam: 'createdAfter', 
@@ -73,7 +73,7 @@ export class CitiesService {
     };
     
     // Build filter query
-    const query = { ...paginationDto, countryId };
+    const query = { ...paginationDto, countryCode };
     const where = this.filterService.buildFilterQuery(query, filterOptions as FilterOptions);
     
     // Define pagination options
@@ -123,9 +123,9 @@ export class CitiesService {
       const data: any = { ...updateCityDto };
       
       // Handle country relationship
-      if (data.countryId) {
-        data.country = { connect: { id: data.countryId } };
-        delete data.countryId;
+      if (data.countryCode) {
+        data.country = { connect: { code: data.countryCode } };
+        delete data.countryCode;
       }
       
       return await this.prisma.city.update({

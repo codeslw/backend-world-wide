@@ -14,35 +14,38 @@ export class UniversitiesService {
   ) {}
 
   async create(createUniversityDto: CreateUniversityDto) {
-    return this.prisma.university.create({
-      data: {
-        nameUz: createUniversityDto.nameUz,
-        nameRu: createUniversityDto.nameRu,
-        nameEn: createUniversityDto.nameEn,
-        established: createUniversityDto.established,
-        type: createUniversityDto.type,
-        avgApplicationFee: createUniversityDto.avgApplicationFee,
-        countryId: createUniversityDto.countryId,
-        cityId: createUniversityDto.cityId,
-        descriptionUz: createUniversityDto.descriptionUz,
-        descriptionRu: createUniversityDto.descriptionRu,
-        descriptionEn: createUniversityDto.descriptionEn,
-        winterIntakeDeadline: createUniversityDto.winterIntakeDeadline,
-        autumnIntakeDeadline: createUniversityDto.autumnIntakeDeadline,
-        ranking: createUniversityDto.ranking,
-        studentsCount: createUniversityDto.studentsCount,
-        acceptanceRate: createUniversityDto.acceptanceRate,
-        website: createUniversityDto.website,
-        tuitionFeeMax: createUniversityDto.tuitionFeeMax,
-        tuitionFeeMin: createUniversityDto.tuitionFeeMin,
-        tuitionFeeCurrency: createUniversityDto.tuitionFeeCurrency,
-        photoUrl: createUniversityDto.photoUrl
-      },
-    });
+    const data = {
+      nameUz: createUniversityDto.nameUz,
+      nameRu: createUniversityDto.nameRu,
+      nameEn: createUniversityDto.nameEn,
+      established: createUniversityDto.established,
+      type: createUniversityDto.type,
+      avgApplicationFee: createUniversityDto.avgApplicationFee,
+      country: { connect: { code: createUniversityDto.countryCode } },
+      city: { connect: { id: createUniversityDto.cityId } },
+      descriptionUz: createUniversityDto.descriptionUz,
+      descriptionRu: createUniversityDto.descriptionRu,
+      descriptionEn: createUniversityDto.descriptionEn,
+      winterIntakeDeadline: createUniversityDto.winterIntakeDeadline,
+      autumnIntakeDeadline: createUniversityDto.autumnIntakeDeadline,
+      ranking: createUniversityDto.ranking,
+      studentsCount: createUniversityDto.studentsCount,
+      acceptanceRate: createUniversityDto.acceptanceRate,
+      website: createUniversityDto.website,
+      tuitionFeeMax: createUniversityDto.tuitionFeeMax,
+      tuitionFeeMin: createUniversityDto.tuitionFeeMin,
+      tuitionFeeCurrency: createUniversityDto.tuitionFeeCurrency,
+      photoUrl: createUniversityDto.photoUrl,
+      email: createUniversityDto.email,
+      phone: createUniversityDto.phone,
+      address: createUniversityDto.address
+    };
+
+    return this.prisma.university.create({ data });
   }
 
   async findAll(
-    countryId?: string, 
+    countryCode?: number, 
     cityId?: string, 
     type?: string,
     lang: string = 'uz', 
@@ -51,7 +54,7 @@ export class UniversitiesService {
     // Define filter options
     const filterOptions = {
       filters: [
-        { field: 'countryId', queryParam: 'countryId' },
+        { field: 'countryCode', queryParam: 'countryCode' },
         { field: 'cityId', queryParam: 'cityId' },
         { field: 'type', queryParam: 'type' },
         { 
@@ -133,7 +136,7 @@ export class UniversitiesService {
     // Build filter query
     const query = { 
       ...paginationDto, 
-      countryId, 
+      countryCode, 
       cityId,
       type
     };
@@ -305,8 +308,8 @@ export class UniversitiesService {
             established: dto.established,
             type: dto.type,
             avgApplicationFee: dto.avgApplicationFee,
-            countryId: dto.countryId,
-            cityId: dto.cityId,
+            country: { connect: { code: dto.countryCode } },
+            city: { connect: { id: dto.cityId } },
             descriptionUz: dto.descriptionUz,
             descriptionRu: dto.descriptionRu,
             descriptionEn: dto.descriptionEn,
@@ -319,7 +322,10 @@ export class UniversitiesService {
             tuitionFeeMax: dto.tuitionFeeMax,
             tuitionFeeMin: dto.tuitionFeeMin,
             tuitionFeeCurrency: dto.tuitionFeeCurrency,
-            photoUrl: dto.photoUrl
+            photoUrl: dto.photoUrl,
+            email: dto.email,
+            phone: dto.phone,
+            address: dto.address
           },
         });
         

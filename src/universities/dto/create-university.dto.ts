@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsInt, IsEnum, IsNumber, IsUrl, IsOptional, IsDate, Min, Max } from 'class-validator';
+import { IsString, IsInt, IsEnum, IsNumber, IsUrl, IsOptional, IsDate, Min, Max, IsEmail, IsPhoneNumber } from 'class-validator';
 import { UniversityType } from '../../common/enum/university-type.enum';
 
 export class CreateUniversityDto {
@@ -27,9 +27,9 @@ export class CreateUniversityDto {
   @IsNumber()
   avgApplicationFee: number;
 
-  @ApiProperty({ description: 'Country ID' })
-  @IsString()
-  countryId: string;
+  @ApiProperty({ description: 'Country code' })
+  @IsNumber()
+  countryCode: number;
 
   @ApiProperty({ description: 'City ID' })
   @IsString()
@@ -74,6 +74,18 @@ export class CreateUniversityDto {
   @ApiProperty({ description: 'University website URL' })
   @IsUrl()
   website: string;
+
+  @ApiProperty({ description: 'University email' })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ description: 'University phone number' })
+  @IsPhoneNumber()
+  phone: string;
+
+  @ApiProperty({ description: 'University address' })
+  @IsString()
+  address: string;
 
   @ApiProperty({ description: 'Minimum tuition fee' })
   @IsNumber()

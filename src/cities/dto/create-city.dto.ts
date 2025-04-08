@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import { IsOptional, IsString, IsNumber, MaxLength, MinLength } from 'class-validator';
 
 export class CreateCityDto {
   @ApiProperty({ description: 'City name in Uzbek' })
@@ -38,7 +38,7 @@ export class CreateCityDto {
   @MaxLength(500)
   descriptionEn?: string;
 
-  @ApiProperty({ description: 'Country ID this city belongs to' })
-  @IsUUID()
-  countryId: string;
+  @ApiProperty({ description: 'Country code this city belongs to' })
+  @IsNumber()
+  countryCode: number;
 } 

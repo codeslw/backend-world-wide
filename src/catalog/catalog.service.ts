@@ -16,12 +16,12 @@ export class CatalogService {
     return this.countriesService.findAll(lang, paginationDto);
   }
 
-  async getCountry(id: string, lang: string = 'uz') {
-    return this.countriesService.findOne(id, lang);
+  async getCountry(code: number, lang: string = 'uz') {
+    return this.countriesService.findOne(code, lang);
   }
 
-  async getCities(countryId?: string, lang: string = 'uz', paginationDto?: PaginationDto) {
-    return this.citiesService.findAll(countryId, lang, paginationDto);
+  async getCities(countryCode?: number, lang: string = 'uz', paginationDto?: PaginationDto) {
+    return this.citiesService.findAll(countryCode, lang, paginationDto);
   }
 
   async getCity(id: string, lang: string = 'uz') {
