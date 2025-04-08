@@ -37,13 +37,21 @@ EOF
     exit 0
 fi
 
+# Verify JWT_SECRET is set
+if [ -z "$(grep -E '^JWT_SECRET=' .env | cut -d '=' -f2)" ] || [ "$(grep -E '^JWT_SECRET=' .env | cut -d '=' -f2)" = "your_jwt_secret" ]; then
+    echo "WARNING: JWT_SECRET is not set or is using the default value."
+    echo "Please update your .env file with a proper JWT_SECRET value."
+    echo "Example: JWT_SECRET=my_secure_random_string_here"
+    exit 1
+fi
+
 # Stop existing containers
 echo "Stopping existing containers..."
 docker-compose down
 
-# Clean up Docker resources
+# Clean up Docker resources but preserve volumes
 echo "Cleaning up Docker resources..."
-docker system prune -af --volumes
+docker system prune -af --filter "label!=keep"
 
 # Build and start containers
 echo "Building and starting containers..."

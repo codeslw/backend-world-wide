@@ -5,12 +5,14 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_data:
-    name: postgres-data
+  postgres-data:
+    name: world-wide-postgres-data
+    labels:
+      keep: "true"
 
 services:
   api:
-    container_name: worldwidedb-api
+    container_name: world-wide-api
     build:
       context: .
       dockerfile: Dockerfile
@@ -20,26 +22,26 @@ services:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/world-wide-db?schema=public
       - SHADOW_DATABASE_URL=postgresql://postgres:password@postgres:5432/world-wide-shadow?schema=public
+      - JWT_SECRET=${JWT_SECRET:-ww2024secretjz}
       - DIGITAL_OCEAN_ACCESS_KEY=${DIGITAL_OCEAN_ACCESS_KEY}
       - DIGITAL_OCEAN_SECRET_KEY=${DIGITAL_OCEAN_SECRET_KEY}
       - DIGITAL_OCEAN_BUCKET=${DIGITAL_OCEAN_BUCKET}
       - DIGITAL_OCEAN_ENDPOINT=${DIGITAL_OCEAN_ENDPOINT}
-      - JWT_SECRET=${JWT_SECRET}
     networks:
       - app-network
     depends_on:
       postgres:
         condition: service_healthy
-    restart: unless-stopped
+    restart: always
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/v1 || exit 1"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
 
   postgres:
-    container_name: worldwidedb-postgres
+    container_name: world-wide-postgres
     image: postgres:15-alpine
     ports:
       - "5432:5432"
@@ -49,12 +51,13 @@ services:
       - POSTGRES_DB=world-wide-db
       - POSTGRES_INITDB_ARGS=--locale=C --encoding=UTF8
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
     networks:
       - app-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
+      start_period: 10s
+    restart: always

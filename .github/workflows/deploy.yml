@@ -59,13 +59,20 @@ jobs:
             DIGITAL_OCEAN_ENDPOINT=${{ secrets.DIGITAL_OCEAN_ENDPOINT }}
             EOF
             
+            # Verify JWT_SECRET is set
+            if [ -z "$(grep -E '^JWT_SECRET=' .env | cut -d '=' -f2)" ]; then
+                echo "ERROR: JWT_SECRET is not set in the environment variables."
+                echo "Please add JWT_SECRET to your GitHub repository secrets."
+                exit 1
+            fi
+            
             # Stop existing containers
             echo "Stopping existing containers..."
-            docker-compose down -v
+            docker-compose down
             
-            # Clean up Docker resources
+            # Clean up Docker resources but preserve volumes
             echo "Cleaning up Docker resources..."
-            docker system prune -af --volumes
+            docker system prune -af --filter "label!=keep"
             
             # Pull latest images and rebuild
             echo "Building and starting containers..."

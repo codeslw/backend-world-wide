@@ -30,7 +30,7 @@ chmod -R 777 ./prisma
 # Clean Docker environment
 echo "Cleaning Docker environment..."
 docker-compose down
-docker system prune -af --volumes
+docker system prune -af --filter "label!=keep"
 
 # Make sure the .env file exists
 if [ ! -f .env ]; then
@@ -45,6 +45,14 @@ DIGITAL_OCEAN_BUCKET=your_digital_ocean_bucket
 DIGITAL_OCEAN_ENDPOINT=your_digital_ocean_endpoint
 EOF
     echo ".env file created. Please update with your actual values before continuing."
+    exit 1
+fi
+
+# Verify JWT_SECRET is set
+if [ -z "$(grep -E '^JWT_SECRET=' .env | cut -d '=' -f2)" ] || [ "$(grep -E '^JWT_SECRET=' .env | cut -d '=' -f2)" = "your_jwt_secret" ]; then
+    echo "WARNING: JWT_SECRET is not set or is using the default value."
+    echo "Please update your .env file with a proper JWT_SECRET value."
+    echo "Example: JWT_SECRET=my_secure_random_string_here"
     exit 1
 fi
 

@@ -73,12 +73,22 @@ The following environment variables are required:
 
 ```
 DATABASE_URL=postgresql://postgres:password@postgres:5432/world-wide-db?schema=public
-JWT_SECRET=your_jwt_secret
+JWT_SECRET=your_jwt_secret  # This is critical for authentication to work
 DIGITAL_OCEAN_ACCESS_KEY=your_digital_ocean_access_key
 DIGITAL_OCEAN_SECRET_KEY=your_digital_ocean_secret_key
 DIGITAL_OCEAN_BUCKET=your_digital_ocean_bucket
 DIGITAL_OCEAN_ENDPOINT=your_digital_ocean_endpoint
 ```
+
+> **Important**: The `JWT_SECRET` is critical for authentication to work. If it's not set or is using the default value, the application will fail to start with a "JwtStrategy requires a secret or key" error.
+
+### Data Persistence
+
+The application uses Docker volumes to persist data:
+
+- PostgreSQL data is stored in a named volume `world-wide-postgres-data`
+- This volume is preserved during deployments and container restarts
+- To backup your database, you can use Docker's volume backup commands
 
 ### CI/CD Pipeline
 
