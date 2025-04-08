@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Headers, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Headers, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { CitiesService } from './cities.service';
 import { CreateCityDto } from './dto/create-city.dto';
 import { UpdateCityDto } from './dto/update-city.dto';
@@ -37,21 +37,20 @@ export class CitiesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all cities with pagination and search, optionally filtered by country ID' })
-  @ApiQuery({ name: 'countryId', required: false, description: 'Filter by country ID' })
+  @ApiOperation({ summary: 'Get all cities with pagination and search' })
   @ApiHeader({ name: 'Accept-Language', enum: ['uz', 'ru', 'en'], description: 'Language preference' })
   @ApiResponse({ status: 200, description: 'List of cities', type: PaginatedCityResponseDto })
   findAll(
-    @Query('countryId') countryId?: string,
+    @Query('countryCode', new ParseIntPipe({ optional: true })) countryCode?: number,
     @Headers('Accept-Language') lang: string = 'uz',
     @Query() paginationDto?: PaginationDto,
   ) {
-    return this.citiesService.findAll(countryId, lang, paginationDto);
+    return this.citiesService.findAll(countryCode, lang, paginationDto);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a city by ID' })
-  @ApiParam({ name: 'id', description: 'City ID (UUID)' })
+  @ApiParam({ name: 'id', description: 'City ID' })
   @ApiHeader({ name: 'Accept-Language', enum: ['uz', 'ru', 'en'], description: 'Language preference' })
   @ApiResponse({ status: 200, description: 'City details', type: CityResponseDto })
   @ApiResponse({ status: 404, description: 'City not found' })
@@ -67,7 +66,7 @@ export class CitiesController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a city (Admin only)' })
-  @ApiParam({ name: 'id', description: 'City ID (UUID)' })
+  @ApiParam({ name: 'id', description: 'City ID' })
   @ApiResponse({ status: 200, description: 'City updated', type: CityResponseDto })
   @ApiResponse({ status: 404, description: 'City not found' })
   update(@Param('id') id: string, @Body() updateCityDto: UpdateCityDto) {
@@ -79,7 +78,7 @@ export class CitiesController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a city (Admin only)' })
-  @ApiParam({ name: 'id', description: 'City ID (UUID)' })
+  @ApiParam({ name: 'id', description: 'City ID' })
   @ApiResponse({ status: 200, description: 'City deleted', type: CityResponseDto })
   @ApiResponse({ status: 404, description: 'City not found' })
   remove(@Param('id') id: string) {

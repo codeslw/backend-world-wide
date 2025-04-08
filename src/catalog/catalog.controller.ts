@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, Headers } from '@nestjs/common';
+import { Controller, Get, Param, Query, Headers, ParseIntPipe } from '@nestjs/common';
 import { ApiHeader, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CatalogService } from './catalog.service';
 import { PaginationDto } from '../common/dto/pagination.dto';
@@ -22,30 +22,30 @@ export class CatalogController {
     return this.catalogService.getCountries(lang, paginationDto);
   }
 
-  @Get('countries/:id')
-  @ApiOperation({ summary: 'Get a country by ID for catalog display' })
-  @ApiParam({ name: 'id', description: 'Country ID (UUID)' })
+  @Get('countries/:code')
+  @ApiOperation({ summary: 'Get a country by code' })
+  @ApiParam({ name: 'code', description: 'Country code (numeric)' })
   @ApiHeader({ name: 'Accept-Language', enum: ['uz', 'ru', 'en'], description: 'Language preference' })
   @ApiResponse({ status: 200, description: 'Country details', type: CountryResponseDto })
   @ApiResponse({ status: 404, description: 'Country not found' })
   getCountry(
-    @Param('id') id: string,
+    @Param('code', ParseIntPipe) code: number,
     @Headers('Accept-Language') lang: string = 'uz',
   ) {
-    return this.catalogService.getCountry(id, lang);
+    return this.catalogService.getCountry(code, lang);
   }
 
   @Get('cities')
   @ApiOperation({ summary: 'Get all cities for catalog display, optionally filtered by country ID' })
-  @ApiQuery({ name: 'countryId', required: false, description: 'Filter by country ID' })
+  @ApiQuery({ name: 'countryCode', required: false, description: 'Filter by country code' })
   @ApiHeader({ name: 'Accept-Language', enum: ['uz', 'ru', 'en'], description: 'Language preference' })
   @ApiResponse({ status: 200, description: 'List of cities', type: PaginatedCityResponseDto })
   getCities(
-    @Query('countryId') countryId?: string,
+    @Query('countryCode', new ParseIntPipe({ optional: true })) countryCode?: number,
     @Headers('Accept-Language') lang: string = 'uz',
     @Query() paginationDto?: PaginationDto,
   ) {
-    return this.catalogService.getCities(countryId, lang, paginationDto);
+    return this.catalogService.getCities(countryCode, lang, paginationDto);
   }
 
   @Get('cities/:id')

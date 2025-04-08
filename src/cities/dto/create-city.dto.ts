@@ -1,44 +1,24 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsNumber, MaxLength, MinLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber } from 'class-validator';
 
 export class CreateCityDto {
-  @ApiProperty({ description: 'City name in Uzbek' })
+  @ApiProperty({ example: 'Toshkent', description: 'City name in Uzbek' })
   @IsString()
-  @MinLength(2)
-  @MaxLength(100)
+  @IsNotEmpty()
   nameUz: string;
 
-  @ApiProperty({ description: 'City name in Russian' })
+  @ApiProperty({ example: 'Ташкент', description: 'City name in Russian' })
   @IsString()
-  @MinLength(2)
-  @MaxLength(100)
+  @IsNotEmpty()
   nameRu: string;
 
-  @ApiProperty({ description: 'City name in English', required: false })
+  @ApiProperty({ example: 'Tashkent', description: 'City name in English' })
   @IsString()
-  @IsOptional()
-  @MaxLength(100)
-  nameEn?: string;
+  @IsNotEmpty()
+  nameEn: string;
 
-  @ApiProperty({ description: 'City description in Uzbek', required: false })
-  @IsString()
-  @IsOptional()
-  @MaxLength(500)
-  descriptionUz?: string;
-
-  @ApiProperty({ description: 'City description in Russian', required: false })
-  @IsString()
-  @IsOptional()
-  @MaxLength(500)
-  descriptionRu?: string;
-
-  @ApiProperty({ description: 'City description in English', required: false })
-  @IsString()
-  @IsOptional()
-  @MaxLength(500)
-  descriptionEn?: string;
-
-  @ApiProperty({ description: 'Country code this city belongs to' })
+  @ApiProperty({ example: 860, description: 'Country code (numeric)' })
   @IsNumber()
+  @IsNotEmpty()
   countryCode: number;
 } 

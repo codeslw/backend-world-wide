@@ -1,47 +1,48 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PaginatedResponseDto } from '../../common/dto/pagination-response.dto';
-import { Type } from 'class-transformer';
+import { CountryResponseDto } from '../../countries/dto/country-response.dto';
 
 export class CityResponseDto {
-  @ApiProperty({ description: 'City ID' })
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   id: string;
 
-  @ApiProperty({ description: 'City name in Uzbek' })
+  @ApiProperty({ example: 'Toshkent' })
   nameUz: string;
 
-  @ApiProperty({ description: 'City name in Russian' })
+  @ApiProperty({ example: 'Ташкент' })
   nameRu: string;
 
-  @ApiProperty({ description: 'City name in English' })
+  @ApiProperty({ example: 'Tashkent' })
   nameEn: string;
 
-  @ApiProperty({ description: 'Localized city name based on language preference' })
-  name: string;
+  @ApiProperty({ example: 860 })
+  countryCode: number;
 
-  @ApiProperty({ description: 'City description in Uzbek' })
-  descriptionUz: string;
+  @ApiProperty({ type: () => CountryResponseDto })
+  country: CountryResponseDto;
 
-  @ApiProperty({ description: 'City description in Russian' })
-  descriptionRu: string;
+  @ApiProperty()
+  createdAt: Date;
 
-  @ApiProperty({ description: 'City description in English' })
-  descriptionEn: string;
-
-  @ApiProperty({ description: 'Localized city description based on language preference' })
-  description: string;
-
-  @ApiProperty({ description: 'Country ID this city belongs to' })
-  countryId: string;
-
-  @ApiProperty({ 
-    description: 'Country this city belongs to', 
-    type: () => 'CountryResponseDto',
-    required: false 
-  })
-  country?: any;
+  @ApiProperty()
+  updatedAt: Date;
 }
 
-export class PaginatedCityResponseDto extends PaginatedResponseDto<CityResponseDto> {
+export class PaginatedCityResponseDto {
   @ApiProperty({ type: [CityResponseDto] })
   data: CityResponseDto[];
+
+  @ApiProperty({
+    example: {
+      total: 100,
+      page: 1,
+      limit: 10,
+      totalPages: 10,
+    },
+  })
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 } 
