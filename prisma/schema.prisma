@@ -48,14 +48,13 @@ model Program {
 }
 
 model Country {
-  id            String    @id @default(uuid())
+  code          Int       @id
   nameUz        String
   nameRu        String
   nameEn        String?
   descriptionUz String?
   descriptionRu String?
   descriptionEn String?
-  code          Int
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
@@ -79,8 +78,8 @@ model City {
   updatedAt     DateTime  @updatedAt
   
   // Relation to country
-  countryId     String
-  country       Country   @relation(fields: [countryId], references: [id])
+  countryCode   Int
+  country       Country   @relation(fields: [countryCode], references: [code])
 
   universities University[]
 
@@ -95,8 +94,8 @@ model University {
   established          Int        // Year of establishment
   type                 UniversityType // Type of university (enum)
   avgApplicationFee    Float      // Average application fee
-  countryId            String     // Relation to Country
-  country              Country    @relation(fields: [countryId], references: [id])
+  countryCode          Int        // Relation to Country
+  country              Country    @relation(fields: [countryCode], references: [code])
   cityId               String     // Relation to City
   city                 City       @relation(fields: [cityId], references: [id])
   descriptionUz        String     // Description (Uzbek)

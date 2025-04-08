@@ -47,40 +47,40 @@ export class CountriesController {
     return this.countriesService.findAll(lang, paginationDto);
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get a country by ID' })
-  @ApiParam({ name: 'id', description: 'Country ID (UUID)' })
+  @Get(':code')
+  @ApiOperation({ summary: 'Get a country by code' })
+  @ApiParam({ name: 'code', description: 'Country code (numeric)' })
   @ApiHeader({ name: 'Accept-Language', enum: ['uz', 'ru', 'en'], description: 'Language preference' })
   @ApiResponse({ status: 200, description: 'Country details', type: CountryResponseDto })
   @ApiResponse({ status: 404, description: 'Country not found' })
   findOne(
-    @Param('id') id: string,
+    @Param('code') code: number,
     @Headers('Accept-Language') lang: string = 'uz',
   ) {
-    return this.countriesService.findOne(id, lang);
+    return this.countriesService.findOne(code, lang);
   }
 
-  @Patch(':id')
+  @Patch(':code')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a country (Admin only)' })
-  @ApiParam({ name: 'id', description: 'Country ID (UUID)' })
+  @ApiParam({ name: 'code', description: 'Country code (numeric)' })
   @ApiResponse({ status: 200, description: 'Country updated', type: CountryResponseDto })
   @ApiResponse({ status: 404, description: 'Country not found' })
-  update(@Param('id') id: string, @Body() updateCountryDto: UpdateCountryDto) {
-    return this.countriesService.update(id, updateCountryDto);
+  update(@Param('code') code: number, @Body() updateCountryDto: UpdateCountryDto) {
+    return this.countriesService.update(code, updateCountryDto);
   }
 
-  @Delete(':id')
+  @Delete(':code')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a country (Admin only)' })
-  @ApiParam({ name: 'id', description: 'Country ID (UUID)' })
+  @ApiParam({ name: 'code', description: 'Country code (numeric)' })
   @ApiResponse({ status: 200, description: 'Country deleted', type: CountryResponseDto })
   @ApiResponse({ status: 404, description: 'Country not found' })
-  remove(@Param('id') id: string) {
-    return this.countriesService.remove(id);
+  remove(@Param('code') code: number) {
+    return this.countriesService.remove(code);
   }
 } 

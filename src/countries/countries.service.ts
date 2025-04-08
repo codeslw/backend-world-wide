@@ -47,8 +47,8 @@ export class CountriesService {
           transform: (value) => new Date(value)
         },
         {
-          field: 'id',
-          queryParam: 'ids',
+          field: 'code',
+          queryParam: 'codes',
           operator: 'in',
           isArray: true
         }
@@ -91,39 +91,39 @@ export class CountriesService {
     };
   }
 
-  async findOne(id: string, lang: string = 'uz') {
+  async findOne(code: number, lang: string = 'uz') {
     const country = await this.prisma.country.findUnique({
-      where: { id },
+      where: { code },
       include: {
         cities: true,
       },
     });
 
     if (!country) {
-      throw new NotFoundException(`Country with ID ${id} not found`);
+      throw new NotFoundException(`Country with code ${code} not found`);
     }
 
     return this.localizeCountry(country, lang);
   }
 
-  async update(id: string, updateCountryDto: UpdateCountryDto) {
+  async update(code: number, updateCountryDto: UpdateCountryDto) {
     try {
       return await this.prisma.country.update({
-        where: { id },
+        where: { code },
         data: updateCountryDto,
       });
     } catch (error) {
-      throw new NotFoundException(`Country with ID ${id} not found`);
+      throw new NotFoundException(`Country with code ${code} not found`);
     }
   }
 
-  async remove(id: string) {
+  async remove(code: number) {
     try {
       return await this.prisma.country.delete({
-        where: { id },
+        where: { code },
       });
     } catch (error) {
-      throw new NotFoundException(`Country with ID ${id} not found`);
+      throw new NotFoundException(`Country with code ${code} not found`);
     }
   }
 

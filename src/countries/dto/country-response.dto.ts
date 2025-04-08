@@ -3,10 +3,7 @@ import { PaginatedResponseDto } from '../../common/dto/pagination-response.dto';
 import { Type } from 'class-transformer';
 
 export class CountryResponseDto {
-  @ApiProperty({ description: 'Country ID' })
-  id: string;
-
-  @ApiProperty({ description: 'Country code' })
+  @ApiProperty({ description: 'Country code (primary identifier)' })
   code: number;
 
   @ApiProperty({ description: 'Country name in Uzbek' })
