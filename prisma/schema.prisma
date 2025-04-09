@@ -17,6 +17,7 @@ model User {
   clientChats Chat[]    @relation("ClientChats")
   adminChats  Chat[]    @relation("AdminChats")
   messages    Message[]
+  profile    Profile?
   @@map("users")
 }
 
@@ -156,4 +157,20 @@ model Message {
   @@index([chatId])
   @@index([senderId])
   @@index([replyToId])
+}
+
+model Profile {
+  id                     String   @id @default(uuid())
+  firstName              String
+  lastName               String
+  yearOfBirth            Int?
+  passportSeriesAndNumber String?
+  email                  String?
+  phoneNumber            String?
+  userId                 String   @unique
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@map("profiles")
 }

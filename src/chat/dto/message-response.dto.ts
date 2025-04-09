@@ -1,4 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ProfileResponseDto } from '../../profiles/dto/profile-response.dto';
+
+class UserWithProfileDto {
+  @ApiProperty({ description: 'User ID' })
+  id: string;
+
+  @ApiProperty({ description: 'User email' })
+  email: string;
+
+  @ApiProperty({ description: 'User role' })
+  role: string;
+
+  @ApiProperty({ description: 'User profile', type: ProfileResponseDto, required: false })
+  profile?: ProfileResponseDto;
+}
 
 export class MessageResponseDto {
   @ApiProperty({ description: 'Message ID' })
@@ -7,8 +22,8 @@ export class MessageResponseDto {
   @ApiProperty({ description: 'Chat ID' })
   chatId: string;
 
-  @ApiProperty({ description: 'Sender user ID' })
-  senderId: number;
+  @ApiProperty({ description: 'Sender', type: UserWithProfileDto })
+  sender: UserWithProfileDto;
 
   @ApiProperty({ description: 'Message text content', required: false })
   text?: string;

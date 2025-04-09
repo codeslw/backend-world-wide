@@ -15,6 +15,7 @@ import { FilesModule } from './files/files.module';
 import { FilesService } from './files/files.service';
 import { ChatModule } from './chat/chat.module';
 import { CatalogModule } from './catalog/catalog.module';
+import { ProfilesModule } from './profiles/profiles.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { CatalogModule } from './catalog/catalog.module';
     CommonModule,
     AuthModule,
     UsersModule,
+    ProfilesModule,
     ProgramsModule,
     CountriesModule,
     CitiesModule,

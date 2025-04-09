@@ -6,12 +6,14 @@ import * as bcrypt from 'bcryptjs';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { FilterService } from '../common/filters/filter.service';
 import { FilterOptions, PaginationOptions } from '../common/filters/filter.interface';
+import { ProfilesService } from '../profiles/profiles.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     private prisma: PrismaService,
-    private filterService: FilterService
+    private filterService: FilterService,
+    private profilesService?: ProfilesService
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -27,10 +29,13 @@ export class UsersService {
     // Hash password
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
+    // Extract profile data if present
+    const { profile, ...userData } = createUserDto;
+
     // Create user with hashed password
-    return this.prisma.user.create({
+    const user = await this.prisma.user.create({
       data: {
-        ...createUserDto,
+        ...userData,
         password: hashedPassword,
       },
       select: {
@@ -41,6 +46,13 @@ export class UsersService {
         updatedAt: true,
       },
     });
+
+    // Create profile if profile data is provided
+    if (profile && this.profilesService) {
+      await this.profilesService.create(user.id, profile);
+    }
+
+    return user;
   }
 
 
@@ -146,9 +158,12 @@ export class UsersService {
         updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
       }
 
-      return await this.prisma.user.update({
+      // Extract profile data if present
+      const { profile, ...userData } = updateUserDto;
+
+      const user = await this.prisma.user.update({
         where: { id },
-        data: updateUserDto,
+        data: userData,
         select: {
           id: true,
           email: true,
@@ -157,6 +172,21 @@ export class UsersService {
           updatedAt: true,
         },
       });
+
+      // Update profile if profile data is provided
+      if (profile && this.profilesService) {
+        const existingProfile = await this.prisma.profile.findUnique({
+          where: { userId: id },
+        });
+
+        if (existingProfile) {
+          await this.profilesService.update(existingProfile.id, profile);
+        } else if (profile) {
+          await this.profilesService.create(id, profile);
+        }
+      }
+
+      return user;
     } catch (error) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }

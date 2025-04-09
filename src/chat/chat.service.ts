@@ -44,11 +44,35 @@ export class ChatService {
     const chat = await this.prisma.chat.findUnique({
       where: { id: chatId },
       include: {
+        client: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            profile: true,
+          },
+        },
+        admin: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            profile: true,
+          },
+        },
         messages: {
           orderBy: { createdAt: 'desc' },
           take: 20,
           include: {
             replyTo: true,
+            sender: {
+              select: {
+                id: true,
+                email: true,
+                role: true,
+                profile: true,
+              },
+            },
           },
         },
       },
@@ -185,6 +209,7 @@ export class ChatService {
             id: true,
             email: true,
             role: true,
+            profile: true,
           },
         },
       },
