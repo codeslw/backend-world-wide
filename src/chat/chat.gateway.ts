@@ -295,4 +295,20 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       status,
     });
   }
+  
+  // Method to notify when an admin is assigned to a chat
+  notifyAdminAssigned(chatId: string, adminId: string) {
+    this.server.to(`chat:${chatId}`).emit('adminAssigned', {
+      chatId,
+      adminId,
+    });
+  }
+  
+  // Method to notify when messages are read
+  notifyMessagesRead(chatId: string, userId: string, messageIds: string[]) {
+    this.server.to(`chat:${chatId}`).emit('messagesRead', {
+      userId,
+      messageIds,
+    });
+  }
 }

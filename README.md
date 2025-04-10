@@ -26,6 +26,45 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Recent Updates
+
+### Enhanced Chat System
+
+The backend now features an improved real-time chat system with:
+
+- WebSocket-based messaging with Socket.io
+- Read status tracking and unread message counts
+- File attachments and message replies
+- Typing indicators and chat status management
+
+For frontend developers, we've provided comprehensive documentation:
+- [Chat API Documentation](docs/CHAT_API.md) - Complete API reference
+- [Chat System Updates](docs/CHAT_UPDATES.md) - Latest changes and migration guide
+- Swagger documentation at `/api` including WebSocket endpoints
+
+### API Documentation
+
+The project includes comprehensive Swagger documentation:
+
+- RESTful API endpoints with request/response schemas
+- WebSocket events and payloads
+- Authentication requirements
+- Example usage for both REST and WebSocket APIs
+
+Access the documentation by running the server and navigating to:
+```
+http://localhost:3000/api
+```
+
+### Project Features
+
+- User authentication with JWT
+- Role-based access control
+- File uploads with Digital Ocean Spaces
+- RESTful API with Swagger documentation
+- PostgreSQL database with Prisma ORM
+- WebSocket support for real-time features
+
 ## Project setup
 
 ```bash

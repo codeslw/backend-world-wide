@@ -17,6 +17,7 @@ model User {
   clientChats Chat[]    @relation("ClientChats")
   adminChats  Chat[]    @relation("AdminChats")
   messages    Message[]
+  readMessages Message[] @relation("MessageReads")
   profile    Profile?
   @@map("users")
 }
@@ -153,6 +154,7 @@ model Message {
   replyTo    Message?  @relation("Replies", fields: [replyToId], references: [id])
   replies    Message[] @relation("Replies")
   createdAt  DateTime  @default(now())
+  readBy     User[]    @relation("MessageReads")
   
   @@index([chatId])
   @@index([senderId])

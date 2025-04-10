@@ -7,17 +7,29 @@ import { ChatStatus } from '../common/enum/chat.enum';
 import { FilesService } from '../files/files.service';
 import { Role } from '../common/enum/roles.enum';
 import { ChatGateway } from './chat.gateway';
+import { Message, Prisma } from '@prisma/client';
+
+export interface MessageWithSender extends Message {
+  sender: {
+    id: string;
+    email: string;
+    role: string;
+    profile?: any;
+  };
+  replyTo?: Message;
+}
 
 @Injectable()
 export class ChatService {
-  private chatGateway: ChatGateway;
-
   constructor(
     private prisma: PrismaService,
     private filesService: FilesService,
+    @Inject(forwardRef(() => ChatGateway))
+    private chatGateway?: ChatGateway
   ) {}
 
-  // Method to set the gateway after initialization
+  // Backward compatibility method to set the gateway after initialization
+  // This can be removed after proper circular dependency is established
   setChatGateway(gateway: ChatGateway) {
     this.chatGateway = gateway;
   }
@@ -26,6 +38,7 @@ export class ChatService {
     const chat = await this.prisma.chat.create({
       data: {
         clientId: userId,
+        status: ChatStatus.PENDING, // Start as pending until admin joins
       },
     });
 
@@ -73,6 +86,11 @@ export class ChatService {
                 profile: true,
               },
             },
+            readBy: {
+              select: {
+                id: true
+              }
+            }
           },
         },
       },
@@ -93,8 +111,8 @@ export class ChatService {
     };
   }
 
-  async getUserChats(userId: number, userRole: Role, status?: ChatStatus) {
-    const where: any = {};
+  async getUserChats(userId: string, userRole: Role, status?: ChatStatus) {
+    const where: Prisma.ChatWhereInput = {};
     
     // Filter by user role
     if (userRole === Role.ADMIN) {
@@ -118,21 +136,93 @@ export class ChatService {
       where,
       orderBy: { updatedAt: 'desc' },
       include: {
+        client: {
+          select: {
+            id: true,
+            email: true,
+            profile: true,
+          }
+        },
+        admin: {
+          select: {
+            id: true,
+            email: true,
+            profile: true,
+          }
+        },
         messages: {
           orderBy: { createdAt: 'desc' },
           take: 1,
+          include: {
+            sender: {
+              select: {
+                id: true,
+                email: true,
+              }
+            },
+            readBy: {
+              select: {
+                id: true
+              }
+            }
+          }
         },
+        _count: {
+          select: {
+            messages: true
+          }
+        }
       },
     });
 
-    return chats;
+    // Add unread count for each chat
+    return chats.map(chat => {
+      const unreadCount = this.countUnreadMessages(chat, userId);
+      return {
+        ...chat,
+        unreadCount,
+      };
+    });
+  }
+
+  private countUnreadMessages(chat: any, userId: string): number {
+    // This is a simple implementation - for a real app, you'd want to use a database query
+    let unreadCount = 0;
+    if (chat.messages) {
+      for (const message of chat.messages) {
+        const isRead = message.readBy?.some(reader => reader.id === userId);
+        if (!isRead && message.sender.id !== userId) {
+          unreadCount++;
+        }
+      }
+    }
+    return unreadCount;
   }
 
   async assignAdminToChat(chatId: string, adminId: string) {
-    return this.prisma.chat.update({
+    const chat = await this.prisma.chat.findUnique({
       where: { id: chatId },
-      data: { adminId },
     });
+
+    if (!chat) {
+      throw new NotFoundException(`Chat with ID ${chatId} not found`);
+    }
+
+    const updatedChat = await this.prisma.chat.update({
+      where: { id: chatId },
+      data: { 
+        adminId,
+        status: ChatStatus.ACTIVE // Auto-activate when admin is assigned
+      },
+    });
+
+    // Notify about admin assignment and status change
+    if (this.chatGateway) {
+      this.chatGateway.notifyChatStatusChange(chatId, updatedChat.status);
+      this.chatGateway.notifyAdminAssigned(chatId, adminId);
+    }
+
+    return updatedChat;
   }
 
   async updateChatStatus(chatId: string, userId: string, userRole: Role, updateChatStatusDto: UpdateChatStatusDto) {
@@ -147,6 +237,11 @@ export class ChatService {
     // Only admins or the assigned admin can update chat status
     if (userRole !== Role.ADMIN && chat.adminId !== userId) {
       throw new ForbiddenException('You do not have permission to update this chat');
+    }
+
+    // Validate status transitions
+    if (chat.status === ChatStatus.CLOSED && updateChatStatusDto.status !== ChatStatus.CLOSED) {
+      throw new ForbiddenException('Cannot reopen a closed chat');
     }
 
     const updatedChat = await this.prisma.chat.update({
@@ -182,21 +277,33 @@ export class ChatService {
     }
 
     // Prepare message data
-    const messageData: any = {
-      chatId,
-      senderId: userId,
-      text: createMessageDto.text,
+    const messageData: Prisma.MessageCreateInput = {
+      chat: { connect: { id: chatId } },
+      sender: { connect: { id: userId } },
+      text: createMessageDto.text || '',
     };
 
     // If there's a file, get its URL
     if (createMessageDto.fileId) {
-      const file = await this.filesService.getFile(createMessageDto.fileId);
-      messageData.fileUrl = file.url;
+      try {
+        const file = await this.filesService.getFile(createMessageDto.fileId);
+        messageData.fileUrl = file.url;
+      } catch (error) {
+        throw new NotFoundException(`File with ID ${createMessageDto.fileId} not found`);
+      }
     }
 
     // If it's a reply, add the reference
     if (createMessageDto.replyToId) {
-      messageData.replyToId = createMessageDto.replyToId;
+      const replyMessage = await this.prisma.message.findUnique({
+        where: { id: createMessageDto.replyToId },
+      });
+      
+      if (!replyMessage || replyMessage.chatId !== chatId) {
+        throw new NotFoundException('Reply message not found or belongs to a different chat');
+      }
+      
+      messageData.replyTo = { connect: { id: createMessageDto.replyToId } };
     }
 
     // Create the message
@@ -212,8 +319,16 @@ export class ChatService {
             profile: true,
           },
         },
+        readBy: {
+          select: {
+            id: true
+          }
+        }
       },
     });
+
+    // Mark as read by the sender automatically
+    await this.markMessagesAsRead([message.id], userId);
 
     // Update the chat's updatedAt timestamp
     await this.prisma.chat.update({
@@ -253,12 +368,31 @@ export class ChatService {
         take: limit,
         include: {
           replyTo: true,
+          sender: {
+            select: {
+              id: true,
+              email: true,
+              role: true,
+              profile: true,
+            }
+          },
+          readBy: {
+            select: {
+              id: true
+            }
+          }
         },
       }),
       this.prisma.message.count({
         where: { chatId },
       }),
     ]);
+
+    // Mark retrieved messages as read by the current user
+    const messageIds = messages.map(message => message.id);
+    if (messageIds.length > 0) {
+      await this.markMessagesAsRead(messageIds, userId);
+    }
 
     return {
       data: messages.reverse(), // Return in chronological order
@@ -271,9 +405,46 @@ export class ChatService {
     };
   }
 
-  async markMessagesAsRead(messageIds: string[], userId: number) {
-    // In a real implementation, you would update a 'readBy' field or similar
-    // For now, we'll just return the message IDs that were marked as read
-    return messageIds.map(id => ({ id, readBy: userId }));
+  async markMessagesAsRead(messageIds: string[], userId: string) {
+    // Create a transaction to handle multiple operations
+    const operations = messageIds.map(messageId => 
+      this.prisma.message.update({
+        where: { id: messageId },
+        data: {
+          readBy: {
+            connect: {
+              id: userId
+            }
+          }
+        },
+        include: {
+          readBy: {
+            select: {
+              id: true
+            }
+          }
+        }
+      })
+    );
+
+    const updatedMessages = await this.prisma.$transaction(operations);
+    
+    // Notify other clients about read status
+    if (this.chatGateway) {
+      // Group by chat ID to send a single notification per chat
+      const messagesByChat = updatedMessages.reduce((acc, message) => {
+        if (!acc[message.chatId]) {
+          acc[message.chatId] = [];
+        }
+        acc[message.chatId].push(message.id);
+        return acc;
+      }, {});
+
+      Object.entries(messagesByChat).forEach(([chatId, ids]) => {
+        this.chatGateway.notifyMessagesRead(chatId, userId, ids as string[]);
+      });
+    }
+
+    return updatedMessages;
   }
 } 
