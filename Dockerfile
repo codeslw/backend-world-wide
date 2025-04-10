@@ -43,5 +43,5 @@ USER node
 # Expose port
 EXPOSE 3000
 
-# Default command
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+# Default command - Updated to use the correct path to main.js
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]
