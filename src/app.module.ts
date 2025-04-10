@@ -16,6 +16,7 @@ import { FilesService } from './files/files.service';
 import { ChatModule } from './chat/chat.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { ProfilesModule } from './profiles/profiles.module';
+import { ApplicationsModule } from './applications/applications.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ProfilesModule } from './profiles/profiles.module';
     FilesModule,
     ChatModule,
     CatalogModule,
+    ApplicationsModule,
   ],
   providers: [PrismaService, DigitalOceanService, FilesService],
   controllers: [FilesController],

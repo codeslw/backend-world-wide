@@ -171,6 +171,84 @@ model Profile {
   user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
+  applications           Application[]
 
   @@map("profiles")
+}
+
+enum ApplicationStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum IntakeSeason {
+  FALL
+  SPRING
+  SUMMER
+}
+
+enum LanguageTest {
+  IELTS
+  TOEFL
+  DUOLINGO
+  NONE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+model Application {
+  id                     String            @id @default(uuid())
+  // Personal Information linked to profile
+  profileId              String
+  profile                Profile           @relation(fields: [profileId], references: [id])
+  middleName             String?
+  dateOfBirth            DateTime
+  gender                 Gender?
+  nationality            String
+  address                String
+  
+  // Passport Information
+  passportNumber         String
+  passportExpiryDate     DateTime
+  passportCopyUrl        String
+  
+  // Education Information
+  currentEducationLevel  String
+  currentInstitutionName String?
+  graduationYear         Int?
+  transcriptUrl          String?
+  
+  // Language Proficiency
+  languageTest           LanguageTest?
+  languageScore          String?
+  languageCertificateUrl String?
+  
+  // University Preferences
+  preferredCountry       String
+  preferredUniversity    String
+  preferredProgram       String
+  intakeSeason           IntakeSeason
+  intakeYear             Int
+  
+  // Additional Documents
+  motivationLetterUrl    String?
+  recommendationLetterUrls String[]
+  cvUrl                  String?
+  
+  // Meta
+  applicationStatus      ApplicationStatus @default(DRAFT)
+  submittedAt            DateTime?
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  
+  @@map("applications")
+  @@index([profileId])
+  @@index([applicationStatus])
 }
