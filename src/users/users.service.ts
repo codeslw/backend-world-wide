@@ -65,18 +65,45 @@ export class UsersService {
     if (existingUsers.length > 0) {
       throw new ConflictException('Some emails are already in use');
     }
-    //hash passwords
+    
+    // Hash passwords
     const hashedPasswords = await Promise.all(createUserDto.map(async (user) => { 
       return await bcrypt.hash(user.password, 10);
     }));
 
-    //create users
-    const users = await this.prisma.user.createMany({
-      data: createUserDto.map((user, index) => ({
-        ...user,
+    // Separate profile data from user data
+    const userData = createUserDto.map((user, index) => {
+      // Extract profile data for later use
+      const { profile, ...userOnly } = user;
+      
+      return {
+        ...userOnly,
         password: hashedPasswords[index],
-      }))
+      };
     });
+
+    // Create users without profiles
+    const users = await this.prisma.user.createMany({
+      data: userData
+    });
+
+    // If profiles need to be created and ProfilesService is available
+    if (this.profilesService) {
+      // Get created users to get their IDs
+      const createdUsers = await this.prisma.user.findMany({
+        where: { email: { in: createUserDto.map(user => user.email) } },
+      });
+      
+      // Create profiles for each user if profile data was provided
+      for (let i = 0; i < createUserDto.length; i++) {
+        const user = createdUsers.find(u => u.email === createUserDto[i].email);
+        const profileData = createUserDto[i].profile;
+        
+        if (user && profileData) {
+          await this.profilesService.create(user.id, profileData);
+        }
+      }
+    }
 
     return users;
   }
