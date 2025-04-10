@@ -12,6 +12,8 @@
     "build": "nest build",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "db:seed": "./scripts/db-seed.sh",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
