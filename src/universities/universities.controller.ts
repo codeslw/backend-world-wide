@@ -10,6 +10,7 @@ import { Role } from '../common/enum/roles.enum';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { UniversityResponseDto, PaginatedUniversityResponseDto } from './dto/university-response.dto';
 import { UniversityType } from '../common/enum/university-type.enum';
+import { ErrorResponseDto } from '../common/dto/error-response.dto';
 
 @ApiTags('universities')
 @Controller('universities')
@@ -22,6 +23,10 @@ export class UniversitiesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new university (Admin only)' })
   @ApiResponse({ status: 201, description: 'University successfully created', type: UniversityResponseDto })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid data provided', type: ErrorResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions', type: ErrorResponseDto })
+  @ApiResponse({ status: 409, description: 'Conflict - University with these details already exists', type: ErrorResponseDto })
   create(@Body() createUniversityDto: CreateUniversityDto) {
     return this.universitiesService.create(createUniversityDto);
   }
@@ -33,6 +38,10 @@ export class UniversitiesController {
   @ApiOperation({ summary: 'Create multiple universities at once (Admin only)' })
   @ApiBody({ type: [CreateUniversityDto] })
   @ApiResponse({ status: 201, description: 'Universities successfully created', type: [UniversityResponseDto] })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid data provided', type: ErrorResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions', type: ErrorResponseDto })
+  @ApiResponse({ status: 409, description: 'Conflict - One or more universities already exist', type: ErrorResponseDto })
   createMany(@Body() createUniversityDtos: CreateUniversityDto[]) {
     return this.universitiesService.createMany(createUniversityDtos);
   }
@@ -57,6 +66,7 @@ export class UniversitiesController {
   @ApiQuery({ name: 'sortDirection', required: false, enum: ['asc', 'desc'], description: 'Sort direction' })
   @ApiHeader({ name: 'Accept-Language', enum: ['uz', 'ru', 'en'], description: 'Language preference' })
   @ApiResponse({ status: 200, description: 'List of universities', type: PaginatedUniversityResponseDto })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid parameters', type: ErrorResponseDto })
   findAll(
     @Query('countryCode', new ParseIntPipe({ optional: true })) countryCode?: number,
     @Query('cityId') cityId?: string,
@@ -72,7 +82,7 @@ export class UniversitiesController {
   @ApiParam({ name: 'id', description: 'University ID (UUID)' })
   @ApiHeader({ name: 'Accept-Language', enum: ['uz', 'ru', 'en'], description: 'Language preference' })
   @ApiResponse({ status: 200, description: 'University details', type: UniversityResponseDto })
-  @ApiResponse({ status: 404, description: 'University not found' })
+  @ApiResponse({ status: 404, description: 'University not found', type: ErrorResponseDto })
   findOne(
     @Param('id') id: string,
     @Headers('Accept-Language') lang: string = 'uz',
@@ -87,7 +97,11 @@ export class UniversitiesController {
   @ApiOperation({ summary: 'Update a university (Admin only)' })
   @ApiParam({ name: 'id', description: 'University ID (UUID)' })
   @ApiResponse({ status: 200, description: 'University updated', type: UniversityResponseDto })
-  @ApiResponse({ status: 404, description: 'University not found' })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid data provided', type: ErrorResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions', type: ErrorResponseDto })
+  @ApiResponse({ status: 404, description: 'University not found', type: ErrorResponseDto })
+  @ApiResponse({ status: 409, description: 'Conflict - University with these details already exists', type: ErrorResponseDto })
   update(@Param('id') id: string, @Body() updateUniversityDto: UpdateUniversityDto) {
     return this.universitiesService.update(id, updateUniversityDto);
   }
@@ -99,7 +113,9 @@ export class UniversitiesController {
   @ApiOperation({ summary: 'Delete a university (Admin only)' })
   @ApiParam({ name: 'id', description: 'University ID (UUID)' })
   @ApiResponse({ status: 200, description: 'University deleted', type: UniversityResponseDto })
-  @ApiResponse({ status: 404, description: 'University not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions', type: ErrorResponseDto })
+  @ApiResponse({ status: 404, description: 'University not found', type: ErrorResponseDto })
   remove(@Param('id') id: string) {
     return this.universitiesService.remove(id);
   }

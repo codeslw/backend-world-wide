@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../db/prisma.service';
 import { CreateUniversityDto } from './dto/create-university.dto';
 import { UpdateUniversityDto } from './dto/update-university.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { FilterService } from '../common/filters/filter.service';
 import { FilterOptions, PaginationOptions } from '../common/filters/filter.interface';
+import { EntityNotFoundException, InvalidDataException } from '../common/exceptions/app.exceptions';
 
 @Injectable()
 export class UniversitiesService {
@@ -14,34 +15,39 @@ export class UniversitiesService {
   ) {}
 
   async create(createUniversityDto: CreateUniversityDto) {
-    const data = {
-      nameUz: createUniversityDto.nameUz,
-      nameRu: createUniversityDto.nameRu,
-      nameEn: createUniversityDto.nameEn,
-      established: createUniversityDto.established,
-      type: createUniversityDto.type,
-      avgApplicationFee: createUniversityDto.avgApplicationFee,
-      country: { connect: { code: createUniversityDto.countryCode } },
-      city: { connect: { id: createUniversityDto.cityId } },
-      descriptionUz: createUniversityDto.descriptionUz,
-      descriptionRu: createUniversityDto.descriptionRu,
-      descriptionEn: createUniversityDto.descriptionEn,
-      winterIntakeDeadline: createUniversityDto.winterIntakeDeadline,
-      autumnIntakeDeadline: createUniversityDto.autumnIntakeDeadline,
-      ranking: createUniversityDto.ranking,
-      studentsCount: createUniversityDto.studentsCount,
-      acceptanceRate: createUniversityDto.acceptanceRate,
-      website: createUniversityDto.website,
-      tuitionFeeMax: createUniversityDto.tuitionFeeMax,
-      tuitionFeeMin: createUniversityDto.tuitionFeeMin,
-      tuitionFeeCurrency: createUniversityDto.tuitionFeeCurrency,
-      photoUrl: createUniversityDto.photoUrl,
-      email: createUniversityDto.email,
-      phone: createUniversityDto.phone,
-      address: createUniversityDto.address
-    };
+    try {
+      const data = {
+        nameUz: createUniversityDto.nameUz,
+        nameRu: createUniversityDto.nameRu,
+        nameEn: createUniversityDto.nameEn,
+        established: createUniversityDto.established,
+        type: createUniversityDto.type,
+        avgApplicationFee: createUniversityDto.avgApplicationFee,
+        country: { connect: { code: createUniversityDto.countryCode } },
+        city: { connect: { id: createUniversityDto.cityId } },
+        descriptionUz: createUniversityDto.descriptionUz,
+        descriptionRu: createUniversityDto.descriptionRu,
+        descriptionEn: createUniversityDto.descriptionEn,
+        winterIntakeDeadline: createUniversityDto.winterIntakeDeadline,
+        autumnIntakeDeadline: createUniversityDto.autumnIntakeDeadline,
+        ranking: createUniversityDto.ranking,
+        studentsCount: createUniversityDto.studentsCount,
+        acceptanceRate: createUniversityDto.acceptanceRate,
+        website: createUniversityDto.website,
+        tuitionFeeMax: createUniversityDto.tuitionFeeMax,
+        tuitionFeeMin: createUniversityDto.tuitionFeeMin,
+        tuitionFeeCurrency: createUniversityDto.tuitionFeeCurrency,
+        photoUrl: createUniversityDto.photoUrl,
+        email: createUniversityDto.email,
+        phone: createUniversityDto.phone,
+        address: createUniversityDto.address
+      };
 
-    return this.prisma.university.create({ data });
+      return this.prisma.university.create({ data });
+    } catch (error) {
+      // Let the global exception filter handle Prisma errors
+      throw error;
+    }
   }
 
   async findAll(
@@ -51,167 +57,217 @@ export class UniversitiesService {
     lang: string = 'uz', 
     paginationDto?: PaginationDto
   ) {
-    // Define filter options
-    const filterOptions = {
-      filters: [
-        { field: 'countryCode', queryParam: 'countryCode' },
-        { field: 'cityId', queryParam: 'cityId' },
-        { field: 'type', queryParam: 'type' },
+    try {
+      // Define filter options
+      const filterOptions = {
+        filters: [
+          { field: 'countryCode', queryParam: 'countryCode' },
+          { field: 'cityId', queryParam: 'cityId' },
+          { field: 'type', queryParam: 'type' },
+          { 
+            field: 'ranking', 
+            queryParam: 'minRanking', 
+            operator: 'gte',
+            transform: (value) => parseInt(value)
+          },
+          { 
+            field: 'ranking', 
+            queryParam: 'maxRanking', 
+            operator: 'lte',
+            transform: (value) => parseInt(value)
+          },
+          { 
+            field: 'established', 
+            queryParam: 'minEstablished', 
+            operator: 'gte',
+            transform: (value) => parseInt(value)
+          },
+          { 
+            field: 'established', 
+            queryParam: 'maxEstablished', 
+            operator: 'lte',
+            transform: (value) => parseInt(value)
+          },
+          { 
+            field: 'acceptanceRate', 
+            queryParam: 'minAcceptanceRate', 
+            operator: 'gte',
+            transform: (value) => parseFloat(value)
+          },
+          { 
+            field: 'acceptanceRate', 
+            queryParam: 'maxAcceptanceRate', 
+            operator: 'lte',
+            transform: (value) => parseFloat(value)
+          },
+          { 
+            field: 'avgApplicationFee', 
+            queryParam: 'minApplicationFee', 
+            operator: 'gte',
+            transform: (value) => parseFloat(value)
+          },
+          { 
+            field: 'avgApplicationFee', 
+            queryParam: 'maxApplicationFee', 
+            operator: 'lte',
+            transform: (value) => parseFloat(value)
+          },
+          { 
+            field: 'createdAt', 
+            queryParam: 'createdAfter', 
+            operator: 'gte',
+            transform: (value) => new Date(value)
+          },
+          { 
+            field: 'createdAt', 
+            queryParam: 'createdBefore', 
+            operator: 'lte',
+            transform: (value) => new Date(value)
+          },
+          {
+            field: 'id',
+            queryParam: 'ids',
+            operator: 'in',
+            isArray: true
+          }
+        ],
+        searchFields: [
+          'nameUz', 'nameRu', 'nameEn', 
+          'descriptionUz', 'descriptionRu', 'descriptionEn',
+          'website'
+        ],
+        searchMode: 'contains',
+        caseSensitive: false
+      };
+      
+      // Build filter query
+      const query = { 
+        ...paginationDto, 
+        countryCode, 
+        cityId,
+        type
+      };
+      
+      const where = this.filterService.buildFilterQuery(query, filterOptions as FilterOptions);
+      
+      // Define pagination options
+      const paginationOptions = {
+        defaultLimit: 10,
+        maxLimit: 50,
+        defaultSortField: 'ranking',
+        defaultSortDirection: 'asc'
+      };
+      
+      // Apply pagination and get results
+      const result = await this.filterService.applyPagination(
+        this.prisma.university,
+        where,
+        paginationDto,
         { 
-          field: 'ranking', 
-          queryParam: 'minRanking', 
-          operator: 'gte',
-          transform: (value) => parseInt(value)
+          country: true, 
+          city: true, 
+          programs: true
         },
-        { 
-          field: 'ranking', 
-          queryParam: 'maxRanking', 
-          operator: 'lte',
-          transform: (value) => parseInt(value)
-        },
-        { 
-          field: 'established', 
-          queryParam: 'minEstablished', 
-          operator: 'gte',
-          transform: (value) => parseInt(value)
-        },
-        { 
-          field: 'established', 
-          queryParam: 'maxEstablished', 
-          operator: 'lte',
-          transform: (value) => parseInt(value)
-        },
-        { 
-          field: 'acceptanceRate', 
-          queryParam: 'minAcceptanceRate', 
-          operator: 'gte',
-          transform: (value) => parseFloat(value)
-        },
-        { 
-          field: 'acceptanceRate', 
-          queryParam: 'maxAcceptanceRate', 
-          operator: 'lte',
-          transform: (value) => parseFloat(value)
-        },
-        { 
-          field: 'avgApplicationFee', 
-          queryParam: 'minApplicationFee', 
-          operator: 'gte',
-          transform: (value) => parseFloat(value)
-        },
-        { 
-          field: 'avgApplicationFee', 
-          queryParam: 'maxApplicationFee', 
-          operator: 'lte',
-          transform: (value) => parseFloat(value)
-        },
-        { 
-          field: 'createdAt', 
-          queryParam: 'createdAfter', 
-          operator: 'gte',
-          transform: (value) => new Date(value)
-        },
-        { 
-          field: 'createdAt', 
-          queryParam: 'createdBefore', 
-          operator: 'lte',
-          transform: (value) => new Date(value)
-        },
-        {
-          field: 'id',
-          queryParam: 'ids',
-          operator: 'in',
-          isArray: true
-        }
-      ],
-      searchFields: [
-        'nameUz', 'nameRu', 'nameEn', 
-        'descriptionUz', 'descriptionRu', 'descriptionEn',
-        'website'
-      ],
-      searchMode: 'contains',
-      caseSensitive: false
-    };
-    
-    // Build filter query
-    const query = { 
-      ...paginationDto, 
-      countryCode, 
-      cityId,
-      type
-    };
-    
-    const where = this.filterService.buildFilterQuery(query, filterOptions as FilterOptions);
-    
-    // Define pagination options
-    const paginationOptions = {
-      defaultLimit: 10,
-      maxLimit: 50,
-      defaultSortField: 'ranking',
-      defaultSortDirection: 'asc'
-    };
-    
-    // Apply pagination and get results
-    const result = await this.filterService.applyPagination(
-      this.prisma.university,
-      where,
-      paginationDto,
-      { 
-        country: true, 
-        city: true, 
-        programs: true
-      },
-      undefined,
-      paginationOptions as PaginationOptions,
-    );
-    
-    // Localize results
-    const localizedData = result.data.map(university => this.localizeUniversity(university, lang));
-    
-    return {
-      data: localizedData,
-      meta: result.meta
-    };
+        undefined,
+        paginationOptions as PaginationOptions,
+      );
+      
+      if (result.data.length === 0 && (countryCode || cityId || type)) {
+        // If specific filters were provided but no results found, return empty result
+        // but don't throw an error - this is expected behavior for search/filters
+        return {
+          data: [],
+          meta: result.meta
+        };
+      }
+      
+      // Localize results
+      const localizedData = result.data.map(university => this.localizeUniversity(university, lang));
+      
+      return {
+        data: localizedData,
+        meta: result.meta
+      };
+    } catch (error) {
+      // Let the global exception filter handle database errors
+      throw error;
+    }
   }
 
   async findOne(id: string, lang: string = 'uz') {
-    const university = await this.prisma.university.findUnique({
-      where: { id },
-      include: {
-        country: true,
-        city: true,
-        programs: true
-      },
-    });
+    try {
+      const university = await this.prisma.university.findUnique({
+        where: { id },
+        include: {
+          country: true,
+          city: true,
+          programs: true
+        },
+      });
 
-    if (!university) {
-      throw new NotFoundException(`University with ID ${id} not found`);
+      if (!university) {
+        throw new EntityNotFoundException('University', id);
+      }
+
+      return this.localizeUniversity(university, lang);
+    } catch (error) {
+      // If it's already our custom exception, just rethrow it
+      if (error instanceof EntityNotFoundException) {
+        throw error;
+      }
+      // Otherwise let the global exception filter handle it
+      throw error;
     }
-
-    return this.localizeUniversity(university, lang);
   }
 
   async update(id: string, updateUniversityDto: UpdateUniversityDto) {
     try {
+      // First check if university exists
+      const university = await this.prisma.university.findUnique({
+        where: { id }
+      });
+      
+      if (!university) {
+        throw new EntityNotFoundException('University', id);
+      }
+      
+      // Proceed with update
       return await this.prisma.university.update({
         where: { id },
-        data: {
-          ...updateUniversityDto,
-          // Make sure to include photoUrl in the update
-        },
+        data: updateUniversityDto,
       });
     } catch (error) {
-      throw new NotFoundException(`University with ID ${id} not found`);
+      // If it's already our custom exception, just rethrow it
+      if (error instanceof EntityNotFoundException) {
+        throw error;
+      }
+      // Otherwise let the global exception filter handle it
+      throw error;
     }
   }
 
   async remove(id: string) {
     try {
+      // First check if university exists
+      const university = await this.prisma.university.findUnique({
+        where: { id }
+      });
+      
+      if (!university) {
+        throw new EntityNotFoundException('University', id);
+      }
+      
+      // Proceed with deletion
       return await this.prisma.university.delete({
         where: { id },
       });
     } catch (error) {
-      throw new NotFoundException(`University with ID ${id} not found`);
+      // If it's already our custom exception, just rethrow it
+      if (error instanceof EntityNotFoundException) {
+        throw error;
+      }
+      // Otherwise let the global exception filter handle it
+      throw error;
     }
   }
 

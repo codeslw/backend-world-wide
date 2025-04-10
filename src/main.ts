@@ -4,11 +4,37 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as fs from 'fs';
 import { Request, Response } from 'express';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
-  // Apply global validation pipe
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  // Apply global validation pipe with detailed error messages
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transformOptions: { enableImplicitConversion: true },
+      exceptionFactory: (errors) => {
+        const formattedErrors = errors.reduce((acc, error) => {
+          acc[error.property] = Object.values(error.constraints || {});
+          return acc;
+        }, {});
+        
+        return new Error(JSON.stringify({
+          statusCode: 400,
+          message: 'Validation failed',
+          error: 'Bad Request',
+          details: formattedErrors,
+        }));
+      },
+    }),
+  );
+  
+  // Apply global exception filter
+  app.useGlobalFilters(new GlobalExceptionFilter());
+  
   //Apply base context for apis api/v1
   app.setGlobalPrefix('api/v1');
 
