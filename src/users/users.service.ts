@@ -181,8 +181,14 @@ export class UsersService {
 
         if (existingProfile) {
           await this.profilesService.update(existingProfile.id, profile);
-        } else if (profile) {
-          await this.profilesService.create(id, profile);
+        } else {
+          // Add required fields if they're missing when creating a new profile
+          const createProfileDto = {
+            firstName: profile.firstName || 'Default',
+            lastName: profile.lastName || 'User',
+            ...profile
+          };
+          await this.profilesService.create(id, createProfileDto);
         }
       }
 

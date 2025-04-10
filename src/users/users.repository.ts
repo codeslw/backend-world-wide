@@ -9,8 +9,20 @@ export class UsersRepository {
 
   async create(createUserDto: CreateUserDto) {
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+    // Extract profile data to handle it separately
+    const { profile, ...userData } = createUserDto;
+    
     return this.prisma.user.create({
-      data: { ...createUserDto, password: hashedPassword },
+      data: { 
+        ...userData, 
+        password: hashedPassword,
+        // Only create profile if it exists
+        ...(profile && {
+          profile: {
+            create: profile
+          }
+        })
+      },
     });
   }
 
