@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query, Request, ForbiddenException } from '@nestjs/common';
 import { ProfilesService } from './profiles.service';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -9,6 +9,8 @@ import { Role } from '../common/enum/roles.enum';
 import { ApiTags, ApiOperation, ApiParam, ApiBearerAuth, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { ProfileResponseDto, PaginatedProfileResponseDto } from './dto/profile-response.dto';
+import { ErrorResponseDto } from '../common/dto/error-response.dto';
+import { ForbiddenActionException } from '../common/exceptions/app.exceptions';
 
 @ApiTags('profiles')
 @Controller('profiles')
@@ -20,6 +22,8 @@ export class ProfilesController {
   @Post()
   @ApiOperation({ summary: 'Create a new profile for the authenticated user' })
   @ApiResponse({ status: 201, description: 'Profile created successfully', type: ProfileResponseDto })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid data provided', type: ErrorResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
   async create(@Request() req, @Body() createProfileDto: CreateProfileDto) {
     return this.profilesService.create(req.user.userId, createProfileDto);
   }
@@ -31,6 +35,8 @@ export class ProfilesController {
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
   @ApiQuery({ name: 'search', required: false, description: 'Search term' })
   @ApiResponse({ status: 200, description: 'List of profiles', type: PaginatedProfileResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions', type: ErrorResponseDto })
   async findAll(@Query() paginationDto: PaginationDto) {
     return this.profilesService.findAll(paginationDto);
   }
@@ -38,7 +44,8 @@ export class ProfilesController {
   @Get('me')
   @ApiOperation({ summary: 'Get profile of the authenticated user' })
   @ApiResponse({ status: 200, description: 'Profile data', type: ProfileResponseDto })
-  @ApiResponse({ status: 404, description: 'Profile not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
+  @ApiResponse({ status: 404, description: 'Profile not found', type: ErrorResponseDto })
   async findMyProfile(@Request() req) {
     return this.profilesService.findByUserId(req.user.userId);
   }
@@ -48,7 +55,9 @@ export class ProfilesController {
   @ApiOperation({ summary: 'Get profile by ID (admin only)' })
   @ApiParam({ name: 'id', description: 'Profile ID' })
   @ApiResponse({ status: 200, description: 'Profile data', type: ProfileResponseDto })
-  @ApiResponse({ status: 404, description: 'Profile not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions', type: ErrorResponseDto })
+  @ApiResponse({ status: 404, description: 'Profile not found', type: ErrorResponseDto })
   async findOne(@Param('id') id: string) {
     return this.profilesService.findOne(id);
   }
@@ -57,8 +66,10 @@ export class ProfilesController {
   @ApiOperation({ summary: 'Update profile by ID' })
   @ApiParam({ name: 'id', description: 'Profile ID' })
   @ApiResponse({ status: 200, description: 'Profile updated successfully', type: ProfileResponseDto })
-  @ApiResponse({ status: 403, description: 'Forbidden resource' })
-  @ApiResponse({ status: 404, description: 'Profile not found' })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid data provided', type: ErrorResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions', type: ErrorResponseDto })
+  @ApiResponse({ status: 404, description: 'Profile not found', type: ErrorResponseDto })
   async update(
     @Request() req,
     @Param('id') id: string,
@@ -68,7 +79,7 @@ export class ProfilesController {
     const profile = await this.profilesService.findOne(id);
     
     if (profile.userId !== req.user.userId && req.user.role !== Role.ADMIN) {
-      return { statusCode: 403, message: 'Forbidden resource' };
+      throw new ForbiddenActionException('You do not have permission to update this profile');
     }
     
     return this.profilesService.update(id, updateProfileDto);
@@ -78,8 +89,10 @@ export class ProfilesController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Delete profile by ID (admin only)' })
   @ApiParam({ name: 'id', description: 'Profile ID' })
-  @ApiResponse({ status: 200, description: 'Profile deleted successfully' })
-  @ApiResponse({ status: 404, description: 'Profile not found' })
+  @ApiResponse({ status: 200, description: 'Profile deleted successfully', type: ProfileResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions', type: ErrorResponseDto })
+  @ApiResponse({ status: 404, description: 'Profile not found', type: ErrorResponseDto })
   async remove(@Param('id') id: string) {
     return this.profilesService.remove(id);
   }

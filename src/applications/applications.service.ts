@@ -8,6 +8,11 @@ import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
 import { ProfilesService } from '../profiles/profiles.service';
 import { ApplicationStatus } from './enums/application.enum';
+import { 
+  EntityNotFoundException,
+  ForbiddenActionException,
+  InvalidDataException
+} from '../common/exceptions/app.exceptions';
 
 @Injectable()
 export class ApplicationsService {
@@ -17,13 +22,20 @@ export class ApplicationsService {
   ) {}
 
   async create(userId: string, createApplicationDto: CreateApplicationDto) {
-    // Get the profile for the user
-    const profile = await this.profilesService.findByUserId(userId);
-    if (!profile) {
-      throw new NotFoundException('Profile not found');
-    }
+    try {
+      // Get the profile for the user
+      const profile = await this.profilesService.findByUserId(userId);
+      if (!profile) {
+        throw new EntityNotFoundException('Profile', userId);
+      }
 
-    return this.applicationsRepository.create(profile.id, createApplicationDto);
+      return this.applicationsRepository.create(profile.id, createApplicationDto);
+    } catch (error) {
+      if (error instanceof EntityNotFoundException) {
+        throw error;
+      }
+      throw new InvalidDataException('Failed to create application', error.message);
+    }
   }
 
   async findAll(options?: {
@@ -33,32 +45,54 @@ export class ApplicationsService {
     where?: any;
     includeProfile?: boolean;
   }) {
-    return this.applicationsRepository.findAll(options);
+    try {
+      return this.applicationsRepository.findAll(options);
+    } catch (error) {
+      throw new InvalidDataException('Failed to retrieve applications', error.message);
+    }
   }
 
   async findAllByUserId(userId: string) {
-    // Get the profile for the user
-    const profile = await this.profilesService.findByUserId(userId);
-    if (!profile) {
-      throw new NotFoundException('Profile not found');
-    }
+    try {
+      // Get the profile for the user
+      const profile = await this.profilesService.findByUserId(userId);
+      if (!profile) {
+        throw new EntityNotFoundException('Profile', userId);
+      }
 
-    return this.applicationsRepository.findByProfileId(profile.id);
+      return this.applicationsRepository.findByProfileId(profile.id);
+    } catch (error) {
+      if (error instanceof EntityNotFoundException) {
+        throw error;
+      }
+      throw new InvalidDataException('Failed to retrieve user applications', error.message);
+    }
   }
 
   async count(where?: any) {
-    return this.applicationsRepository.count(where);
+    try {
+      return this.applicationsRepository.count(where);
+    } catch (error) {
+      throw new InvalidDataException('Failed to count applications', error.message);
+    }
   }
 
   async findOne(id: string, includeProfile = true) {
-    const application = await this.applicationsRepository.findById(
-      id,
-      includeProfile,
-    );
-    if (!application) {
-      throw new NotFoundException(`Application with ID ${id} not found`);
+    try {
+      const application = await this.applicationsRepository.findById(
+        id,
+        includeProfile,
+      );
+      if (!application) {
+        throw new EntityNotFoundException('Application', id);
+      }
+      return application;
+    } catch (error) {
+      if (error instanceof EntityNotFoundException) {
+        throw error;
+      }
+      throw new InvalidDataException('Failed to retrieve application', error.message);
     }
-    return application;
   }
 
   async update(
@@ -66,83 +100,107 @@ export class ApplicationsService {
     userId: string,
     updateApplicationDto: UpdateApplicationDto,
   ) {
-    // Verify the application exists
-    const application = await this.findOne(id);
+    try {
+      // Verify the application exists
+      const application = await this.findOne(id);
 
-    // Get the user's profile
-    const profile = await this.profilesService.findByUserId(userId);
-    if (!profile) {
-      throw new NotFoundException('Profile not found');
+      // Get the user's profile
+      const profile = await this.profilesService.findByUserId(userId);
+      if (!profile) {
+        throw new EntityNotFoundException('Profile', userId);
+      }
+
+      // Check if this application belongs to the user's profile
+      if (application.profileId !== profile.id) {
+        throw new ForbiddenActionException(
+          'You do not have permission to update this application',
+        );
+      }
+
+      // If transitioning from DRAFT to SUBMITTED, set the submittedAt timestamp
+      if (
+        String(application.applicationStatus) === 'DRAFT' &&
+        String(updateApplicationDto.applicationStatus) === 'SUBMITTED'
+      ) {
+        updateApplicationDto.submittedAt = new Date().toISOString();
+      }
+
+      return this.applicationsRepository.update(id, updateApplicationDto);
+    } catch (error) {
+      if (error instanceof EntityNotFoundException || 
+          error instanceof ForbiddenActionException) {
+        throw error;
+      }
+      throw new InvalidDataException('Failed to update application', error.message);
     }
-
-    // Check if this application belongs to the user's profile
-    if (application.profileId !== profile.id) {
-      throw new ForbiddenException(
-        'You do not have permission to update this application',
-      );
-    }
-
-    // If transitioning from DRAFT to SUBMITTED, set the submittedAt timestamp
-    if (
-      String(application.applicationStatus) === 'DRAFT' &&
-      String(updateApplicationDto.applicationStatus) === 'SUBMITTED'
-    ) {
-      updateApplicationDto.submittedAt = new Date().toISOString();
-    }
-
-    return this.applicationsRepository.update(id, updateApplicationDto);
   }
 
   async remove(id: string, userId: string) {
-    // Verify the application exists
-    const application = await this.findOne(id);
+    try {
+      // Verify the application exists
+      const application = await this.findOne(id);
 
-    // Get the user's profile
-    const profile = await this.profilesService.findByUserId(userId);
-    if (!profile) {
-      throw new NotFoundException('Profile not found');
+      // Get the user's profile
+      const profile = await this.profilesService.findByUserId(userId);
+      if (!profile) {
+        throw new EntityNotFoundException('Profile', userId);
+      }
+
+      // Check if this application belongs to the user's profile
+      if (application.profileId !== profile.id) {
+        throw new ForbiddenActionException(
+          'You do not have permission to delete this application',
+        );
+      }
+
+      // Only allow deletion of applications in DRAFT state
+      if (String(application.applicationStatus) !== 'DRAFT') {
+        throw new ForbiddenActionException('Only draft applications can be deleted');
+      }
+
+      return this.applicationsRepository.remove(id);
+    } catch (error) {
+      if (error instanceof EntityNotFoundException || 
+          error instanceof ForbiddenActionException) {
+        throw error;
+      }
+      throw new InvalidDataException('Failed to delete application', error.message);
     }
-
-    // Check if this application belongs to the user's profile
-    if (application.profileId !== profile.id) {
-      throw new ForbiddenException(
-        'You do not have permission to delete this application',
-      );
-    }
-
-    // Only allow deletion of applications in DRAFT state
-    if (String(application.applicationStatus) !== 'DRAFT') {
-      throw new ForbiddenException('Only draft applications can be deleted');
-    }
-
-    return this.applicationsRepository.remove(id);
   }
 
   async submit(id: string, userId: string) {
-    // Verify the application exists
-    const application = await this.findOne(id);
+    try {
+      // Verify the application exists
+      const application = await this.findOne(id);
 
-    // Get the user's profile
-    const profile = await this.profilesService.findByUserId(userId);
-    if (!profile) {
-      throw new NotFoundException('Profile not found');
+      // Get the user's profile
+      const profile = await this.profilesService.findByUserId(userId);
+      if (!profile) {
+        throw new EntityNotFoundException('Profile', userId);
+      }
+
+      // Check if this application belongs to the user's profile
+      if (application.profileId !== profile.id) {
+        throw new ForbiddenActionException(
+          'You do not have permission to submit this application',
+        );
+      }
+
+      // Only allow submission of applications in DRAFT state
+      if (String(application.applicationStatus) !== 'DRAFT') {
+        throw new ForbiddenActionException('Only draft applications can be submitted');
+      }
+
+      return this.applicationsRepository.update(id, {
+        applicationStatus: ApplicationStatus.SUBMITTED,
+        submittedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      if (error instanceof EntityNotFoundException || 
+          error instanceof ForbiddenActionException) {
+        throw error;
+      }
+      throw new InvalidDataException('Failed to submit application', error.message);
     }
-
-    // Check if this application belongs to the user's profile
-    if (application.profileId !== profile.id) {
-      throw new ForbiddenException(
-        'You do not have permission to submit this application',
-      );
-    }
-
-    // Only allow submission of applications in DRAFT state
-    if (String(application.applicationStatus) !== 'DRAFT') {
-      throw new ForbiddenException('Only draft applications can be submitted');
-    }
-
-    return this.applicationsRepository.update(id, {
-      applicationStatus: ApplicationStatus.SUBMITTED,
-      submittedAt: new Date().toISOString(),
-    });
   }
 }

@@ -10,6 +10,7 @@ import { Role } from '../common/enum/roles.enum';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { ProgramResponseDto, PaginatedProgramResponseDto } from './dto/program-response.dto';
 import { CreateManyProgramsDto } from './dto/create-many-programs.dto';
+import { ErrorResponseDto } from '../common/dto/error-response.dto';
 
 @ApiTags('programs')
 @Controller('programs')
@@ -22,6 +23,10 @@ export class ProgramsController {
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a new program (Admin only)' })
   @ApiResponse({ status: 201, description: 'Program successfully created', type: ProgramResponseDto })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid data provided', type: ErrorResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions', type: ErrorResponseDto })
+  @ApiResponse({ status: 409, description: 'Conflict - Program with these details already exists', type: ErrorResponseDto })
   create(@Body() createProgramDto: CreateProgramDto) {
     return this.programsService.create(createProgramDto);
   }
@@ -32,6 +37,10 @@ export class ProgramsController {
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create multiple programs at once (Admin only)' })
   @ApiResponse({ status: 201, description: 'Programs successfully created' })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid data provided', type: ErrorResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions', type: ErrorResponseDto })
+  @ApiResponse({ status: 409, description: 'Conflict - One or more programs already exist', type: ErrorResponseDto })
   createMany(@Body() createManyProgramsDto: CreateManyProgramsDto) {
     return this.programsService.createMany(createManyProgramsDto.programs);
   }
@@ -41,6 +50,7 @@ export class ProgramsController {
   @ApiQuery({ name: 'parentId', required: false, description: 'Filter by parent program ID' })
   @ApiHeader({ name: 'Accept-Language', enum: ['uz', 'ru', 'en'], description: 'Language preference' })
   @ApiResponse({ status: 200, description: 'List of programs', type: PaginatedProgramResponseDto })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid parameters', type: ErrorResponseDto })
   findAll(
     @Query('parentId') parentId?: string,
     @Headers('Accept-Language') lang: string = 'uz',
@@ -54,7 +64,7 @@ export class ProgramsController {
   @ApiParam({ name: 'id', description: 'Program ID (UUID)' })
   @ApiHeader({ name: 'Accept-Language', enum: ['uz', 'ru', 'en'], description: 'Language preference' })
   @ApiResponse({ status: 200, description: 'Program details', type: ProgramResponseDto })
-  @ApiResponse({ status: 404, description: 'Program not found' })
+  @ApiResponse({ status: 404, description: 'Program not found', type: ErrorResponseDto })
   findOne(
     @Param('id') id: string,
     @Headers('Accept-Language') lang: string = 'uz',
@@ -69,7 +79,10 @@ export class ProgramsController {
   @ApiOperation({ summary: 'Update a program (Admin only)' })
   @ApiParam({ name: 'id', description: 'Program ID (UUID)' })
   @ApiResponse({ status: 200, description: 'Program updated', type: ProgramResponseDto })
-  @ApiResponse({ status: 404, description: 'Program not found' })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid data provided', type: ErrorResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions', type: ErrorResponseDto })
+  @ApiResponse({ status: 404, description: 'Program not found', type: ErrorResponseDto })
   update(@Param('id') id: string, @Body() updateProgramDto: UpdateProgramDto) {
     return this.programsService.update(id, updateProgramDto);
   }
@@ -81,7 +94,9 @@ export class ProgramsController {
   @ApiOperation({ summary: 'Delete a program (Admin only)' })
   @ApiParam({ name: 'id', description: 'Program ID (UUID)' })
   @ApiResponse({ status: 200, description: 'Program deleted', type: ProgramResponseDto })
-  @ApiResponse({ status: 404, description: 'Program not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions', type: ErrorResponseDto })
+  @ApiResponse({ status: 404, description: 'Program not found', type: ErrorResponseDto })
   remove(@Param('id') id: string) {
     return this.programsService.remove(id);
   }

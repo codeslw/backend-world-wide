@@ -10,6 +10,7 @@ import { Role } from '../common/enum/roles.enum';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { CityResponseDto, PaginatedCityResponseDto } from './dto/city-response.dto';
 import { CreateManyCitiesDto } from './dto/create-many-cities.dto';
+import { ErrorResponseDto } from '../common/dto/error-response.dto';
 
 @ApiTags('cities')
 @Controller('cities')
@@ -22,6 +23,10 @@ export class CitiesController {
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a new city (Admin only)' })
   @ApiResponse({ status: 201, description: 'City successfully created', type: CityResponseDto })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid data provided', type: ErrorResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions', type: ErrorResponseDto })
+  @ApiResponse({ status: 409, description: 'Conflict - City with these details already exists', type: ErrorResponseDto })
   create(@Body() createCityDto: CreateCityDto) {
     return this.citiesService.create(createCityDto);
   }
@@ -32,6 +37,10 @@ export class CitiesController {
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create multiple cities at once (Admin only)' })
   @ApiResponse({ status: 201, description: 'Cities successfully created' })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid data provided', type: ErrorResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions', type: ErrorResponseDto })
+  @ApiResponse({ status: 409, description: 'Conflict - One or more cities already exist', type: ErrorResponseDto })
   createMany(@Body() createManyCitiesDto: CreateManyCitiesDto) {
     return this.citiesService.createMany(createManyCitiesDto.cities);
   }
@@ -40,6 +49,7 @@ export class CitiesController {
   @ApiOperation({ summary: 'Get all cities with pagination and search' })
   @ApiHeader({ name: 'Accept-Language', enum: ['uz', 'ru', 'en'], description: 'Language preference' })
   @ApiResponse({ status: 200, description: 'List of cities', type: PaginatedCityResponseDto })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid parameters', type: ErrorResponseDto })
   findAll(
     @Query('countryCode', new ParseIntPipe({ optional: true })) countryCode?: number,
     @Headers('Accept-Language') lang: string = 'uz',
@@ -53,7 +63,7 @@ export class CitiesController {
   @ApiParam({ name: 'id', description: 'City ID' })
   @ApiHeader({ name: 'Accept-Language', enum: ['uz', 'ru', 'en'], description: 'Language preference' })
   @ApiResponse({ status: 200, description: 'City details', type: CityResponseDto })
-  @ApiResponse({ status: 404, description: 'City not found' })
+  @ApiResponse({ status: 404, description: 'City not found', type: ErrorResponseDto })
   findOne(
     @Param('id') id: string,
     @Headers('Accept-Language') lang: string = 'uz',
@@ -68,7 +78,10 @@ export class CitiesController {
   @ApiOperation({ summary: 'Update a city (Admin only)' })
   @ApiParam({ name: 'id', description: 'City ID' })
   @ApiResponse({ status: 200, description: 'City updated', type: CityResponseDto })
-  @ApiResponse({ status: 404, description: 'City not found' })
+  @ApiResponse({ status: 400, description: 'Bad request - Invalid data provided', type: ErrorResponseDto })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions', type: ErrorResponseDto })
+  @ApiResponse({ status: 404, description: 'City not found', type: ErrorResponseDto })
   update(@Param('id') id: string, @Body() updateCityDto: UpdateCityDto) {
     return this.citiesService.update(id, updateCityDto);
   }
@@ -80,7 +93,9 @@ export class CitiesController {
   @ApiOperation({ summary: 'Delete a city (Admin only)' })
   @ApiParam({ name: 'id', description: 'City ID' })
   @ApiResponse({ status: 200, description: 'City deleted', type: CityResponseDto })
-  @ApiResponse({ status: 404, description: 'City not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions', type: ErrorResponseDto })
+  @ApiResponse({ status: 404, description: 'City not found', type: ErrorResponseDto })
   remove(@Param('id') id: string) {
     return this.citiesService.remove(id);
   }

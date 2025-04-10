@@ -8,7 +8,8 @@ import {
   Delete,
   UseGuards,
   Query,
-  Request,
+  Req,
+  HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { ApplicationsService } from './applications.service';
@@ -25,224 +26,278 @@ import {
   ApiBearerAuth,
   ApiQuery,
 } from '@nestjs/swagger';
-import {
-  ApplicationResponseDto,
-  PaginatedApplicationResponseDto,
-} from './dto/application-response.dto';
-import { ApplicationStatus } from './enums/application.enum';
+import { Request } from 'express';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { ApplicationResponseDto, PaginatedApplicationResponseDto } from './dto/application-response.dto';
+import { ErrorResponseDto } from '../common/dto/error-response.dto';
+import { ForbiddenActionException } from '../common/exceptions/app.exceptions';
+
+// Define a custom request interface that includes the user property
+interface RequestWithUser extends Request {
+  user: {
+    id: string;
+    role: Role;
+    [key: string]: any;
+  };
+}
 
 @ApiTags('applications')
 @Controller('applications')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@ApiBearerAuth()
 export class ApplicationsController {
   constructor(private readonly applicationsService: ApplicationsService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @Roles(Role.CLIENT)
   @ApiOperation({ summary: 'Create a new application' })
+  @ApiBearerAuth('access-token')
   @ApiResponse({
-    status: HttpStatus.CREATED,
-    description: 'Application created successfully',
+    status: 201,
+    description: 'The application has been successfully created.',
     type: ApplicationResponseDto,
   })
-  create(@Request() req, @Body() createApplicationDto: CreateApplicationDto) {
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Profile not found',
+    type: ErrorResponseDto,
+  })
+  create(
+    @Req() req: RequestWithUser,
+    @Body() createApplicationDto: CreateApplicationDto,
+  ) {
     return this.applicationsService.create(req.user.id, createApplicationDto);
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.CLIENT, Role.ADMIN)
-  @ApiOperation({ summary: 'Find all applications' })
+  @ApiOperation({ summary: 'Get all applications' })
+  @ApiBearerAuth('access-token')
   @ApiResponse({
-    status: HttpStatus.OK,
+    status: 200,
     description: 'Return all applications',
     type: PaginatedApplicationResponseDto,
   })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Page number',
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ErrorResponseDto,
   })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Number of items per page',
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden',
+    type: ErrorResponseDto,
   })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    enum: ApplicationStatus,
-    description: 'Filter by application status',
-  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'orderBy', required: false, type: String })
+  @ApiQuery({ name: 'orderDir', required: false, enum: ['asc', 'desc'] })
   async findAll(
-    @Request() req,
-    @Query('page') page = 1,
-    @Query('limit') limit = 10,
-    @Query('status') status?: ApplicationStatus,
+    @Req() req: RequestWithUser,
+    @Query() queryDto: PaginationDto,
   ) {
-    // Convert page and limit to numbers and ensure they're valid
-    const pageNum = Math.max(1, Number(page));
-    const limitNum = Math.min(100, Math.max(1, Number(limit)));
-    const skip = (pageNum - 1) * limitNum;
-
-    // Build filter conditions
-    const where: any = {};
-
-    // If CLIENT role, only show their applications
+    // If user is CLIENT, only return their applications
     if (req.user.role === Role.CLIENT) {
-      // Get the profile for this user
-      const applications = await this.applicationsService.findAllByUserId(
-        req.user.id,
-      );
-
-      const total = applications.length;
-      const data = applications.slice(skip, skip + limitNum);
-
-      return {
-        data,
-        meta: {
-          total,
-          page: pageNum,
-          limit: limitNum,
-          totalPages: Math.ceil(total / limitNum),
-        },
-      };
+      return this.applicationsService.findAllByUserId(req.user.id);
     }
 
-    // For ADMIN role, potentially filter by status
-    if (status) {
-      where.applicationStatus = status;
-    }
+    // For other roles or if no role, get all applications with pagination
+    const {
+      page = 1,
+      limit = 10,
+    } = queryDto;
+    const skip = (page - 1) * limit;
+    const take = limit;
 
-    // Get paginated results
-    const [data, total] = await Promise.all([
+    const [applications, total] = await Promise.all([
       this.applicationsService.findAll({
         skip,
-        take: limitNum,
-        where,
+        take,
         orderBy: { createdAt: 'desc' },
         includeProfile: true,
       }),
-      this.applicationsService.count(where),
+      this.applicationsService.count(),
     ]);
 
     return {
-      data,
+      data: applications,
       meta: {
         total,
-        page: pageNum,
-        limit: limitNum,
-        totalPages: Math.ceil(total / limitNum),
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
       },
     };
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   @Roles(Role.CLIENT, Role.ADMIN)
-  @ApiOperation({ summary: 'Find application by id' })
+  @ApiOperation({ summary: 'Get application by id' })
+  @ApiBearerAuth('access-token')
   @ApiResponse({
-    status: HttpStatus.OK,
+    status: 200,
     description: 'Return the application',
     type: ApplicationResponseDto,
   })
   @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Application not found',
+    status: 401,
+    description: 'Unauthorized',
+    type: ErrorResponseDto,
   })
-  async findOne(@Request() req, @Param('id') id: string) {
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Application not found',
+    type: ErrorResponseDto,
+  })
+  async findOne(@Param('id') id: string, @Req() req: RequestWithUser) {
     const application = await this.applicationsService.findOne(id);
 
-    // If CLIENT role, check if application belongs to them
-    if (req.user.role === Role.CLIENT) {
-      const userApplications = await this.applicationsService.findAllByUserId(
-        req.user.id,
+    // If user is CLIENT, ensure they can only access their own applications
+    if (
+      req.user.role === Role.CLIENT &&
+      application.profile.userId !== req.user.id
+    ) {
+      throw new ForbiddenActionException(
+        'You do not have permission to access this application',
       );
-      const isOwner = userApplications.some((app) => app.id === id);
-
-      if (!isOwner) {
-        return {
-          message: 'You do not have permission to view this application',
-        };
-      }
     }
 
     return application;
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   @Roles(Role.CLIENT, Role.ADMIN)
-  @ApiOperation({ summary: 'Update application by id' })
+  @ApiOperation({ summary: 'Update an application' })
+  @ApiBearerAuth('access-token')
   @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Application updated successfully',
+    status: 200,
+    description: 'The application has been successfully updated.',
     type: ApplicationResponseDto,
   })
   @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Application not found',
+    status: 400,
+    description: 'Bad Request',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Application or Profile not found',
+    type: ErrorResponseDto,
   })
   update(
-    @Request() req,
     @Param('id') id: string,
     @Body() updateApplicationDto: UpdateApplicationDto,
+    @Req() req: RequestWithUser,
   ) {
-    // If admin, can update any application
+    // Check if admin is trying to update status or assigned to
     if (req.user.role === Role.ADMIN) {
-      return this.applicationsService.update(
-        id,
-        req.user.id,
-        updateApplicationDto,
-      );
+      // Extract only the fields that an admin can update
+      const adminUpdates = {};
+      const allowedFields = [
+        'applicationStatus',
+        'assignedTo',
+        'adminNotes',
+        'reviewedAt',
+      ];
+      
+      for (const field of allowedFields) {
+        if (updateApplicationDto[field] !== undefined) {
+          adminUpdates[field] = updateApplicationDto[field];
+        }
+      }
+      
+      // If there are admin updates, apply them
+      if (Object.keys(adminUpdates).length > 0) {
+        return this.applicationsService.update(id, req.user.id, adminUpdates);
+      }
     }
 
-    // For clients, check if they own the application
-    return this.applicationsService.update(
-      id,
-      req.user.id,
-      updateApplicationDto,
-    );
+    // For all other users, use their user ID to verify ownership
+    return this.applicationsService.update(id, req.user.id, updateApplicationDto);
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(JwtAuthGuard)
   @Roles(Role.CLIENT, Role.ADMIN)
-  @ApiOperation({ summary: 'Delete application by id' })
+  @ApiOperation({ summary: 'Delete an application' })
+  @ApiBearerAuth('access-token')
   @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Application deleted successfully',
+    status: 204,
+    description: 'The application has been successfully deleted.',
   })
   @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Application not found',
+    status: 401,
+    description: 'Unauthorized',
+    type: ErrorResponseDto,
   })
-  remove(@Request() req, @Param('id') id: string) {
-    // If admin, can delete any application
-    if (req.user.role === Role.ADMIN) {
-      return this.applicationsService.remove(id, req.user.id);
-    }
-
-    // For clients, check if they own the application
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Application or Profile not found',
+    type: ErrorResponseDto,
+  })
+  remove(@Param('id') id: string, @Req() req: RequestWithUser) {
     return this.applicationsService.remove(id, req.user.id);
   }
 
   @Post(':id/submit')
+  @UseGuards(JwtAuthGuard)
   @Roles(Role.CLIENT)
   @ApiOperation({ summary: 'Submit an application' })
+  @ApiBearerAuth('access-token')
   @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Application submitted successfully',
+    status: 200,
+    description: 'The application has been successfully submitted.',
     type: ApplicationResponseDto,
   })
   @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Application not found',
+    status: 401,
+    description: 'Unauthorized',
+    type: ErrorResponseDto,
   })
   @ApiResponse({
-    status: HttpStatus.FORBIDDEN,
-    description: 'Only draft applications can be submitted',
+    status: 403,
+    description: 'Forbidden',
+    type: ErrorResponseDto,
   })
-  submit(@Request() req, @Param('id') id: string) {
+  @ApiResponse({
+    status: 404,
+    description: 'Application or Profile not found',
+    type: ErrorResponseDto,
+  })
+  submit(@Param('id') id: string, @Req() req: RequestWithUser) {
     return this.applicationsService.submit(id, req.user.id);
   }
 }

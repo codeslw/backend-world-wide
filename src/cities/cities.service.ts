@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../db/prisma.service';
 import { CreateCityDto } from './dto/create-city.dto';
 import { UpdateCityDto } from './dto/update-city.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { FilterService } from '../common/filters/filter.service';
 import { FilterOptions, PaginationOptions } from '../common/filters/filter.interface';
+import { EntityNotFoundException, InvalidDataException } from '../common/exceptions/app.exceptions';
 
 @Injectable()
 export class CitiesService {
@@ -14,106 +15,171 @@ export class CitiesService {
   ) {}
 
   async create(createCityDto: CreateCityDto) {
-    const city = await this.prisma.city.create({
-      data: {
-        nameUz: createCityDto.nameUz,
-        nameRu: createCityDto.nameRu,
-        nameEn: createCityDto.nameEn,
-        countryCode: createCityDto.countryCode,
-      },
-      include: {
-        country: true,
-      },
-    });
-    return city;
-  }
-
-  async createMany(cities: CreateCityDto[]) {
-    const createdCities = await Promise.all(
-      cities.map(cityDto => {
-        return this.create(cityDto);
-      })
-    );
-    
-    return { 
-      count: createdCities.length,
-      cities: createdCities
-    };
-  }
-
-  async findAll(countryCode?: number, lang: string = 'uz', paginationDto?: PaginationDto) {
-    const { page = 1, limit = 10 } = paginationDto || {};
-    const skip = (page - 1) * limit;
-
-    const where = countryCode ? { countryCode } : {};
-
-    const [cities, total] = await Promise.all([
-      this.prisma.city.findMany({
-        where,
-        skip,
-        take: limit,
+    try {
+      const city = await this.prisma.city.create({
+        data: {
+          nameUz: createCityDto.nameUz,
+          nameRu: createCityDto.nameRu,
+          nameEn: createCityDto.nameEn,
+          countryCode: createCityDto.countryCode,
+        },
         include: {
           country: true,
         },
-        orderBy: {
-          [`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`]: 'asc',
-        },
-      }),
-      this.prisma.city.count({ where }),
-    ]);
+      });
+      return city;
+    } catch (error) {
+      // Let the global exception filter handle Prisma errors
+      throw error;
+    }
+  }
 
-    return {
-      data: cities,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+  async createMany(cities: CreateCityDto[]) {
+    try {
+      const createdCities = await Promise.all(
+        cities.map(cityDto => {
+          return this.create(cityDto);
+        })
+      );
+      
+      return { 
+        count: createdCities.length,
+        cities: createdCities
+      };
+    } catch (error) {
+      // Let the global exception filter handle Prisma errors
+      throw error;
+    }
+  }
+
+  async findAll(countryCode?: number, lang: string = 'uz', paginationDto?: PaginationDto) {
+    try {
+      const { page = 1, limit = 10 } = paginationDto || {};
+      const skip = (page - 1) * limit;
+
+      const where = countryCode ? { countryCode } : {};
+
+      const [cities, total] = await Promise.all([
+        this.prisma.city.findMany({
+          where,
+          skip,
+          take: limit,
+          include: {
+            country: true,
+          },
+          orderBy: {
+            [`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`]: 'asc',
+          },
+        }),
+        this.prisma.city.count({ where }),
+      ]);
+
+      // Map cities to localized format
+      const localizedCities = cities.map(city => this.localizeCity(city, lang));
+
+      return {
+        data: localizedCities,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
+    } catch (error) {
+      // Let the global exception filter handle database errors
+      throw error;
+    }
   }
 
   async findOne(id: string, lang: string = 'uz') {
-    const city = await this.prisma.city.findUnique({
-      where: { id },
-      include: {
-        country: true,
-      },
-    });
+    try {
+      const city = await this.prisma.city.findUnique({
+        where: { id },
+        include: {
+          country: true,
+        },
+      });
 
-    if (!city) {
-      throw new NotFoundException(`City with ID ${id} not found`);
+      if (!city) {
+        throw new EntityNotFoundException('City', id);
+      }
+
+      return this.localizeCity(city, lang);
+    } catch (error) {
+      // If it's already our custom exception, just rethrow it
+      if (error instanceof EntityNotFoundException) {
+        throw error;
+      }
+      // Otherwise let the global exception filter handle it
+      throw error;
     }
-
-    return city;
   }
 
   async update(id: string, updateCityDto: UpdateCityDto) {
-    const city = await this.prisma.city.update({
-      where: { id },
-      data: {
-        nameUz: updateCityDto.nameUz,
-        nameRu: updateCityDto.nameRu,
-        nameEn: updateCityDto.nameEn,
-        countryCode: updateCityDto.countryCode,
-      },
-      include: {
-        country: true,
-      },
-    });
+    try {
+      // First check if city exists
+      const existingCity = await this.prisma.city.findUnique({
+        where: { id }
+      });
+      
+      if (!existingCity) {
+        throw new EntityNotFoundException('City', id);
+      }
+      
+      // Proceed with update
+      const city = await this.prisma.city.update({
+        where: { id },
+        data: {
+          nameUz: updateCityDto.nameUz,
+          nameRu: updateCityDto.nameRu,
+          nameEn: updateCityDto.nameEn,
+          countryCode: updateCityDto.countryCode,
+        },
+        include: {
+          country: true,
+        },
+      });
 
-    return city;
+      return city;
+    } catch (error) {
+      // If it's already our custom exception, just rethrow it
+      if (error instanceof EntityNotFoundException) {
+        throw error;
+      }
+      // Otherwise let the global exception filter handle it
+      throw error;
+    }
   }
 
   async remove(id: string) {
-    const city = await this.prisma.city.delete({
-      where: { id },
-      include: {
-        country: true,
-      },
-    });
+    try {
+      // First check if city exists
+      const existingCity = await this.prisma.city.findUnique({
+        where: { id }
+      });
+      
+      if (!existingCity) {
+        throw new EntityNotFoundException('City', id);
+      }
+      
+      // Proceed with deletion
+      const city = await this.prisma.city.delete({
+        where: { id },
+        include: {
+          country: true,
+        },
+      });
 
-    return city;
+      return city;
+    } catch (error) {
+      // If it's already our custom exception, just rethrow it
+      if (error instanceof EntityNotFoundException) {
+        throw error;
+      }
+      // Otherwise let the global exception filter handle it
+      throw error;
+    }
   }
 
   private localizeCity(city: any, lang: string) {
