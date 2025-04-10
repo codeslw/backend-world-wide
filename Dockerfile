@@ -5,6 +5,9 @@ WORKDIR /app
 # Install system dependencies
 RUN apk add --no-cache python3 make g++
 
+# Set Node options for increased memory limit
+ENV NODE_OPTIONS="--max-old-space-size=8192"
+
 # Copy package files first for better caching
 COPY package*.json ./
 COPY prisma ./prisma
