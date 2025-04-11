@@ -68,7 +68,7 @@ export class UniversitiesController {
   @ApiResponse({ status: 200, description: 'List of universities', type: PaginatedUniversityResponseDto })
   @ApiResponse({ status: 400, description: 'Bad request - Invalid parameters', type: ErrorResponseDto })
   findAll(
-    @Query('countryCode', new ParseIntPipe({ optional: true })) countryCode?: number,
+    @Query('countryCode') countryCode?: number,
     @Query('cityId') cityId?: string,
     @Query('type') type?: string,
     @Headers('Accept-Language') lang: string = 'uz',
