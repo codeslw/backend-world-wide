@@ -44,12 +44,39 @@ export class ChatService {
       },
     });
 
-    // If there's an initial message, create it
+    // If there's an initial message, create it directly without the chat status check
     if (createChatDto.initialMessage) {
-      await this.createMessage(userId, chat.id, {
-        chatId: chat.id,
-        text: createChatDto.initialMessage,
+      // Create message directly without status validation
+      const message = await this.prisma.message.create({
+        data: {
+          chat: { connect: { id: chat.id } },
+          sender: { connect: { id: userId } },
+          text: createChatDto.initialMessage || '',
+          readBy: {
+            connect: { id: userId } // Mark as read by the sender automatically
+          }
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              email: true,
+              role: true,
+              profile: true,
+            },
+          },
+          readBy: {
+            select: {
+              id: true
+            }
+          }
+        },
       });
+
+      // Notify connected clients via WebSockets
+      if (this.chatGateway) {
+        this.chatGateway.notifyNewMessage(chat.id, message);
+      }
     }
 
     return this.getChatById(chat.id, userId);
