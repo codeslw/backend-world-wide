@@ -34,7 +34,7 @@ export class ChatController implements OnModuleInit {
   @ApiOperation({ summary: 'Create a new chat' })
   @ApiResponse({ status: 201, description: 'Chat created', type: ChatResponseDto })
   async createChat(@Request() req, @Body() createChatDto: CreateChatDto) {
-    return this.chatService.createChat(req.user.id, createChatDto);
+    return this.chatService.createChat(req.user.userId, createChatDto);
   }
 
   @Get()
@@ -45,7 +45,7 @@ export class ChatController implements OnModuleInit {
     @Request() req,
     @Query('status') status?: ChatStatus,
   ) {
-    return this.chatService.getUserChats(req.user.id, req.user.role, status);
+    return this.chatService.getUserChats(req.user.userId, req.user.role, status);
   }
 
   @Get('admin')
@@ -57,7 +57,7 @@ export class ChatController implements OnModuleInit {
     @Request() req,
     @Query('status') status?: ChatStatus,
   ) {
-    return this.chatService.getUserChats(req.user.id, Role.ADMIN, status);
+    return this.chatService.getUserChats(req.user.userId, Role.ADMIN, status);
   }
 
   @Get(':id')
@@ -66,7 +66,7 @@ export class ChatController implements OnModuleInit {
   @ApiResponse({ status: 200, description: 'Chat details', type: ChatResponseDto })
   @ApiResponse({ status: 404, description: 'Chat not found' })
   async getChatById(@Request() req, @Param('id') id: string) {
-    return this.chatService.getChatById(id, req.user.id, req.user.role);
+    return this.chatService.getChatById(id, req.user.userId, req.user.role);
   }
 
   @Patch(':id/assign')
@@ -76,7 +76,7 @@ export class ChatController implements OnModuleInit {
   @ApiResponse({ status: 200, description: 'Admin assigned to chat', type: ChatResponseDto })
   @ApiResponse({ status: 404, description: 'Chat not found' })
   async assignAdminToChat(@Request() req, @Param('id') id: string) {
-    return this.chatService.assignAdminToChat(id, req.user.id);
+    return this.chatService.assignAdminToChat(id, req.user.userId);
   }
 
   @Patch(':id/status')
@@ -89,7 +89,7 @@ export class ChatController implements OnModuleInit {
     @Param('id') id: string,
     @Body() updateChatStatusDto: UpdateChatStatusDto,
   ) {
-    return this.chatService.updateChatStatus(id, req.user.id, req.user.role, updateChatStatusDto);
+    return this.chatService.updateChatStatus(id, req.user.userId, req.user.role, updateChatStatusDto);
   }
 
   @Post(':id/messages')
@@ -102,7 +102,7 @@ export class ChatController implements OnModuleInit {
     @Param('id') id: string,
     @Body() createMessageDto: CreateMessageDto,
   ) {
-    return this.chatService.createMessage(req.user.id, id, createMessageDto);
+    return this.chatService.createMessage(req.user.userId, id, createMessageDto);
   }
 
   @Get(':id/messages')
@@ -120,6 +120,6 @@ export class ChatController implements OnModuleInit {
   ) {
     const pageNum = page ? parseInt(page) : 1;
     const limitNum = limit ? parseInt(limit) : 20;
-    return this.chatService.getChatMessages(id, req.user.id, req.user.role, pageNum, limitNum);
+    return this.chatService.getChatMessages(id, req.user.userId, req.user.role, pageNum, limitNum);
   }
 } 
