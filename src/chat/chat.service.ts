@@ -37,7 +37,9 @@ export class ChatService {
   async createChat(userId: string, createChatDto: CreateChatDto) {
     const chat = await this.prisma.chat.create({
       data: {
-        clientId: userId,
+        client: {
+          connect: { id: userId }
+        },
         status: ChatStatus.PENDING, // Start as pending until admin joins
       },
     });
@@ -211,7 +213,9 @@ export class ChatService {
     const updatedChat = await this.prisma.chat.update({
       where: { id: chatId },
       data: { 
-        adminId,
+        admin: {
+          connect: { id: adminId }
+        },
         status: ChatStatus.ACTIVE // Auto-activate when admin is assigned
       },
     });
