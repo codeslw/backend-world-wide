@@ -13,74 +13,87 @@ export class FilterService {
     for (const filter of filters) {
       const { field, queryParam, operator = 'equals', transform, isArray = false } = filter;
       
-      if (query[queryParam] !== undefined) {
-        let value = query[queryParam];
-        
-        // Apply transformation if provided
-        if (transform) {
+      // Skip undefined, null or empty string values
+      if (query[queryParam] === undefined || query[queryParam] === null || query[queryParam] === '') {
+        continue;
+      }
+      
+      let value = query[queryParam];
+      
+      // Apply transformation if provided
+      if (transform) {
+        try {
           value = transform(value);
+          // Skip if transformation resulted in NaN or invalid value
+          if (typeof value === 'number' && isNaN(value)) {
+            continue;
+          }
+        } catch (error) {
+          // Skip this filter if transformation fails
+          continue;
         }
-        
-        // Handle array values
-        if (isArray && !Array.isArray(value)) {
-          value = value.toString().split(',');
-        }
-        
-        // Apply the filter based on the operator
-        switch (operator) {
-          case 'equals':
-            where[field] = value;
-            break;
-          case 'contains':
-            where[field] = { 
-              contains: value,
-              ...(caseSensitive ? {} : { mode: 'insensitive' })
-            };
-            break;
-          case 'startsWith':
-            where[field] = { 
-              startsWith: value,
-              ...(caseSensitive ? {} : { mode: 'insensitive' })
-            };
-            break;
-          case 'endsWith':
-            where[field] = { 
-              endsWith: value,
-              ...(caseSensitive ? {} : { mode: 'insensitive' })
-            };
-            break;
-          case 'in':
-            where[field] = { in: Array.isArray(value) ? value : [value] };
-            break;
-          case 'not':
-            where[field] = { not: value };
-            break;
-          case 'gt':
-            where[field] = { gt: value };
-            break;
-          case 'gte':
-            where[field] = { gte: value };
-            break;
-          case 'lt':
-            where[field] = { lt: value };
-            break;
-          case 'lte':
-            where[field] = { lte: value };
-            break;
-          case 'between':
-            if (Array.isArray(value) && value.length === 2) {
-              where[field] = { gte: value[0], lte: value[1] };
-            }
-            break;
-        }
+      }
+      
+      // Handle array values
+      if (isArray && !Array.isArray(value)) {
+        value = value.toString().split(',');
+      }
+      
+      // Apply the filter based on the operator
+      switch (operator) {
+        case 'equals':
+          where[field] = value;
+          break;
+        case 'contains':
+          where[field] = { 
+            contains: value,
+            ...(caseSensitive ? {} : { mode: 'insensitive' })
+          };
+          break;
+        case 'startsWith':
+          where[field] = { 
+            startsWith: value,
+            ...(caseSensitive ? {} : { mode: 'insensitive' })
+          };
+          break;
+        case 'endsWith':
+          where[field] = { 
+            endsWith: value,
+            ...(caseSensitive ? {} : { mode: 'insensitive' })
+          };
+          break;
+        case 'in':
+          where[field] = { in: Array.isArray(value) ? value : [value] };
+          break;
+        case 'not':
+          where[field] = { not: value };
+          break;
+        case 'gt':
+          where[field] = { gt: value };
+          break;
+        case 'gte':
+          where[field] = { gte: value };
+          break;
+        case 'lt':
+          where[field] = { lt: value };
+          break;
+        case 'lte':
+          where[field] = { lte: value };
+          break;
+        case 'between':
+          if (Array.isArray(value) && value.length === 2) {
+            where[field] = { gte: value[0], lte: value[1] };
+          }
+          break;
       }
     }
     
-    // Apply search if provided
-    if (query.search && searchFields.length > 0) {
+    // Apply search if provided with improved validation
+    if (query.search && typeof query.search === 'string' && query.search.trim() !== '' && searchFields.length > 0) {
+      const searchValue = query.search.trim();
       const searchConditions = searchFields.map(field => ({
         [field]: { 
-          contains: query.search,
+          contains: searchValue,
           ...(caseSensitive ? {} : { mode: 'insensitive' })
         }
       }));
@@ -132,8 +145,26 @@ export class FilterService {
       maxLimit = 100
     } = options;
     
-    // Extract pagination parameters
-    let { page = 1, limit = defaultLimit } = paginationDto || {};
+    // Extract pagination parameters with safer defaults
+    let page = 1;
+    let limit = defaultLimit;
+    
+    if (paginationDto) {
+      // Parse pagination values more safely
+      if (paginationDto.page !== undefined) {
+        const parsedPage = Number(paginationDto.page);
+        if (!isNaN(parsedPage) && parsedPage > 0) {
+          page = parsedPage;
+        }
+      }
+      
+      if (paginationDto.limit !== undefined) {
+        const parsedLimit = Number(paginationDto.limit);
+        if (!isNaN(parsedLimit) && parsedLimit > 0) {
+          limit = parsedLimit;
+        }
+      }
+    }
     
     // Ensure limit doesn't exceed maximum
     limit = Math.min(limit, maxLimit);
@@ -144,26 +175,40 @@ export class FilterService {
     // Use provided orderBy or build from query
     const sortOptions = orderBy || this.buildSortOptions(paginationDto || {}, options);
     
-    // Get total count for pagination
-    const total = await model.count({ where });
-    
-    // Get paginated results
-    const data = await model.findMany({
-      where,
-      include,
-      skip,
-      take: limit,
-      orderBy: sortOptions,
-    });
-    
-    return {
-      data,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    try {
+      // Get total count for pagination
+      const total = await model.count({ where });
+      
+      // Get paginated results
+      const data = await model.findMany({
+        where,
+        include,
+        skip,
+        take: limit,
+        orderBy: sortOptions,
+      });
+      
+      return {
+        data,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
+    } catch (error) {
+      // If there's an error with the query, log it and return empty results
+      console.error('Error in pagination query:', error);
+      return {
+        data: [],
+        meta: {
+          total: 0,
+          page,
+          limit,
+          totalPages: 0,
+        },
+      };
+    }
   }
 } 

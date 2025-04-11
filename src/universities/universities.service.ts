@@ -140,13 +140,23 @@ export class UniversitiesService {
         caseSensitive: false
       };
       
-      // Build filter query
-      const query = { 
-        ...paginationDto, 
-        countryCode, 
-        cityId,
-        type
+      // Build filter query with proper handling of optional parameters
+      const query: Record<string, any> = {
+        ...paginationDto
       };
+      
+      // Only add parameters to the query if they have valid values
+      if (countryCode !== undefined && countryCode !== null) {
+        query.countryCode = countryCode;
+      }
+      
+      if (cityId) {
+        query.cityId = cityId;
+      }
+      
+      if (type) {
+        query.type = type;
+      }
       
       const where = this.filterService.buildFilterQuery(query, filterOptions as FilterOptions);
       
