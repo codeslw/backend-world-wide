@@ -207,10 +207,10 @@ export class ProgramsService {
   private localizeProgram(program: any, lang: string) {
     const result = { ...program };
     
-    // Set name based on language
-    result.name = program[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || 
-                  program.nameUz || 
-                  program.nameRu;
+    // Set title based on language
+    result.title = program[`title${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || 
+                  program.titleUz || 
+                  program.titleRu;
     
     // Set description based on language
     result.description = program[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || 
