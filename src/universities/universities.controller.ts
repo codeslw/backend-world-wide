@@ -32,10 +32,10 @@ export class UniversitiesController {
   }
 
   @Post('create/many')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles(Role.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create multiple universities at once (Admin only)' })
+  @ApiOperation({ summary: 'Create multiple universities at once' })
   @ApiBody({ type: [CreateUniversityDto] })
   @ApiResponse({ status: 201, description: 'Universities successfully created', type: [UniversityResponseDto] })
   @ApiResponse({ status: 400, description: 'Bad request - Invalid data provided', type: ErrorResponseDto })

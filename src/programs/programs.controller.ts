@@ -32,10 +32,10 @@ export class ProgramsController {
   }
 
   @Post('create/many')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles(Role.ADMIN)
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Create multiple programs at once (Admin only)' })
+  @ApiOperation({ summary: 'Create multiple programs at once' })
   @ApiResponse({ status: 201, description: 'Programs successfully created' })
   @ApiResponse({ status: 400, description: 'Bad request - Invalid data provided', type: ErrorResponseDto })
   @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })

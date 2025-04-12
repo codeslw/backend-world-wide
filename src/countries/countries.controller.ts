@@ -32,10 +32,10 @@ export class CountriesController {
   }
 
   @Post('create/many')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles(Role.ADMIN)
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Create multiple countries at once (Admin only)' })
+  @ApiOperation({ summary: 'Create multiple countries at once' })
   @ApiResponse({ status: 201, description: 'Countries successfully created' })
   @ApiResponse({ status: 400, description: 'Bad request - Invalid data provided', type: ErrorResponseDto })
   @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })

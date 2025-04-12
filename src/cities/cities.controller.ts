@@ -32,10 +32,10 @@ export class CitiesController {
   }
 
   @Post('create/many')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles(Role.ADMIN)
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Create multiple cities at once (Admin only)' })
+  @ApiOperation({ summary: 'Create multiple cities at once' })
   @ApiResponse({ status: 201, description: 'Cities successfully created' })
   @ApiResponse({ status: 400, description: 'Bad request - Invalid data provided', type: ErrorResponseDto })
   @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
