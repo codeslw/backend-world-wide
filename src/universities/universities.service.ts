@@ -40,7 +40,8 @@ export class UniversitiesService {
         photoUrl: createUniversityDto.photoUrl,
         email: createUniversityDto.email,
         phone: createUniversityDto.phone,
-        address: createUniversityDto.address
+        address: createUniversityDto.address,
+        programs: { connect: createUniversityDto.programs.map(program => ({ id: program })) }
       };
 
       return this.prisma.university.create({ data });
@@ -127,6 +128,12 @@ export class UniversitiesService {
           {
             field: 'id',
             queryParam: 'ids',
+            operator: 'in',
+            isArray: true
+          },
+          {
+            field: 'programs',
+            queryParam: 'programs',
             operator: 'in',
             isArray: true
           }
@@ -241,10 +248,32 @@ export class UniversitiesService {
         throw new EntityNotFoundException('University', id);
       }
       
+      // Extract relation fields for proper formatting
+      const { countryCode, cityId, programs, ...otherFields } = updateUniversityDto;
+
+      // Prepare the data object for Prisma
+      const data: any = { ...otherFields };
+      
+      // Add relation fields if they exist
+      if (countryCode) {
+        data.country = { connect: { code: countryCode } };
+      }
+      
+      if (cityId) {
+        data.city = { connect: { id: cityId } };
+      }
+      
+      if (programs && programs.length > 0) {
+        data.programs = { 
+          set: [], // Clear existing connections
+          connect: programs.map(programId => ({ id: programId }))
+        };
+      }
+      
       // Proceed with update
       return await this.prisma.university.update({
         where: { id },
-        data: updateUniversityDto,
+        data,
       });
     } catch (error) {
       // If it's already our custom exception, just rethrow it

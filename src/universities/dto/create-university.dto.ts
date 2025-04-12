@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsInt, IsEnum, IsNumber, IsUrl, IsOptional, IsDate, Min, Max, IsEmail, IsPhoneNumber } from 'class-validator';
+import { IsString, IsInt, IsEnum, IsNumber, IsUrl, IsOptional, IsDate, Min, Max, IsEmail, IsPhoneNumber, IsArray } from 'class-validator';
 import { UniversityType } from '../../common/enum/university-type.enum';
 
 export class CreateUniversityDto {
@@ -104,4 +104,9 @@ export class CreateUniversityDto {
   @IsUrl()
   @IsOptional()
   photoUrl?: string;
+  
+  @ApiProperty({ description: 'Programs', type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  programs: string[];
 } 
