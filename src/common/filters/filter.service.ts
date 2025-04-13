@@ -65,6 +65,15 @@ export class FilterService {
         case 'in':
           where[field] = { in: Array.isArray(value) ? value : [value] };
           break;
+        case 'some':
+          where[field] = { some: value };
+          break;
+        case 'every':
+          where[field] = { every: value };
+          break;
+        case 'none':
+          where[field] = { none: value };
+          break;
         case 'not':
           where[field] = { not: value };
           break;

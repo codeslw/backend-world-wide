@@ -6,6 +6,7 @@ import { PaginationDto } from '../common/dto/pagination.dto';
 import { FilterService } from '../common/filters/filter.service';
 import { FilterOptions, PaginationOptions } from '../common/filters/filter.interface';
 import { EntityNotFoundException, InvalidDataException } from '../common/exceptions/app.exceptions';
+import { UniversityFilterDto } from './dto/university-filter.dto';
 
 @Injectable()
 export class UniversitiesService {
@@ -52,9 +53,7 @@ export class UniversitiesService {
   }
 
   async findAll(
-    countryCode?: number, 
-    cityId?: string, 
-    type?: string,
+    filterDto: UniversityFilterDto,
     lang: string = 'uz', 
     paginationDto?: PaginationDto
   ) {
@@ -134,8 +133,15 @@ export class UniversitiesService {
           {
             field: 'programs',
             queryParam: 'programs',
-            operator: 'in',
-            isArray: true
+            operator: 'some',
+            transform: (value) => {
+              if (Array.isArray(value)) {
+                return { id: { in: value } };
+              } else if (typeof value === 'string') {
+                return { id: { in: value.split(',') } };
+              }
+              return { id: { equals: value } };
+            }
           }
         ],
         searchFields: [
@@ -147,23 +153,11 @@ export class UniversitiesService {
         caseSensitive: false
       };
       
-      // Build filter query with proper handling of optional parameters
-      const query: Record<string, any> = {
-        ...paginationDto
+      // Build filter query using the new filterDto
+      const query = {
+        ...paginationDto,
+        ...filterDto
       };
-      
-      // Only add parameters to the query if they have valid values
-      if (countryCode !== undefined && countryCode !== null) {
-        query.countryCode = countryCode;
-      }
-      
-      if (cityId) {
-        query.cityId = cityId;
-      }
-      
-      if (type) {
-        query.type = type;
-      }
       
       const where = this.filterService.buildFilterQuery(query, filterOptions as FilterOptions);
       
@@ -189,7 +183,7 @@ export class UniversitiesService {
         paginationOptions as PaginationOptions,
       );
       
-      if (result.data.length === 0 && (countryCode || cityId || type)) {
+      if (result.data.length === 0 && (filterDto.countryCode || filterDto.cityId || filterDto.type || filterDto.programs)) {
         // If specific filters were provided but no results found, return empty result
         // but don't throw an error - this is expected behavior for search/filters
         return {

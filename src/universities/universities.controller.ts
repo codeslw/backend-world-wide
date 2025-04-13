@@ -11,6 +11,7 @@ import { PaginationDto } from '../common/dto/pagination.dto';
 import { UniversityResponseDto, PaginatedUniversityResponseDto } from './dto/university-response.dto';
 import { UniversityType } from '../common/enum/university-type.enum';
 import { ErrorResponseDto } from '../common/dto/error-response.dto';
+import { UniversityFilterDto } from './dto/university-filter.dto';
 
 @ApiTags('universities')
 @Controller('universities')
@@ -62,19 +63,18 @@ export class UniversitiesController {
   @ApiQuery({ name: 'maxAcceptanceRate', required: false, description: 'Filter by maximum acceptance rate' })
   @ApiQuery({ name: 'minApplicationFee', required: false, description: 'Filter by minimum application fee' })
   @ApiQuery({ name: 'maxApplicationFee', required: false, description: 'Filter by maximum application fee' })
+  @ApiQuery({ name: 'programs', required: false, isArray: true, description: 'Filter by program IDs (comma-separated UUIDs)' })
   @ApiQuery({ name: 'sortBy', required: false, description: 'Field to sort by' })
   @ApiQuery({ name: 'sortDirection', required: false, enum: ['asc', 'desc'], description: 'Sort direction' })
   @ApiHeader({ name: 'Accept-Language', enum: ['uz', 'ru', 'en'], description: 'Language preference' })
   @ApiResponse({ status: 200, description: 'List of universities', type: PaginatedUniversityResponseDto })
   @ApiResponse({ status: 400, description: 'Bad request - Invalid parameters', type: ErrorResponseDto })
   findAll(
-    @Query('countryCode') countryCode?: number,
-    @Query('cityId') cityId?: string,
-    @Query('type') type?: string,
     @Headers('Accept-Language') lang: string = 'uz',
-    @Query() paginationDto?: PaginationDto,
+    @Query() filterDto: UniversityFilterDto,
+    @Query() paginationDto: PaginationDto,
   ) {
-    return this.universitiesService.findAll(countryCode, cityId, type, lang, paginationDto);
+    return this.universitiesService.findAll(filterDto, lang, paginationDto);
   }
 
   @Get(':id')

@@ -1,6 +1,6 @@
 export interface FilterConfig {
   field: string;
-  operator?: 'equals' | 'contains' | 'in' | 'gt' | 'gte' | 'lt' | 'lte' | 'between' | 'startsWith' | 'endsWith' | 'not';
+  operator?: 'equals' | 'contains' | 'in' | 'gt' | 'gte' | 'lt' | 'lte' | 'between' | 'startsWith' | 'endsWith' | 'not' | 'some' | 'every' | 'none';
   queryParam: string;
   transform?: (value: any) => any;
   isArray?: boolean;
