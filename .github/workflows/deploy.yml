@@ -93,7 +93,7 @@ jobs:
             
             # Run database seed
             echo "Seeding database with initial data..."
-            docker-compose exec -T api npm run prisma:seed
+            # docker-compose exec -T api npm run prisma:seed
             
             # Verify containers are running
             echo "Deployed containers:"

@@ -72,8 +72,10 @@ export class UniversitiesController {
   findAll(
     @Headers('Accept-Language') lang: string = 'uz',
     @Query() filterDto: UniversityFilterDto,
-    @Query() paginationDto: PaginationDto,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
   ) {
+    const paginationDto: PaginationDto = { page, limit };
     return this.universitiesService.findAll(filterDto, lang, paginationDto);
   }
 
