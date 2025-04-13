@@ -55,9 +55,9 @@ export class UniversitiesService {
   async findAll(
     filterDto: UniversityFilterDto,
     lang: string = 'uz', 
-    paginationDto?: PaginationDto
   ) {
     try {
+      const paginationDto: PaginationDto = { page: filterDto.page, limit: filterDto.limit };
       // Define filter options
       const filterOptions = {
         filters: [
@@ -155,7 +155,7 @@ export class UniversitiesService {
       
       // Build filter query using the new filterDto
       const query = {
-        ...paginationDto,
+        // ...paginationDto,
         ...filterDto
       };
       

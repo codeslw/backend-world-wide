@@ -98,4 +98,18 @@ export class UniversityFilterDto {
   @IsArray()
   @IsUUID('4', { each: true })
   programs?: string[];
+
+  @ApiProperty({ description: 'Page number', required: false })
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  page?: number;
+
+  @ApiProperty({ description: 'Items per page', required: false })
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  limit?: number;
+  
+  
 } 
