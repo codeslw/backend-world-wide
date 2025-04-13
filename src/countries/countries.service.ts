@@ -86,9 +86,9 @@ export class CountriesService {
       // Define pagination options
       const paginationOptions = {
         defaultLimit: 10,
-        maxLimit: 50,
-        defaultSortField: 'createdAt',
-        defaultSortDirection: 'desc'
+        maxLimit: 300,
+        defaultSortField: 'nameUz',
+        defaultSortDirection: 'asc'
       };
       
       // Apply pagination and get results

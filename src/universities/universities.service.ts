@@ -164,7 +164,7 @@ export class UniversitiesService {
       // Define pagination options
       const paginationOptions = {
         defaultLimit: 10,
-        maxLimit: 50,
+        maxLimit: 300,
         defaultSortField: 'ranking',
         defaultSortDirection: 'asc'
       };

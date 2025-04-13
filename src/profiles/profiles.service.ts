@@ -54,7 +54,7 @@ export class ProfilesService {
       // Define pagination options
       const paginationOptions = {
         defaultLimit: 10,
-        maxLimit: 50,
+        maxLimit: 300,
         defaultSortField: 'createdAt',
         defaultSortDirection: 'desc'
       };
