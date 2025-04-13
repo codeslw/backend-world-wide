@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, Param, Post, Res, UploadedFile, UploadedFiles, UseInterceptors, Query, BadRequestException, MaxFileSizeValidator, FileTypeValidator, ParseFilePipe, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Get, Param, Post, Res, UploadedFile, UploadedFiles, UseInterceptors, Query, BadRequestException, MaxFileSizeValidator, FileTypeValidator, ParseFilePipe, UseGuards, Body } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { FilesService } from './files.service';
 import { ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiParam, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
@@ -89,8 +89,24 @@ export class FilesController {
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
   @ApiResponse({ 
     status: 200, 
-    description: 'List of files', 
-    type: [FileResponseDto] 
+    description: 'List of files with pagination metadata', 
+    schema: {
+      properties: {
+        data: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/FileResponseDto' }
+        },
+        meta: {
+          type: 'object',
+          properties: {
+            total: { type: 'number' },
+            page: { type: 'number' },
+            limit: { type: 'number' },
+            totalPages: { type: 'number' }
+          }
+        }
+      }
+    }
   })
   async getAllFiles(
     @Query('page') page?: string,
@@ -124,12 +140,19 @@ export class FilesController {
     return this.filesService.downloadFile(file, res);
   }
   
-  @Delete(':id')
-  @ApiOperation({ summary: 'Delete file by ID' })
-  @ApiParam({ name: 'id', description: 'File ID' })
+  @Delete('url')
+  @ApiOperation({ summary: 'Delete file by URL' })
+  @ApiBody({
+    schema: {
+      properties: {
+        url: { type: 'string', description: 'File URL to delete' }
+      },
+      required: ['url']
+    }
+  })
   @ApiResponse({ status: 200, description: 'File deleted successfully' })
   @ApiResponse({ status: 404, description: 'File not found' })
-  async deleteFile(@Param('id') id: string) {
-    return this.filesService.deleteFile(id);
+  async deleteFileByUrl(@Body('url') url: string) {
+    return this.filesService.deleteFileByUrl(url);
   }
 }

@@ -129,4 +129,19 @@ export class DigitalOceanService {
     
     return this.s3.getSignedUrl('getObject', params);
   }
+
+  async deleteFile(key: string): Promise<void> {
+    const params = {
+      Bucket: this.configService.get('DIGITAL_OCEAN_BUCKET'),
+      Key: key,
+    };
+    
+    try {
+      await this.s3.deleteObject(params).promise();
+      this.logger.log(`Successfully deleted file ${key}`);
+    } catch (error) {
+      this.logger.error(`Error deleting file ${key}: ${error.message}`);
+      throw error;
+    }
+  }
 }

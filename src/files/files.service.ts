@@ -108,19 +108,53 @@ export class FilesService {
 
   async deleteFile(id: string) {
     // Get the file first to get the URL
-    const file = await this.getFile(id);
+    const file = await this.prisma.file.findUnique({
+      where: { id },
+    });
+    
+    if (!file) {
+      throw new NotFoundException(`File with ID ${id} not found`);
+    }
     
     try {
-      // Delete from DigitalOcean if needed
-      // This depends on your DigitalOceanService implementation
-      // await this.digitalOceanService.deleteFile(file.url);
+      // Delete from DigitalOcean
+      await this.digitalOceanService.deleteFile(file.url);
       
       // Delete from database
       return await this.prisma.file.delete({
         where: { id },
       });
     } catch (error) {
-      throw new NotFoundException(`File with ID ${id} not found`);
+      throw new NotFoundException(`Error deleting file with ID ${id}: ${error.message}`);
     }
+  }
+
+  async deleteFileByUrl(url: string) {
+    // Extract the key from the URL if it's a presigned URL
+    let key = url;
+    if (url.includes('?')) {
+      key = url.split('?')[0].split('/').slice(-2).join('/');
+    }
+    
+    // Find the file in the database
+    const file = await this.prisma.file.findFirst({
+      where: { 
+        url: { 
+          contains: key 
+        } 
+      },
+    });
+    
+    if (!file) {
+      throw new NotFoundException(`File with URL ${url} not found`);
+    }
+    
+    // Delete the file
+    await this.digitalOceanService.deleteFile(key);
+    
+    // Delete from database
+    return await this.prisma.file.delete({
+      where: { id: file.id },
+    });
   }
 }
