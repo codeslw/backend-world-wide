@@ -4,6 +4,12 @@ import { Type } from 'class-transformer';
 import { UniversityType } from '../../common/enum/university-type.enum';
 
 export class UniversityFilterDto {
+
+  @ApiProperty({ description: 'Search query', required: false })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
   @ApiProperty({ description: 'Country code', required: false })
   @IsOptional()
   @IsInt()
@@ -110,6 +116,8 @@ export class UniversityFilterDto {
   @IsInt()
   @Type(() => Number)
   limit?: number;
+
+
   
   
 } 
