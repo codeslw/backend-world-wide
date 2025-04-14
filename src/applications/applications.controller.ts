@@ -35,7 +35,8 @@ import { ForbiddenActionException } from '../common/exceptions/app.exceptions';
 // Define a custom request interface that includes the user property
 interface RequestWithUser extends Request {
   user: {
-    id: string;
+    userId: string;
+    email: string;
     role: Role;
     [key: string]: any;
   };
@@ -75,7 +76,7 @@ export class ApplicationsController {
     @Req() req: RequestWithUser,
     @Body() createApplicationDto: CreateApplicationDto,
   ) {
-    return this.applicationsService.create(req.user.id, createApplicationDto);
+    return this.applicationsService.create(req.user.userId, createApplicationDto);
   }
 
   @Get()
@@ -108,7 +109,7 @@ export class ApplicationsController {
   ) {
     // If user is CLIENT, only return their applications
     if (req.user.role === Role.CLIENT) {
-      return this.applicationsService.findAllByUserId(req.user.id);
+      return this.applicationsService.findAllByUserId(req.user.userId);
     }
 
     // For other roles or if no role, get all applications with pagination
@@ -171,7 +172,7 @@ export class ApplicationsController {
     // If user is CLIENT, ensure they can only access their own applications
     if (
       req.user.role === Role.CLIENT &&
-      application.profile.userId !== req.user.id
+      application.profile.userId !== req.user.userId
     ) {
       throw new ForbiddenActionException(
         'You do not have permission to access this application',
@@ -235,12 +236,12 @@ export class ApplicationsController {
       
       // If there are admin updates, apply them
       if (Object.keys(adminUpdates).length > 0) {
-        return this.applicationsService.update(id, req.user.id, adminUpdates);
+        return this.applicationsService.update(id, req.user.userId, adminUpdates);
       }
     }
 
     // For all other users, use their user ID to verify ownership
-    return this.applicationsService.update(id, req.user.id, updateApplicationDto);
+    return this.applicationsService.update(id, req.user.userId, updateApplicationDto);
   }
 
   @Delete(':id')
@@ -269,7 +270,7 @@ export class ApplicationsController {
     type: ErrorResponseDto,
   })
   remove(@Param('id') id: string, @Req() req: RequestWithUser) {
-    return this.applicationsService.remove(id, req.user.id);
+    return this.applicationsService.remove(id, req.user.userId);
   }
 
   @Post(':id/submit')
@@ -298,6 +299,6 @@ export class ApplicationsController {
     type: ErrorResponseDto,
   })
   submit(@Param('id') id: string, @Req() req: RequestWithUser) {
-    return this.applicationsService.submit(id, req.user.id);
+    return this.applicationsService.submit(id, req.user.userId);
   }
 }

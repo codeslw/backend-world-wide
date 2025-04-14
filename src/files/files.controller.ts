@@ -84,6 +84,7 @@ export class FilesController {
   }
 
   @Get()
+  
   @ApiOperation({ summary: 'Get all files' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
