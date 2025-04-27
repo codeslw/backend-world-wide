@@ -7,7 +7,7 @@ import { ApplicationsRepository } from './applications.repository';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
 import { ProfilesService } from '../profiles/profiles.service';
-import { ApplicationStatus } from './enums/application.enum';
+import { ApplicationStatus } from '@prisma/client';
 import { 
   EntityNotFoundException,
   ForbiddenActionException,
@@ -187,7 +187,7 @@ export class ApplicationsService {
       }
 
       // Only allow submission of applications in DRAFT state
-      if (String(application.applicationStatus) !== 'DRAFT') {
+      if (application.applicationStatus !== ApplicationStatus.DRAFT) {
         throw new ForbiddenActionException('Only draft applications can be submitted');
       }
 

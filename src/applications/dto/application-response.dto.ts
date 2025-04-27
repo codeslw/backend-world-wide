@@ -1,12 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ProfileResponseDto } from '../../profiles/dto/profile-response.dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination-response.dto';
-import {
-  Gender,
-  LanguageTest,
-  IntakeSeason,
-  ApplicationStatus,
-} from '../enums/application.enum';
+import { Gender, LanguageTest, IntakeSeason, ApplicationStatus } from '@prisma/client';
 
 export class ApplicationResponseDto {
   @ApiProperty({ description: 'Application ID' })
