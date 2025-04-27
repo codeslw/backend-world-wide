@@ -37,19 +37,16 @@ export class CatalogController {
 
   @Get('cities')
   @ApiOperation({ summary: 'Get all cities for catalog display, optionally filtered by country ID' })
-  @ApiQuery({ name: 'countryCode', required: false, description: 'Filter by country code' })
+  @ApiQuery({ name: 'countryCode', required: false, description: 'Filter by country code (numeric)' })
   @ApiHeader({ name: 'Accept-Language', enum: ['uz', 'ru', 'en'], description: 'Language preference' })
   @ApiResponse({ status: 200, description: 'List of cities', type: PaginatedCityResponseDto })
   getCities(
-    @Query('countryCode') countryCodeStr?: string,
+    @Query('countryCode', new ParseIntPipe({ optional: true })) countryCode?: number,
     @Headers('Accept-Language') lang: string = 'uz',
     @Query() paginationDto?: PaginationDto,
   ) {
-    // Only convert to number if the parameter exists and is a valid number
-    const countryCode = countryCodeStr ? parseInt(countryCodeStr, 10) : undefined;
-    // Only pass the countryCode if it's a valid number
     return this.catalogService.getCities(
-      !isNaN(countryCode) ? countryCode : undefined, 
+      countryCode,
       lang, 
       paginationDto
     );
