@@ -2,8 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../db/prisma.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
-import { ApplicationStatus, Gender } from './enums/application.enum';
-import { Prisma } from '@prisma/client';
+import { Prisma, Gender, ApplicationStatus } from '@prisma/client';
 
 @Injectable()
 export class ApplicationsRepository {
