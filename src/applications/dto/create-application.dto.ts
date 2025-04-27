@@ -11,12 +11,7 @@ import {
   IsUrl,
   MinLength,
 } from 'class-validator';
-import {
-  Gender,
-  LanguageTest,
-  IntakeSeason,
-  ApplicationStatus,
-} from '../enums/application.enum';
+import { Gender, LanguageTest, IntakeSeason, ApplicationStatus } from '@prisma/client';
 
 export class CreateApplicationDto {
   // Personal Information

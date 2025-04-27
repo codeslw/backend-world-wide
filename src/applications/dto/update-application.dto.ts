@@ -10,12 +10,7 @@ import {
   IsArray,
   IsUrl,
 } from 'class-validator';
-import {
-  Gender,
-  LanguageTest,
-  IntakeSeason,
-  ApplicationStatus,
-} from '../enums/application.enum';
+import { Gender, LanguageTest, IntakeSeason, ApplicationStatus } from '@prisma/client';
 
 export class UpdateApplicationDto {
   // Personal Information
