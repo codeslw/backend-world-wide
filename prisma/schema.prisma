@@ -44,7 +44,9 @@ model Program {
   parent      Program?  @relation("ProgramToProgram", fields: [parentId], references: [id])
   children    Program[] @relation("ProgramToProgram")
 
-  universities University[]
+  // Removed direct relation to University
+  // universities University[] 
+  universityPrograms UniversityProgram[] // Relation to the join table
 
   @@map("programs")
 }
@@ -81,7 +83,7 @@ model University {
   nameRu                String
   nameEn                String
   established           Int
-  type                  String
+  type                  String // Consider changing to UniversityType enum if values are fixed
   descriptionUz         String
   descriptionRu         String
   descriptionEn         String
@@ -95,17 +97,40 @@ model University {
   studentsCount         Int
   acceptanceRate        Float
   avgApplicationFee     Float
-  tuitionFeeMin         Float
-  tuitionFeeMax         Float
-  tuitionFeeCurrency    String?  @default("USD")
+  // Removed university-wide tuition fields
+  // tuitionFeeMin         Float 
+  // tuitionFeeMax         Float
+  // tuitionFeeCurrency    String?  @default("USD")
   photoUrl              String?
   cityId                String
   city                  City     @relation(fields: [cityId], references: [id])
   countryCode           Int
   country               Country  @relation(fields: [countryCode], references: [code])
-  programs              Program[]
+  // Removed direct relation to Program
+  // programs              Program[] 
+  universityPrograms    UniversityProgram[] // Relation to the join table
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+
+  @@map("universities") // Added map explicitly
+}
+
+// New join table for University-Program relationship with tuition fees
+model UniversityProgram {
+  id                 String   @id @default(uuid())
+  universityId       String
+  university         University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  programId          String
+  program            Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  tuitionFee         Float
+  tuitionFeeCurrency String   @default("USD")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([universityId, programId]) // Ensure a program is added only once per university
+  @@index([universityId])
+  @@index([programId])
+  @@map("university_programs")
 }
 
 enum UniversityType {
@@ -202,7 +227,6 @@ enum LanguageTest {
 enum Gender {
   MALE
   FEMALE
-  OTHER
 }
 
 model Application {
