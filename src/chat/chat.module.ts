@@ -22,14 +22,10 @@ import { WebSocketDocsController } from './websocket-docs.controller';
   ],
   controllers: [ChatController, WebSocketDocsController],
   providers: [
-    {
-      provide: 'CHAT_SERVICE_PROVIDER',
-      useClass: ChatService,
-    },
+    ChatService,
     ChatGateway,
     PrismaService,
-    WebSocketDocsController
   ],
-  exports: ['CHAT_SERVICE_PROVIDER', ChatGateway]
+  exports: [ChatService, ChatGateway]
 })
 export class ChatModule {} 

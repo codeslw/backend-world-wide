@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Query, UseGuards, Request, Inject, OnModuleInit, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, UseGuards, Request, OnModuleInit, UnauthorizedException } from '@nestjs/common';
 import { ChatService, PartialAdminInfo } from './chat.service';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { CreateMessageDto } from './dto/create-message.dto';
@@ -30,7 +30,7 @@ const mapToPrismaRole = (role: Role): PrismaRole => {
 @ApiBearerAuth()
 export class ChatController implements OnModuleInit {
   constructor(
-    @Inject('CHAT_SERVICE_PROVIDER') private readonly chatService: ChatService,
+    private readonly chatService: ChatService,
     private readonly chatGateway: ChatGateway,
     private moduleRef: ModuleRef
   ) {}
