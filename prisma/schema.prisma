@@ -170,7 +170,7 @@ model Chat {
 model Message {
   id         String    @id @default(uuid())
   chatId     String
-  chat       Chat      @relation(fields: [chatId], references: [id])
+  chat       Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
   senderId   String       // Reference to User model
   sender     User      @relation(fields: [senderId], references: [id])
   text       String?

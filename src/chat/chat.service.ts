@@ -240,17 +240,22 @@ export class ChatService {
     const updatedChat = await this.prisma.chat.update({
       where: { id: chatId },
       data: { 
-        admin: {
-          connect: { id: adminId }
-        },
-        status: ChatStatus.ACTIVE // Auto-activate when admin is assigned
+        admin: { connect: { id: adminId } },
+        status: ChatStatus.ACTIVE 
       },
+      include: { 
+        admin: { 
+          select: { id: true, email: true, profile: true, role: true } 
+        } 
+      } 
     });
 
     // Notify about admin assignment and status change
-    if (this.chatGateway) {
+    if (this.chatGateway && updatedChat.admin) { 
+      const adminInfo: PartialAdminInfo = updatedChat.admin;
+      // Pass the adminInfo object as the third argument
+      this.chatGateway.notifyAdminAssigned(chatId, adminId, adminInfo); 
       this.chatGateway.notifyChatStatusChange(chatId, updatedChat.status);
-      this.chatGateway.notifyAdminAssigned(chatId, adminId);
     }
 
     return updatedChat;
@@ -288,53 +293,99 @@ export class ChatService {
     return updatedChat;
   }
 
-  async createMessage(userId: string, chatId: string, createMessageDto: CreateMessageDto) {
-    const chat = await this.prisma.chat.findUnique({
+  async createMessage(userId: string, userRole: PrismaRole, createMessageDto: CreateMessageDto) {
+    const { chatId, text, fileId, replyToId } = createMessageDto;
+
+    let chat = await this.prisma.chat.findUnique({
       where: { id: chatId },
+      // Include admin to check assignment status
+      include: { admin: true } 
     });
 
     if (!chat) {
       throw new NotFoundException(`Chat with ID ${chatId} not found`);
     }
 
-    // Check if user has access to this chat
-    if (chat.clientId !== userId && chat.adminId !== userId) {
+    // Check if user has access (Client owns, Admin assigned, or Admin sending to unassigned)
+    if (chat.clientId !== userId && chat.adminId !== userId && userRole !== PrismaRole.ADMIN) {
       throw new ForbiddenException('You do not have access to this chat');
     }
 
-    // Check if chat is active
+    let adminAssignedInThisRequest = false;
+    let assignedAdminInfo: PartialAdminInfo | null = null;
+
+    // --- Start: Admin Auto-Assignment Logic --- 
+    // If chat is unassigned AND the sender is an admin, assign the chat to them BEFORE creating the message.
+    if (!chat.adminId && userRole === PrismaRole.ADMIN) {
+      try {
+        console.log(`Admin ${userId} sending first message to unassigned chat ${chatId}. Assigning...`);
+        // Update the chat in the database to assign admin and set status to ACTIVE
+        const updatedChatData = await this.prisma.chat.update({
+          where: { id: chatId },
+          data: { 
+            admin: { connect: { id: userId } },
+            status: ChatStatus.ACTIVE 
+          },
+          // Include admin details needed for notification
+          include: { admin: { select: { id: true, email: true, profile: true, role: true } } }
+        });
+        
+        // Update the local chat object for consistency
+        chat = updatedChatData; 
+        assignedAdminInfo = updatedChatData.admin as PartialAdminInfo;
+        adminAssignedInThisRequest = true;
+
+        console.log(`Admin ${userId} successfully assigned to chat ${chatId}. Status: ${chat.status}`);
+
+        // Notify about assignment immediately
+        if (this.chatGateway && assignedAdminInfo) {
+          this.chatGateway.notifyAdminAssigned(chatId, userId, assignedAdminInfo);
+          this.chatGateway.notifyChatStatusChange(chatId, chat.status); // Notify status change
+        }
+
+      } catch (error) {
+        console.error(`Failed to auto-assign admin ${userId} to chat ${chatId}:`, error);
+        // Decide if this should prevent message sending or just log
+        throw new Error('Failed to assign admin to chat before sending message'); 
+      }
+    }
+    // --- End: Admin Auto-Assignment Logic --- 
+
+    // Now, re-check chat status after potential assignment
     if (chat.status !== ChatStatus.ACTIVE) {
-      throw new ForbiddenException('Cannot send messages to a closed or pending chat');
+      // If admin was just assigned, chat status is now ACTIVE. If not, and status isn't active, forbid.
+       throw new ForbiddenException(`Cannot send messages to a chat with status: ${chat.status}`);
     }
 
     // Prepare message data
     const messageData: Prisma.MessageCreateInput = {
       chat: { connect: { id: chatId } },
       sender: { connect: { id: userId } },
-      text: createMessageDto.text || '',
+      text: text || '',
+      readBy: { connect: { id: userId } } // Auto-read by sender
     };
 
-    // If there's a file, get its URL
-    if (createMessageDto.fileId) {
+    // Handle file URL
+    if (fileId) {
       try {
-        const file = await this.filesService.getFile(createMessageDto.fileId);
+        const file = await this.filesService.getFile(fileId);
+        if (!file) throw new NotFoundException(); // Ensure file exists
         messageData.fileUrl = file.url;
       } catch (error) {
-        throw new NotFoundException(`File with ID ${createMessageDto.fileId} not found`);
+        console.error(`File service error for fileId ${fileId}:`, error);
+        throw new NotFoundException(`File with ID ${fileId} not found or failed to retrieve.`);
       }
     }
 
-    // If it's a reply, add the reference
-    if (createMessageDto.replyToId) {
-      const replyMessage = await this.prisma.message.findUnique({
-        where: { id: createMessageDto.replyToId },
+    // Handle reply
+    if (replyToId) {
+      const replyMessage = await this.prisma.message.findFirst({
+        where: { id: replyToId, chatId: chatId }, // Ensure reply is in the same chat
       });
-      
-      if (!replyMessage || replyMessage.chatId !== chatId) {
+      if (!replyMessage) {
         throw new NotFoundException('Reply message not found or belongs to a different chat');
       }
-      
-      messageData.replyTo = { connect: { id: createMessageDto.replyToId } };
+      messageData.replyTo = { connect: { id: replyToId } };
     }
 
     // Create the message
@@ -350,26 +401,20 @@ export class ChatService {
             profile: true,
           },
         },
-        readBy: {
-          select: {
-            id: true
-          }
-        }
+        readBy: { select: { id: true } }
       },
     });
 
-    // Mark as read by the sender automatically
-    await this.markMessagesAsRead([message.id], userId);
-
-    // Update the chat's updatedAt timestamp
+    // Update chat's updatedAt timestamp
+    // We do this separately to ensure it happens even if admin assignment failed but we allowed message sending
     await this.prisma.chat.update({
       where: { id: chatId },
       data: { updatedAt: new Date() },
     });
 
-    // Notify connected clients via WebSockets
+    // Notify about the new message (admin assignment notification already sent if applicable)
     if (this.chatGateway) {
-      this.chatGateway.notifyNewMessage(chatId, message);
+      this.chatGateway.notifyNewMessage(chatId, message as MessageWithSender);
     }
 
     return message;
