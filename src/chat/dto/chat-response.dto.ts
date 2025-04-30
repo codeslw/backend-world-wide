@@ -36,6 +36,9 @@ export class ChatResponseDto {
   @ApiProperty({ description: 'Last update date' })
   updatedAt: Date;
 
-  @ApiProperty({ description: 'Latest messages', type: [MessageResponseDto], required: false })
+  @ApiProperty({ description: 'Latest messages (or recent messages for getById)', type: [MessageResponseDto], required: false })
   messages?: MessageResponseDto[];
+
+  @ApiProperty({ description: 'Number of messages unread by the current user in this chat' })
+  unreadCount: number;
 } 

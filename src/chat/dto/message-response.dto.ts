@@ -37,6 +37,9 @@ export class MessageResponseDto {
   @ApiProperty({ description: 'Creation date' })
   createdAt: Date;
 
-  @ApiProperty({ description: 'Reply message', required: false })
+  @ApiProperty({ description: 'Reply message', type: () => MessageResponseDto, required: false })
   replyTo?: MessageResponseDto;
+
+  @ApiProperty({ description: 'Indicates if the message has been read by the current user' })
+  isReadByCurrentUser: boolean;
 } 

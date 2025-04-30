@@ -68,7 +68,7 @@ jobs:
             
             # Stop existing containers
             echo "Stopping existing containers..."
-            docker-compose down -v
+            docker-compose down 
             
             # Clean up Docker resources but preserve volumes
             echo "Cleaning up Docker resources..."
@@ -91,10 +91,7 @@ jobs:
             echo "Running database migrations..."
             docker-compose exec -T api npx prisma migrate deploy
             
-            # Run database seed
-            echo "Seeding database with initial data..."
-            # docker-compose exec -T api npm run prisma:seed
-            
+           
             # Verify containers are running
             echo "Deployed containers:"
             docker-compose ps

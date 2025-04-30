@@ -7,6 +7,7 @@ import { FilesService } from '../files/files.service';
 import { ChatGateway } from './chat.gateway';
 // Use Prisma-generated types directly
 import { Message, Prisma, User, Profile, Role as PrismaRole, ChatStatus } from '@prisma/client'; 
+import { MessageResponseDto } from './dto/message-response.dto'; // Import DTO
 
 // Define and export the interface for partial admin info
 export interface PartialAdminInfo {
@@ -29,6 +30,26 @@ export interface MessageWithSender extends Message {
   readBy?: { id: string }[]; // Ensure readBy is properly typed
 }
 
+// Helper function to map Prisma Message to MessageResponseDto structure
+const mapMessageToDto = (message: any, currentUserId: string): MessageResponseDto => {
+  if (!message) return null;
+
+  const isReadByCurrentUser = message.readBy?.some(reader => reader.id === currentUserId) || false;
+  const replyToDto = message.replyTo ? mapMessageToDto(message.replyTo, currentUserId) : null;
+
+  return {
+    id: message.id,
+    chatId: message.chatId,
+    sender: message.sender,
+    text: message.text,
+    fileUrl: message.fileUrl,
+    createdAt: message.createdAt,
+    replyToId: message.replyToId,
+    replyTo: replyToDto,
+    isReadByCurrentUser,
+  };
+};
+
 @Injectable()
 export class ChatService {
   constructor(
@@ -44,6 +65,21 @@ export class ChatService {
     this.chatGateway = gateway;
   }
 
+  // Helper to calculate unread count for a specific user in a chat
+  private async calculateUnreadCount(chatId: string, userId: string): Promise<number> {
+    return this.prisma.message.count({
+      where: {
+        chatId: chatId,
+        senderId: { not: userId }, // Messages not sent by the user
+        NOT: {
+          readBy: {
+            some: { id: userId }, // Messages not read by the user
+          },
+        },
+      },
+    });
+  }
+
   // --- Chat Methods --- 
 
   async createChat(userId: string, createChatDto: CreateChatDto) {
@@ -52,61 +88,61 @@ export class ChatService {
         client: { connect: { id: userId } },
         status: ChatStatus.PENDING, // Chats start as PENDING
       },
+      include: { client: { select: { id: true, email: true, profile: true, role: true } } } // Include client details
     });
 
-    // Handle initial message if provided
+    let initialMessageDto: MessageResponseDto | null = null;
     if (createChatDto.initialMessage) {
-      const initialMessageDto: CreateMessageDto = {
-        chatId: chat.id,
-        text: createChatDto.initialMessage,
-      };
-      // Need user role to call createMessage, assume CLIENT for chat creation
-      await this.createMessage(userId, PrismaRole.CLIENT, initialMessageDto);
+      const createMsgDto: CreateMessageDto = { chatId: chat.id, text: createChatDto.initialMessage };
+      const message = await this.createMessage(userId, PrismaRole.CLIENT, createMsgDto);
+      initialMessageDto = message; // createMessage now returns the DTO
     }
 
-    // Return chat details, fetch fresh to include message if created
-    return this.getChatById(chat.id, userId, PrismaRole.CLIENT);
+    return {
+        ...chat,
+        admin: null,
+        messages: initialMessageDto ? [initialMessageDto] : [],
+        unreadCount: 0, // Unread count is 0 for creator initially
+    };
   }
 
   async getChatById(chatId: string, userId: string, userRole: PrismaRole) {
-    const chat = await this.prisma.chat.findUnique({
+    const chatPrisma = await this.prisma.chat.findUnique({
       where: { id: chatId },
       include: {
-        client: { select: { id: true, email: true, profile: true } },
-        admin: { select: { id: true, email: true, profile: true, role: true } }, // Include role
+        client: { select: { id: true, email: true, profile: true, role: true } },
+        admin: { select: { id: true, email: true, profile: true, role: true } }, 
         messages: {
-          orderBy: { createdAt: 'desc' },
-          take: 20, // Initial load limit
+          orderBy: { createdAt: 'desc' }, // Fetch latest first for initial view
+          take: 20, 
           include: {
             sender: { select: { id: true, email: true, role: true, profile: true } },
-            replyTo: { 
-                include: { 
-                    sender: { select: { id: true, email: true, role: true, profile: true } } 
-                }
-            },
+            replyTo: { include: { sender: { select: { id: true, email: true, role: true, profile: true } } } },
             readBy: { select: { id: true } },
           },
         },
       },
     });
 
-    if (!chat) {
-      throw new NotFoundException(`Chat with ID ${chatId} not found`);
-    }
+    if (!chatPrisma) throw new NotFoundException(`Chat with ID ${chatId} not found`);
 
-    // Permission check
-    if (chat.clientId !== userId && chat.adminId !== userId && userRole !== PrismaRole.ADMIN) {
+    if (chatPrisma.clientId !== userId && chatPrisma.adminId !== userId && userRole !== PrismaRole.ADMIN) {
       throw new ForbiddenException('You do not have access to this chat');
     }
 
-    // Reverse messages for chronological order and add unread count
-    const messages = chat.messages.reverse() as MessageWithSender[];
-    const unreadCount = this.countUnreadMessages(messages, userId);
+    const unreadCount = await this.calculateUnreadCount(chatId, userId);
+    const messagesDto = chatPrisma.messages
+        .map(msg => mapMessageToDto(msg, userId))
+        .reverse(); // Reverse back to chronological for display
 
-    return { 
-        ...chat, 
-        admin: chat.admin as PartialAdminInfo | null, // Cast admin to partial type
-        messages, 
+    return {
+        id: chatPrisma.id,
+        client: chatPrisma.client,
+        admin: chatPrisma.admin as PartialAdminInfo | null,
+        status: chatPrisma.status,
+        createdAt: chatPrisma.createdAt,
+        updatedAt: chatPrisma.updatedAt,
+        messages: messagesDto,
         unreadCount 
     };
   }
@@ -130,11 +166,11 @@ export class ChatService {
       if (status) { where.status = status; }
     }
 
-    const chats = await this.prisma.chat.findMany({
+    const chatsPrisma = await this.prisma.chat.findMany({
       where,
       orderBy: { updatedAt: 'desc' },
       include: {
-        client: { select: { id: true, email: true, profile: true } },
+        client: { select: { id: true, email: true, profile: true, role: true } },
         admin: { select: { id: true, email: true, profile: true, role: true } },
         messages: {
           orderBy: { createdAt: 'desc' },
@@ -148,30 +184,33 @@ export class ChatService {
       },
     });
 
-    // Calculate unread count for each chat
-    return chats.map(chat => {
-        const lastMessage = chat.messages[0] as MessageWithSender | undefined;
-        // Simplified: unread = last message exists, not sent by user, not read by user
-        const isUnread = lastMessage && lastMessage.senderId !== userId && !lastMessage.readBy?.some(r => r.id === userId);
+    if (chatsPrisma.length === 0) return [];
+
+    const chatIds = chatsPrisma.map(c => c.id);
+    const unreadCounts = await this.prisma.message.groupBy({
+        by: ['chatId'],
+        where: {
+            chatId: { in: chatIds },
+            senderId: { not: userId },
+            NOT: { readBy: { some: { id: userId } } },
+        },
+        _count: { id: true },
+    });
+    const unreadCountMap = new Map(unreadCounts.map(item => [item.chatId, item._count.id]));
+
+    return chatsPrisma.map(chat => {
+        const lastMessageDto = chat.messages[0] ? mapMessageToDto(chat.messages[0], userId) : null;
         return {
-            ...chat,
+            id: chat.id,
+            client: chat.client,
             admin: chat.admin as PartialAdminInfo | null,
-            messages: lastMessage ? [lastMessage] : [], // Keep as array for type consistency
-            unreadCount: isUnread ? 1 : 0, // Simple unread flag based on last message
-            // Proper unread count might require a separate query or different logic
+            status: chat.status,
+            createdAt: chat.createdAt,
+            updatedAt: chat.updatedAt,
+            messages: lastMessageDto ? [lastMessageDto] : [],
+            unreadCount: unreadCountMap.get(chat.id) || 0,
         };
     });
-  }
-
-  // Simplified unread count - real implementation might be more complex
-  private countUnreadMessages(messages: MessageWithSender[], userId: string): number {
-    return messages.reduce((count, msg) => {
-        const isRead = msg.readBy?.some(reader => reader.id === userId);
-        if (!isRead && msg.senderId !== userId) {
-            return count + 1;
-        }
-        return count;
-    }, 0);
   }
 
   async assignAdminToChat(chatId: string, adminId: string) {
@@ -239,7 +278,7 @@ export class ChatService {
 
   // --- Message Methods --- 
 
-  async createMessage(userId: string, userRole: PrismaRole, createMessageDto: CreateMessageDto) {
+  async createMessage(userId: string, userRole: PrismaRole, createMessageDto: CreateMessageDto): Promise<MessageResponseDto> {
     const { chatId, text, fileId, replyToId } = createMessageDto;
 
     let chat = await this.prisma.chat.findUnique({ where: { id: chatId } });
@@ -345,7 +384,9 @@ export class ChatService {
       this.chatGateway.notifyNewMessage(chatId, message as MessageWithSender);
     }
 
-    return message as MessageWithSender;
+    const messageDto = mapMessageToDto(message, userId);
+
+    return messageDto;
   }
 
   async getChatMessages(chatId: string, userId: string, userRole: PrismaRole, page: number = 1, limit: number = 20) {
@@ -361,7 +402,7 @@ export class ChatService {
     const skip = (page - 1) * limit;
     const where = { chatId };
 
-    const [messages, total] = await Promise.all([
+    const [messagesPrisma, total] = await Promise.all([
       this.prisma.message.findMany({
         where,
         orderBy: { createdAt: 'asc' }, // Fetch oldest first for pagination
@@ -381,7 +422,7 @@ export class ChatService {
     ]);
 
     // Mark retrieved messages as read by the current user
-    const messageIdsToMark = messages
+    const messageIdsToMark = messagesPrisma
         .filter(msg => msg.senderId !== userId && !msg.readBy.some(r => r.id === userId))
         .map(msg => msg.id);
         
@@ -389,8 +430,10 @@ export class ChatService {
       await this.markMessagesAsRead(chatId, messageIdsToMark, userId);
     }
 
+    const messagesDto = messagesPrisma.map(msg => mapMessageToDto(msg, userId));
+
     return {
-      data: messages as MessageWithSender[], 
+      data: messagesDto, 
       meta: {
         total,
         page,
