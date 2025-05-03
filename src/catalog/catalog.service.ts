@@ -20,8 +20,8 @@ export class CatalogService {
     return this.countriesService.findOne(code, lang);
   }
 
-  async getCities(countryCode?: number, lang: string = 'uz', paginationDto?: PaginationDto) {
-    return this.citiesService.findAll(countryCode, lang, paginationDto);
+  async getCities(lang: string = 'uz', page: number = 1, limit: number = 10, countryCode?: number) {
+    return this.citiesService.findAll(lang, page, limit, countryCode);
   }
 
   async getCity(id: string, lang: string = 'uz') {

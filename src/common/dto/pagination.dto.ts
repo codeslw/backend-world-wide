@@ -7,7 +7,7 @@ export class PaginationDto {
   @IsOptional()
   @IsInt()
   @Min(1)
-  // @Type(() => Number) // Rely on enableImplicitConversion in ValidationPipe
+  @Type(() => Number) // Rely on enableImplicitConversion in ValidationPipe
   page?: number = 1;
 
   @ApiProperty({ description: 'Items per page', default: 10, required: false })
@@ -15,7 +15,7 @@ export class PaginationDto {
   @IsInt()
   @Min(1)
   @Max(300)
-  // @Type(() => Number) // Rely on enableImplicitConversion in ValidationPipe
+  @Type(() => Number) // Rely on enableImplicitConversion in ValidationPipe
   limit?: number = 10;
 
   @ApiProperty({ description: 'Search term', required: false })

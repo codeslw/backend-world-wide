@@ -52,12 +52,14 @@ export class CitiesService {
     }
   }
 
-  async findAll(countryCode?: number, lang: string = 'uz', paginationDto?: PaginationDto) {
+  async findAll(lang: string = 'uz', page: number = 1, limit: number = 10, countryCode?: number) {
     try {
-      const { page = 1, limit = 10 } = paginationDto || {};
       const skip = (page - 1) * limit;
 
-      const where = countryCode ? { countryCode } : {};
+      const where: any = {};
+      if (countryCode !== undefined) {
+          where.countryCode = countryCode;
+      }
 
       const [cities, total] = await Promise.all([
         this.prisma.city.findMany({

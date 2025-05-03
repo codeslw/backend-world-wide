@@ -13,7 +13,7 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
-      whitelist: true,
+      whitelist: false,
       transformOptions: { enableImplicitConversion: true },
       exceptionFactory: (errors) => {
         const formattedErrors = errors.reduce((acc, error) => {

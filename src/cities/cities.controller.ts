@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Headers, UseGuards, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Headers, UseGuards, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
 import { CitiesService } from './cities.service';
 import { CreateCityDto } from './dto/create-city.dto';
 import { UpdateCityDto } from './dto/update-city.dto';
@@ -51,11 +51,12 @@ export class CitiesController {
   @ApiResponse({ status: 200, description: 'List of cities', type: PaginatedCityResponseDto })
   @ApiResponse({ status: 400, description: 'Bad request - Invalid parameters', type: ErrorResponseDto })
   findAll(
-    @Query('countryCode', new ParseIntPipe({ optional: true })) countryCode?: number,
     @Headers('Accept-Language') lang: string = 'uz',
-    @Query() paginationDto?: PaginationDto,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('countryCode', new ParseIntPipe({ optional: true })) countryCode?: number,
   ) {
-    return this.citiesService.findAll(countryCode, lang, paginationDto);
+    return this.citiesService.findAll(lang, page, limit, countryCode);
   }
 
   @Get(':id')

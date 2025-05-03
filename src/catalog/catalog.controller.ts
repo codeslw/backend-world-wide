@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, Headers, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Param, Query, Headers, ParseIntPipe, DefaultValuePipe, BadRequestException } from '@nestjs/common';
 import { ApiHeader, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CatalogService } from './catalog.service';
 import { PaginationDto } from '../common/dto/pagination.dto';
@@ -41,14 +41,41 @@ export class CatalogController {
   @ApiHeader({ name: 'Accept-Language', enum: ['uz', 'ru', 'en'], description: 'Language preference' })
   @ApiResponse({ status: 200, description: 'List of cities', type: PaginatedCityResponseDto })
   getCities(
-    @Query('countryCode', new ParseIntPipe({ optional: true })) countryCode?: number,
+    @Query('page') pageQuery?: string,
+    @Query('limit') limitQuery?: string,
     @Headers('Accept-Language') lang: string = 'uz',
-    @Query() paginationDto?: PaginationDto,
+    @Query('countryCode') countryCodeQuery?: string,
   ) {
+    let page: number;
+    let limit: number;
+    let countryCode: number | undefined;
+
+    try {
+      page = pageQuery ? parseInt(pageQuery, 10) : 1;
+      limit = limitQuery ? parseInt(limitQuery, 10) : 10;
+
+      if (isNaN(page) || page < 1) {
+        throw new Error('Invalid page number');
+      }
+      if (isNaN(limit) || limit < 1 || limit > 300) {
+        throw new Error('Invalid limit number');
+      }
+
+      if (countryCodeQuery !== undefined) {
+        countryCode = parseInt(countryCodeQuery, 10);
+        if (isNaN(countryCode)) {
+          throw new Error('Invalid countryCode');
+        }
+      }
+    } catch (error) {
+      throw new BadRequestException(`Validation failed: ${error.message}`);
+    }
+
     return this.catalogService.getCities(
-      countryCode,
       lang, 
-      paginationDto
+      page, 
+      limit,
+      countryCode,
     );
   }
 
