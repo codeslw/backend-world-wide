@@ -35,7 +35,7 @@ import { ApplicationsModule } from './applications/applications.module';
     CatalogModule,
     ApplicationsModule,
   ],
-  providers: [PrismaService, DigitalOceanService, FilesService],
-  controllers: [FilesController],
+  providers: [PrismaService, DigitalOceanService],
+  controllers: [],
 })
 export class AppModule {}
