@@ -3,6 +3,7 @@ import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { FilesService } from './files.service';
 import { ApiTags, ApiOperation, ApiConsumes, ApiBody, ApiParam, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { FileResponseDto } from './dto/file-response.dto';
+import { DownloadFileByUrlDto } from './dto/download-file-by-url.dto';
 import { Response } from 'express';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../common/enum/roles.enum';
@@ -131,14 +132,14 @@ export class FilesController {
     return this.filesService.getFile(id);
   }
 
-  @Get(':id/download')
-  @ApiOperation({ summary: 'Download file by ID' })
-  @ApiParam({ name: 'id', description: 'File ID' })
+  @Get('download-by-url')
+  @ApiOperation({ summary: 'Download file by URL' })
+  @ApiQuery({ type: DownloadFileByUrlDto })
   @ApiResponse({ status: 200, description: 'File stream' })
-  @ApiResponse({ status: 404, description: 'File not found' })
-  async downloadFile(@Param('id') id: string, @Res() res: Response) {
-    const file = await this.filesService.getFile(id);
-    return this.filesService.downloadFile(file, res);
+  @ApiResponse({ status: 400, description: 'Bad Request (e.g., invalid URL)' })
+  @ApiResponse({ status: 404, description: 'File not found at URL' })
+  async downloadFileByUrl(@Query() query: DownloadFileByUrlDto, @Res() res: Response) {
+    return this.filesService.downloadFileByUrl(query.url, res);
   }
   
   @Delete('url')
