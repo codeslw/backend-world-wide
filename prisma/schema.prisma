@@ -280,6 +280,12 @@ model Application {
   @@index([applicationStatus])
 }
 
+enum MiniApplicationStatus {
+  NEW
+  CONTACTED
+  CLOSED
+}
+
 model MiniApplication {
   id           String     @id @default(uuid())
   firstName    String
@@ -288,10 +294,12 @@ model MiniApplication {
   phoneNumber  String
   universityId String
   university   University @relation(fields: [universityId], references: [id], onDelete: Cascade) // Relation to University
+  status       MiniApplicationStatus @default(NEW)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
   @@map("mini_applications")
   @@index([universityId])
   @@index([email]) // Add index for potential lookup by email
+  @@index([status]) // Add index for status
 }

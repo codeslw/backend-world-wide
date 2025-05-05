@@ -17,6 +17,7 @@ import { UpdateMiniApplicationDto } from './dto/update-mini-application.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { MiniApplication } from '@prisma/client'; // Import the entity type
+import { MiniApplicationResponseDto, PaginatedMiniApplicationResponseDto } from './dto/mini-application-response.dto';
 
 @ApiTags('Mini Applications (Public)')
 @Controller('mini-applications')
@@ -25,7 +26,7 @@ export class MiniApplicationsController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new mini application' })
-  @ApiResponse({ status: 201, description: 'The mini application has been successfully created.', type: CreateMiniApplicationDto /* Ideally return the created entity type */ })
+  @ApiResponse({ status: 201, description: 'The mini application has been successfully created.', type: MiniApplicationResponseDto })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
   @ApiResponse({ status: 404, description: 'University not found.' })
   @ApiBody({ type: CreateMiniApplicationDto })
@@ -39,7 +40,7 @@ export class MiniApplicationsController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page' })
   @ApiQuery({ name: 'sortBy', required: false, type: String, description: 'Field to sort by (e.g., createdAt)' })
   @ApiQuery({ name: 'sortDirection', required: false, enum: ['asc', 'desc'], description: 'Sort direction' })
-  @ApiResponse({ status: 200, description: 'Successfully retrieved mini applications.' /* Specify array type if possible */ })
+  @ApiResponse({ status: 200, description: 'Successfully retrieved mini applications.', type: PaginatedMiniApplicationResponseDto })
   async findAll(@Query() paginationDto: PaginationDto): Promise<{ data: MiniApplication[]; meta: any }> {
     return this.miniApplicationsService.findAll(paginationDto);
   }
@@ -47,7 +48,7 @@ export class MiniApplicationsController {
   @Get(':id')
   @ApiOperation({ summary: 'Retrieve a specific mini application by ID' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid', description: 'Mini Application ID' })
-  @ApiResponse({ status: 200, description: 'Successfully retrieved mini application.', type: CreateMiniApplicationDto /* Ideally return the entity type */ })
+  @ApiResponse({ status: 200, description: 'Successfully retrieved mini application.', type: MiniApplicationResponseDto })
   @ApiResponse({ status: 404, description: 'Mini application not found.' })
   async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<MiniApplication> {
     return this.miniApplicationsService.findOne(id);
@@ -57,7 +58,7 @@ export class MiniApplicationsController {
   @ApiOperation({ summary: 'Update a specific mini application by ID' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid', description: 'Mini Application ID' })
   @ApiBody({ type: UpdateMiniApplicationDto })
-  @ApiResponse({ status: 200, description: 'Successfully updated mini application.', type: CreateMiniApplicationDto /* Ideally return the entity type */ })
+  @ApiResponse({ status: 200, description: 'Successfully updated mini application.', type: MiniApplicationResponseDto })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
   @ApiResponse({ status: 404, description: 'Mini application or University not found.' })
   async update(
