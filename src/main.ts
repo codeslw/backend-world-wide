@@ -6,6 +6,9 @@ import * as fs from 'fs';
 import { Request, Response } from 'express';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
+
+
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
@@ -65,7 +68,7 @@ async function bootstrap() {
       tagsSorter: 'alpha', // Sort tags alphabetically
       operationsSorter: 'alpha', // Sort operations alphabetically
     },
-    customSiteTitle: 'EduWorldWide API Docs',
+    customSiteTitle: 'EduWorldWide API Docs v1.0.0',
   };
   
   SwaggerModule.setup('api', app, document, customOptions);
