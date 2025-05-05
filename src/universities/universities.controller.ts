@@ -12,6 +12,7 @@ import {
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
+  ValidationPipe,
 } from '@nestjs/common';
 import { UniversitiesService } from './universities.service';
 import { CreateUniversityDto } from './dto/create-university.dto';
@@ -37,6 +38,7 @@ import {
 import { UniversityType } from '../common/enum/university-type.enum';
 import { ErrorResponseDto } from '../common/dto/error-response.dto';
 import { UniversityFilterDto } from './dto/university-filter.dto';
+import { CreateManyUniversitiesDto } from './dto/create-many-universities.dto';
 
 @ApiTags('Universities')
 @Controller('universities')
@@ -57,6 +59,20 @@ export class UniversitiesController {
   @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'Internal Server Error', type: ErrorResponseDto })
   async create(@Body() createUniversityDto: CreateUniversityDto): Promise<UniversityResponseDto> {
     return this.universitiesService.create(createUniversityDto);
+  }
+
+  @Post('create/many')
+  @ApiOperation({ summary: 'Create multiple universities at once (Unauthorized)' })
+  @ApiBody({ type: CreateManyUniversitiesDto, description: 'Array of university data to create.' })
+  @ApiResponse({ status: HttpStatus.CREATED, description: 'Universities successfully created', type: [UniversityResponseDto] })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Bad Request - Invalid data provided in one or more entries', type: ErrorResponseDto })
+  @ApiResponse({ status: HttpStatus.CONFLICT, description: 'Conflict - Creation failed due to duplicate data in one or more entries', type: ErrorResponseDto })
+  @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'Internal Server Error', type: ErrorResponseDto })
+  async createMany(
+    @Body(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })) 
+    createManyDto: CreateManyUniversitiesDto
+  ): Promise<UniversityResponseDto[]> {
+    return this.universitiesService.createMany(createManyDto.universities);
   }
 
   @Get()

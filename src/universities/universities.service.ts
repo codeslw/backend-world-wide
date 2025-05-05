@@ -61,6 +61,22 @@ export class UniversitiesService {
     }
   }
 
+  // Added method signature for bulk creation
+  async createMany(createManyUniversitiesDto: CreateUniversityDto[]): Promise<UniversityResponseDto[]> {
+    // Implementation pending: 
+    // - Iterate through createManyUniversitiesDto array
+    // - Validate each DTO (perhaps using validateProgramIds for all programs first)
+    // - Use Prisma's createMany or transaction for batch insertion
+    // - Map results to UniversityResponseDto array
+    // - Handle potential errors for individual or batch operations
+    console.log("createMany called with:", createManyUniversitiesDto);
+    // Placeholder implementation - replace with actual logic
+    const createdUniversities = await Promise.all(
+      createManyUniversitiesDto.map(dto => this.create(dto))
+    );
+    return createdUniversities;
+  }
+
   async findAll(
     filterDto: UniversityFilterDto,
     lang: string = 'uz',

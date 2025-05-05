@@ -131,4 +131,15 @@ export class CreateUniversityDto {
   @Type(() => UniversityProgramDto)
   @IsNotEmpty()
   programs: UniversityProgramDto[];
+}
+
+export class CreateManyUniversitiesDto {
+  @ApiProperty({
+    type: [CreateUniversityDto],
+    description: 'An array of university data objects to create.',
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateUniversityDto)
+  universities: CreateUniversityDto[];
 } 
