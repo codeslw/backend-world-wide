@@ -68,7 +68,7 @@ jobs:
             
             # Stop existing containers
             echo "Stopping existing containers..."
-            docker-compose down -v
+            docker-compose down
             
             # Clean up Docker resources but preserve volumes
             echo "Cleaning up Docker resources..."

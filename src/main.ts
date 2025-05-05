@@ -68,7 +68,7 @@ async function bootstrap() {
       tagsSorter: 'alpha', // Sort tags alphabetically
       operationsSorter: 'alpha', // Sort operations alphabetically
     },
-    customSiteTitle: 'EduWorldWide API Docs v1.0.0',
+    customSiteTitle: 'EduWorldWide API Docs v2.0.0',
   };
   
   SwaggerModule.setup('api', app, document, customOptions);
