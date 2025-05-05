@@ -1,0 +1,112 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../db/prisma.service';
+import { CreateMiniApplicationDto } from './dto/create-mini-application.dto';
+import { UpdateMiniApplicationDto } from './dto/update-mini-application.dto';
+import { MiniApplication } from '@prisma/client';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { FilterService } from '../common/filters/filter.service';
+import { FilterOptions, PaginationOptions } from '../common/filters/filter.interface';
+
+@Injectable()
+export class MiniApplicationsService {
+  constructor(
+    private prisma: PrismaService,
+    private filterService: FilterService,
+  ) {}
+
+  async create(createMiniApplicationDto: CreateMiniApplicationDto): Promise<MiniApplication> {
+    // Check if university exists
+    const university = await this.prisma.university.findUnique({
+      where: { id: createMiniApplicationDto.universityId },
+    });
+    if (!university) {
+      throw new NotFoundException(`University with ID "${createMiniApplicationDto.universityId}" not found`);
+    }
+
+    return this.prisma.miniApplication.create({
+      data: createMiniApplicationDto,
+    });
+  }
+
+  async findAll(paginationDto: PaginationDto): Promise<{ data: MiniApplication[]; meta: any }> {
+    // Define filters (can be extended based on query parameters)
+    const filterOptions: FilterOptions = {
+      filters: [
+        // Example: filter by email if query param 'email' is present
+        // { field: 'email', queryParam: 'email', operator: 'contains' },
+      ],
+      // Optional: Add search fields if a global 'search' query param is expected
+      // searchFields: ['firstName', 'lastName', 'email'],
+    };
+
+    // Build the Prisma 'where' clause based on query parameters and filter definitions
+    const where = this.filterService.buildFilterQuery(paginationDto, filterOptions);
+
+    // Define pagination/sorting configuration
+    const paginationOptions: PaginationOptions = {
+      defaultSortField: 'createdAt',
+      defaultSortDirection: 'desc',
+      defaultLimit: 10,
+      maxLimit: 100,
+    };
+
+    // Use applyPagination to fetch data and metadata
+    return this.filterService.applyPagination<MiniApplication>(
+      this.prisma.miniApplication,
+      where,
+      paginationDto,
+      { university: true }, // Include related university data
+      undefined, // Let applyPagination handle sorting based on DTO
+      paginationOptions,
+    );
+  }
+
+  async findOne(id: string): Promise<MiniApplication> {
+    const miniApplication = await this.prisma.miniApplication.findUnique({
+      where: { id },
+      include: { university: true }, // Optionally include university details
+    });
+    if (!miniApplication) {
+      throw new NotFoundException(`MiniApplication with ID "${id}" not found`);
+    }
+    return miniApplication;
+  }
+
+  async update(id: string, updateMiniApplicationDto: UpdateMiniApplicationDto): Promise<MiniApplication> {
+    // Check if the mini-application exists first
+    await this.findOne(id);
+
+    // If universityId is being updated, check if the new university exists
+    if (updateMiniApplicationDto.universityId) {
+      const university = await this.prisma.university.findUnique({
+        where: { id: updateMiniApplicationDto.universityId },
+      });
+      if (!university) {
+        throw new NotFoundException(`University with ID "${updateMiniApplicationDto.universityId}" not found`);
+      }
+    }
+
+    try {
+      return await this.prisma.miniApplication.update({
+        where: { id },
+        data: updateMiniApplicationDto,
+      });
+    } catch (error) {
+      // Handle potential errors, e.g., Prisma specific errors
+      throw error; // Re-throw for global exception filter or handle specifically
+    }
+  }
+
+  async remove(id: string): Promise<MiniApplication> {
+    // Check if the mini-application exists first
+    await this.findOne(id);
+
+    try {
+      return await this.prisma.miniApplication.delete({
+        where: { id },
+      });
+    } catch (error) {
+      throw error; // Re-throw for global exception filter or handle specifically
+    }
+  }
+}

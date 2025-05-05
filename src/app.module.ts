@@ -17,6 +17,7 @@ import { ChatModule } from './chat/chat.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import { ApplicationsModule } from './applications/applications.module';
+import { MiniApplicationsModule } from './modules/mini-applications.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ApplicationsModule } from './applications/applications.module';
     ChatModule,
     CatalogModule,
     ApplicationsModule,
+    MiniApplicationsModule,
   ],
   providers: [PrismaService, DigitalOceanService],
   controllers: [],
