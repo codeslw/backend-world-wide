@@ -41,7 +41,7 @@ model Program {
 
   // Parent-child relationship
   parentId    String?
-  parent      Program?  @relation("ProgramToProgram", fields: [parentId], references: [id])
+  parent      Program?  @relation("ProgramToProgram", fields: [parentId], references: [id], onDelete: SetNull)
   children    Program[] @relation("ProgramToProgram")
 
   // Removed direct relation to University
@@ -120,9 +120,9 @@ model University {
 model UniversityProgram {
   id                 String   @id @default(uuid())
   universityId       String
-  university         University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  university         University @relation(fields: [universityId], references: [id], onDelete: Restrict)
   programId          String
-  program            Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  program            Program  @relation(fields: [programId], references: [id], onDelete: Restrict)
   tuitionFee         Float
   tuitionFeeCurrency String   @default("USD")
   createdAt          DateTime @default(now())
@@ -199,6 +199,21 @@ model Profile {
   passportNumber         String?
   passportExpiryDate     DateTime?
   passportCopyUrl        String?
+  // Education Information
+  currentEducationLevel  String?
+  currentInstitutionName String?
+  graduationYear         Int?
+  transcriptUrl          String?
+  
+  // Language Proficiency
+  languageTest           LanguageTest?
+  languageScore          String?
+  languageCertificateUrl String?
+    
+  // Additional Documents
+  motivationLetterUrl    String?
+  recommendationLetterUrls String[] @default([])
+  cvUrl                  String?
   yearOfBirth            Int?
   passportSeriesAndNumber String?
   email                  String?
@@ -243,32 +258,22 @@ model Application {
   // Personal Information linked to profile
   profileId              String
   profile                Profile           @relation(fields: [profileId], references: [id])
-  // middleName             String? // Moved to Profile
-  // dateOfBirth            DateTime // Moved to Profile
-  // gender                 Gender? // Moved to Profile
-  // nationality            String // Moved to Profile
-  // address                String // Moved to Profile
   
-  // Passport Information
-  // passportNumber         String // Moved to Profile
-  // passportExpiryDate     DateTime // Moved to Profile
-  // passportCopyUrl        String // Moved to Profile
+  // Education Information - moved to Profile
+  // currentEducationLevel  String
+  // currentInstitutionName String?
+  // graduationYear         Int?
+  // transcriptUrl          String?
   
-  // Education Information
-  currentEducationLevel  String
-  currentInstitutionName String?
-  graduationYear         Int?
-  transcriptUrl          String?
-  
-  // Language Proficiency
-  languageTest           LanguageTest?
-  languageScore          String?
-  languageCertificateUrl String?
+  // Language Proficiency - moved to Profile
+  // languageTest           LanguageTest?
+  // languageScore          String?
+  // languageCertificateUrl String?
     
-  // Additional Documents
-  motivationLetterUrl    String?
-  recommendationLetterUrls String[]
-  cvUrl                  String?
+  // Additional Documents - moved to Profile
+  // motivationLetterUrl    String?
+  // recommendationLetterUrls String[]
+  // cvUrl                  String?
   
   // University Preferences
   preferredCountry       String
@@ -276,8 +281,6 @@ model Application {
   preferredProgram       String
   intakeSeason           IntakeSeason
   intakeYear             Int
-  
-
   
   // Meta
   applicationStatus      ApplicationStatus @default(DRAFT)
@@ -303,7 +306,7 @@ model MiniApplication {
   email        String
   phoneNumber  String
   universityId String
-  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade) // Relation to University
+  university   University @relation(fields: [universityId], references: [id], onDelete: Restrict) // Changed from Cascade to Restrict
   status       MiniApplicationStatus @default(NEW)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt

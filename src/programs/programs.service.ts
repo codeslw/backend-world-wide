@@ -6,6 +6,7 @@ import { PaginationDto } from '../common/dto/pagination.dto';
 import { FilterService } from '../common/filters/filter.service';
 import { FilterOptions, PaginationOptions } from 'src/common/filters/filter.interface';
 import { EntityNotFoundException, InvalidDataException } from '../common/exceptions/app.exceptions';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ProgramsService {
@@ -182,13 +183,33 @@ export class ProgramsService {
 
   async remove(id: string) {
     try {
-      // First check if program exists
+      // First check if program exists with relationships
       const program = await this.prisma.program.findUnique({
-        where: { id }
+        where: { id },
+        include: {
+          children: true,
+          universityPrograms: true
+        }
       });
       
       if (!program) {
         throw new EntityNotFoundException('Program', id);
+      }
+
+      // Check if there are children programs
+      if (program.children.length > 0) {
+        throw new InvalidDataException(
+          'Cannot delete program with child programs. Please update or remove child programs first.',
+          { reason: 'RELATED_CHILDREN_EXIST', count: program.children.length }
+        );
+      }
+
+      // Check if program is associated with any universities
+      if (program.universityPrograms.length > 0) {
+        throw new InvalidDataException(
+          'Cannot delete program that is offered by universities. Please remove university-program associations first.',
+          { reason: 'RELATED_UNIVERSITIES_EXIST', count: program.universityPrograms.length }
+        );
       }
       
       return await this.prisma.program.delete({
@@ -196,9 +217,21 @@ export class ProgramsService {
       });
     } catch (error) {
       // If it's already our custom exception, just rethrow it
-      if (error instanceof EntityNotFoundException) {
+      if (error instanceof EntityNotFoundException || error instanceof InvalidDataException) {
         throw error;
       }
+
+      // Handle Prisma errors
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2003') {
+          // Foreign key constraint error
+          throw new InvalidDataException(
+            'Cannot delete program because it is referenced by other records.',
+            { reason: 'FOREIGN_KEY_CONSTRAINT', errorCode: error.code }
+          );
+        }
+      }
+
       // Otherwise let the global exception filter handle it
       throw error;
     }

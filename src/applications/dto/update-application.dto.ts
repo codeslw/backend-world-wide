@@ -7,124 +7,13 @@ import {
   IsNumber,
   Min,
   Max,
-  IsArray,
-  IsUrl,
 } from 'class-validator';
-import { LanguageTest, IntakeSeason, ApplicationStatus } from '@prisma/client';
+import { IntakeSeason, ApplicationStatus } from '@prisma/client';
 
 export class UpdateApplicationDto {
-  // Personal Information - Fields moved to Profile DTO
-  // @ApiProperty({ required: false, description: 'Middle name of the applicant' })
-  // @IsOptional()
-  // @IsString()
-  // middleName?: string;
-
-  // @ApiProperty({ required: false, description: 'Date of birth in ISO format' })
-  // @IsOptional()
-  // @IsDateString()
-  // dateOfBirth?: string;
-
-  // @ApiProperty({
-  //   enum: Gender,
-  //   required: false,
-  //   description: 'Gender of the applicant',
-  // })
-  // @IsOptional()
-  // @IsEnum(Gender)
-  // gender?: Gender;
-
-  // @ApiProperty({ required: false, description: 'Nationality of the applicant' })
-  // @IsOptional()
-  // @IsString()
-  // nationality?: string;
-
-  // @ApiProperty({
-  //   required: false,
-  //   description: 'Full address of the applicant',
-  // })
-  // @IsOptional()
-  // @IsString()
-  // address?: string;
-
-  // Passport Information - Fields moved to Profile DTO
-  // @ApiProperty({ required: false, description: 'Passport number' })
-  // @IsOptional()
-  // @IsString()
-  // passportNumber?: string;
-
-  // @ApiProperty({
-  //   required: false,
-  //   description: 'Passport expiry date in ISO format',
-  // })
-  // @IsOptional()
-  // @IsDateString()
-  // passportExpiryDate?: string;
-
-  // @ApiProperty({
-  //   required: false,
-  //   description: 'URL to the uploaded passport copy',
-  // })
-  // @IsOptional()
-  // @IsString()
-  // @IsUrl()
-  // passportCopyUrl?: string;
-
-  // Education Information
-  @ApiProperty({
-    required: false,
-    description: 'Current education level (e.g., "Bachelor", "High School")',
-  })
-  @IsOptional()
-  @IsString()
-  currentEducationLevel?: string;
-
-  @ApiProperty({
-    required: false,
-    description: 'Name of current educational institution',
-  })
-  @IsOptional()
-  @IsString()
-  currentInstitutionName?: string;
-
-  @ApiProperty({ required: false, description: 'Year of graduation' })
-  @IsOptional()
-  @IsNumber()
-  @Min(1900)
-  @Max(2100)
-  graduationYear?: number;
-
-  @ApiProperty({
-    required: false,
-    description: 'URL to the uploaded transcript',
-  })
-  @IsOptional()
-  @IsString()
-  @IsUrl()
-  transcriptUrl?: string;
-
-  // Language Proficiency
-  @ApiProperty({
-    enum: LanguageTest,
-    required: false,
-    description: 'Type of language test taken',
-  })
-  @IsOptional()
-  @IsEnum(LanguageTest)
-  languageTest?: LanguageTest;
-
-  @ApiProperty({ required: false, description: 'Score of language test' })
-  @IsOptional()
-  @IsString()
-  languageScore?: string;
-
-  @ApiProperty({
-    required: false,
-    description: 'URL to the uploaded language certificate',
-  })
-  @IsOptional()
-  @IsString()
-  @IsUrl()
-  languageCertificateUrl?: string;
+  // Fields moved to Profile DTO
+  // All personal information, passport information, education, language proficiency and document fields
+  // have been moved to Profile entity
 
   // University Preferences
   @ApiProperty({ required: false, description: 'Preferred country for study' })
@@ -160,31 +49,6 @@ export class UpdateApplicationDto {
   @Min(new Date().getFullYear())
   @Max(new Date().getFullYear() + 5)
   intakeYear?: number;
-
-  // Additional Documents
-  @ApiProperty({
-    required: false,
-    description: 'URL to the uploaded motivation letter',
-  })
-  @IsOptional()
-  @IsString()
-  @IsUrl()
-  motivationLetterUrl?: string;
-
-  @ApiProperty({
-    required: false,
-    description: 'URLs to the uploaded recommendation letters',
-    type: [String],
-  })
-  @IsOptional()
-  @IsArray()
-  recommendationLetterUrls?: string[];
-
-  @ApiProperty({ required: false, description: 'URL to the uploaded CV' })
-  @IsOptional()
-  @IsString()
-  @IsUrl()
-  cvUrl?: string;
 
   // Meta
   @ApiProperty({

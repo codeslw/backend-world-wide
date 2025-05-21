@@ -325,31 +325,23 @@ export class ApplicationsService {
       profileId: application.profileId,
       profile: profileDto, // This correctly includes the moved fields via ProfileResponseDto
 
-      // Fields that were moved to Profile are no longer mapped directly from the Application object here.
+      // Fields that were moved to Profile are no longer mapped directly from the Application object.
       // They are part of the profileDto.
 
-      currentEducationLevel: application.currentEducationLevel,
-      currentInstitutionName: application.currentInstitutionName,
-      graduationYear: application.graduationYear,
-      transcriptUrl: application.transcriptUrl,
-      languageTest: application.languageTest,
-      languageScore: application.languageScore,
-      languageCertificateUrl: application.languageCertificateUrl,
+      // Only university preferences remain in Application
       preferredCountry: application.preferredCountry,
       preferredUniversity: application.preferredUniversity,
       preferredProgram: application.preferredProgram,
       intakeSeason: application.intakeSeason,
       intakeYear: application.intakeYear,
-      motivationLetterUrl: application.motivationLetterUrl,
-      recommendationLetterUrls: application.recommendationLetterUrls,
-      cvUrl: application.cvUrl,
+      
+      // Status fields
       applicationStatus: application.applicationStatus,
       submittedAt: application.submittedAt,
       createdAt: application.createdAt,
       updatedAt: application.updatedAt,
 
-      // Optional fields from ApplicationResponseDto; these should be on the 'application' object if populated.
-      // If 'application' object (from repository) doesn't include these, they'll be undefined, which is fine for optional DTO fields.
+      // Optional fields from ApplicationResponseDto
       programId: (application as any).programId, 
       programType: (application as any).programType,
       academicYear: (application as any).academicYear,

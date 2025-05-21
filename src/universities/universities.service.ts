@@ -300,23 +300,85 @@ export class UniversitiesService {
   async remove(id: string): Promise<void> {
     try {
       // Check if university exists before attempting delete
-      const university = await this.prisma.university.findUnique({ where: { id } });
+      const university = await this.prisma.university.findUnique({
+        where: { id },
+        include: {
+          universityPrograms: true,
+          miniApplications: true
+        }
+      });
+      
       if (!university) {
         throw new EntityNotFoundException('University', id);
       }
 
-      // Deletion cascades to UniversityProgram due to schema definition
+      // Check if there are related records that would prevent deletion
+      if (university.universityPrograms.length > 0) {
+        throw new InvalidDataException(
+          'Cannot delete university with associated programs. Please remove university-program associations first.',
+          { reason: 'RELATED_PROGRAMS_EXIST', count: university.universityPrograms.length }
+        );
+      }
+
+      if (university.miniApplications.length > 0) {
+        throw new InvalidDataException(
+          'Cannot delete university with associated mini-applications. Please handle mini-applications first.',
+          { reason: 'RELATED_MINI_APPLICATIONS_EXIST', count: university.miniApplications.length }
+        );
+      }
+
+      // Now safe to delete
       await this.prisma.university.delete({ where: { id } });
+    } catch (error) {
+      if (error instanceof EntityNotFoundException || error instanceof InvalidDataException) {
+        throw error;
+      }
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          // Handles case where it might have been deleted between check and delete call
+          throw new EntityNotFoundException('University', id);
+        }
+        if (error.code === 'P2003') {
+          // Foreign key constraint failed
+          throw new InvalidDataException(
+            'Cannot delete university because it has related records.',
+            { reason: 'FOREIGN_KEY_CONSTRAINT', errorCode: error.code }
+          );
+        }
+      }
+      console.error(`Error deleting university with id ${id}:`, error);
+      throw error;
+    }
+  }
+
+  // Add this method after the remove() method
+  async removeUniversityProgram(universityId: string, programId: string): Promise<void> {
+    try {
+      // Check if the association exists
+      const universityProgram = await this.prisma.universityProgram.findFirst({
+        where: {
+          universityId,
+          programId
+        }
+      });
+
+      if (!universityProgram) {
+        throw new EntityNotFoundException('University Program association');
+      }
+
+      // Delete the association
+      await this.prisma.universityProgram.delete({
+        where: { id: universityProgram.id }
+      });
     } catch (error) {
       if (error instanceof EntityNotFoundException) {
         throw error;
       }
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-        // Handles case where it might have been deleted between check and delete call
-        throw new EntityNotFoundException('University', id);
-      }
-      console.error(`Error deleting university with id ${id}:`, error);
-      throw error;
+      console.error(`Error removing university-program association:`, error);
+      throw new InvalidDataException(
+        'Failed to remove university-program association',
+        { universityId, programId }
+      );
     }
   }
 

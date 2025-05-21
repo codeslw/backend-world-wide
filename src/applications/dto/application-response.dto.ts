@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ProfileResponseDto } from '../../profiles/dto/profile-response.dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination-response.dto';
-import { LanguageTest, IntakeSeason, ApplicationStatus } from '@prisma/client';
+import { IntakeSeason, ApplicationStatus } from '@prisma/client';
 
 export class ApplicationResponseDto {
   @ApiProperty({ description: 'Application ID' })
@@ -13,40 +13,9 @@ export class ApplicationResponseDto {
   @ApiProperty({ description: 'Profile details', type: ProfileResponseDto })
   profile: ProfileResponseDto;
 
-  @ApiProperty({ description: 'Current education level' })
-  currentEducationLevel: string;
+  // Fields have been moved to Profile entity and are accessible via the profile property
 
-  @ApiProperty({
-    description: 'Name of current educational institution',
-    required: false,
-  })
-  currentInstitutionName?: string;
-
-  @ApiProperty({ description: 'Year of graduation', required: false })
-  graduationYear?: number;
-
-  @ApiProperty({
-    description: 'URL to the uploaded transcript',
-    required: false,
-  })
-  transcriptUrl?: string;
-
-  @ApiProperty({
-    enum: LanguageTest,
-    description: 'Type of language test taken',
-    required: false,
-  })
-  languageTest?: LanguageTest;
-
-  @ApiProperty({ description: 'Score of language test', required: false })
-  languageScore?: string;
-
-  @ApiProperty({
-    description: 'URL to the uploaded language certificate',
-    required: false,
-  })
-  languageCertificateUrl?: string;
-
+  // University Preferences
   @ApiProperty({ description: 'Preferred country for study' })
   preferredCountry: string;
 
@@ -61,22 +30,6 @@ export class ApplicationResponseDto {
 
   @ApiProperty({ description: 'Year of intended intake' })
   intakeYear: number;
-
-  @ApiProperty({
-    description: 'URL to the uploaded motivation letter',
-    required: false,
-  })
-  motivationLetterUrl?: string;
-
-  @ApiProperty({
-    description: 'URLs to the uploaded recommendation letters',
-    type: [String],
-    required: false,
-  })
-  recommendationLetterUrls?: string[];
-
-  @ApiProperty({ description: 'URL to the uploaded CV', required: false })
-  cvUrl?: string;
 
   @ApiProperty({
     enum: ApplicationStatus,

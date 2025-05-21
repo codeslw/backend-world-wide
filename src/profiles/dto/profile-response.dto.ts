@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../common/dto/pagination-response.dto';
-import { Gender } from '@prisma/client';
+import { Gender, LanguageTest } from '@prisma/client';
 
 export class ProfileResponseDto {
   @ApiProperty({ description: 'Profile ID' })
@@ -50,6 +50,36 @@ export class ProfileResponseDto {
 
   @ApiProperty({ description: 'Phone number', required: false })
   phoneNumber?: string;
+
+  @ApiProperty({ description: 'Current education level', required: false })
+  currentEducationLevel?: string;
+
+  @ApiProperty({ description: 'Current educational institution name', required: false })
+  currentInstitutionName?: string;
+
+  @ApiProperty({ description: 'Graduation year', required: false })
+  graduationYear?: number;
+
+  @ApiProperty({ description: 'URL to uploaded transcript document', required: false })
+  transcriptUrl?: string;
+
+  @ApiProperty({ enum: LanguageTest, description: 'Language test type', required: false })
+  languageTest?: LanguageTest;
+
+  @ApiProperty({ description: 'Language test score', required: false })
+  languageScore?: string;
+
+  @ApiProperty({ description: 'URL to uploaded language certificate', required: false })
+  languageCertificateUrl?: string;
+
+  @ApiProperty({ description: 'URL to uploaded motivation letter', required: false })
+  motivationLetterUrl?: string;
+
+  @ApiProperty({ description: 'URLs to uploaded recommendation letters', type: [String], required: false })
+  recommendationLetterUrls?: string[];
+
+  @ApiProperty({ description: 'URL to uploaded CV', required: false })
+  cvUrl?: string;
 
   @ApiProperty({ description: 'Profile creation date' })
   createdAt: Date;

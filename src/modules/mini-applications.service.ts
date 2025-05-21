@@ -2,10 +2,12 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../db/prisma.service';
 import { CreateMiniApplicationDto } from './dto/create-mini-application.dto';
 import { UpdateMiniApplicationDto } from './dto/update-mini-application.dto';
-import { MiniApplication } from '@prisma/client';
+import { MiniApplication, MiniApplicationStatus } from '@prisma/client';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { FilterService } from '../common/filters/filter.service';
 import { FilterOptions, PaginationOptions } from '../common/filters/filter.interface';
+import { Prisma } from '@prisma/client';
+import { InvalidDataException } from '../common/exceptions/app.exceptions';
 
 @Injectable()
 export class MiniApplicationsService {
@@ -106,6 +108,15 @@ export class MiniApplicationsService {
         where: { id },
       });
     } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2003') {
+          // Foreign key constraint error
+          throw new InvalidDataException(
+            'Cannot delete mini-application because it has relationships that prevent deletion.',
+            { reason: 'FOREIGN_KEY_CONSTRAINT', errorCode: error.code }
+          );
+        }
+      }
       throw error; // Re-throw for global exception filter or handle specifically
     }
   }

@@ -169,6 +169,19 @@ export class ProfilesService {
       passportNumber: profile.passportNumber || undefined,
       passportExpiryDate: profile.passportExpiryDate || undefined,
       passportCopyUrl: profile.passportCopyUrl || undefined,
+      // Education and Language fields
+      currentEducationLevel: profile.currentEducationLevel || undefined,
+      currentInstitutionName: profile.currentInstitutionName || undefined,
+      graduationYear: profile.graduationYear || undefined,
+      transcriptUrl: profile.transcriptUrl || undefined,
+      languageTest: profile.languageTest || undefined,
+      languageScore: profile.languageScore || undefined,
+      languageCertificateUrl: profile.languageCertificateUrl || undefined,
+      // Document fields
+      motivationLetterUrl: profile.motivationLetterUrl || undefined,
+      recommendationLetterUrls: profile.recommendationLetterUrls || undefined,
+      cvUrl: profile.cvUrl || undefined,
+      // Other fields
       yearOfBirth: profile.yearOfBirth || undefined,
       passportSeriesAndNumber: profile.passportSeriesAndNumber || undefined,
       email: profile.email || undefined,

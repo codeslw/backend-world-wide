@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsInt, IsOptional, IsString, Min, Max, IsDateString, IsEnum, IsUrl } from 'class-validator';
-import { Gender } from '@prisma/client';
+import { IsEmail, IsInt, IsOptional, IsString, Min, Max, IsDateString, IsEnum, IsUrl, IsArray } from 'class-validator';
+import { Gender, LanguageTest } from '@prisma/client';
 
 export class CreateProfileDto {
   @ApiProperty({ description: 'First name of the user', example: 'John' })
@@ -73,4 +73,60 @@ export class CreateProfileDto {
   @IsOptional()
   @IsString()
   phoneNumber?: string;
+
+  @ApiProperty({ description: 'Current education level', example: 'Bachelor', required: false })
+  @IsOptional()
+  @IsString()
+  currentEducationLevel?: string;
+
+  @ApiProperty({ description: 'Current educational institution name', example: 'University of Example', required: false })
+  @IsOptional()
+  @IsString()
+  currentInstitutionName?: string;
+
+  @ApiProperty({ description: 'Graduation year', example: 2022, required: false })
+  @IsOptional()
+  @IsInt()
+  @Min(1900)
+  @Max(new Date().getFullYear() + 10)
+  graduationYear?: number;
+
+  @ApiProperty({ description: 'URL to uploaded transcript document', example: 'https://example.com/transcript.pdf', required: false })
+  @IsOptional()
+  @IsString()
+  @IsUrl()
+  transcriptUrl?: string;
+
+  @ApiProperty({ enum: LanguageTest, description: 'Language test type', required: false })
+  @IsOptional()
+  @IsEnum(LanguageTest)
+  languageTest?: LanguageTest;
+
+  @ApiProperty({ description: 'Language test score', example: '7.5', required: false })
+  @IsOptional()
+  @IsString()
+  languageScore?: string;
+
+  @ApiProperty({ description: 'URL to uploaded language certificate', example: 'https://example.com/certificate.pdf', required: false })
+  @IsOptional()
+  @IsString()
+  @IsUrl()
+  languageCertificateUrl?: string;
+
+  @ApiProperty({ description: 'URL to uploaded motivation letter', example: 'https://example.com/motivation.pdf', required: false })
+  @IsOptional()
+  @IsString()
+  @IsUrl()
+  motivationLetterUrl?: string;
+
+  @ApiProperty({ description: 'URLs to uploaded recommendation letters', type: [String], required: false })
+  @IsOptional()
+  @IsArray()
+  recommendationLetterUrls?: string[];
+
+  @ApiProperty({ description: 'URL to uploaded CV', example: 'https://example.com/cv.pdf', required: false })
+  @IsOptional()
+  @IsString()
+  @IsUrl()
+  cvUrl?: string;
 } 

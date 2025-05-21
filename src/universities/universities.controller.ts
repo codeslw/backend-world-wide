@@ -160,4 +160,24 @@ export class UniversitiesController {
   async remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     await this.universitiesService.remove(id);
   }
+
+  @Delete(':id/programs/:programId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove a program from a university (Admin only)' })
+  @ApiParam({ name: 'id', required: true, description: 'University ID (UUID format)', type: String })
+  @ApiParam({ name: 'programId', required: true, description: 'Program ID (UUID format)', type: String })
+  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Program successfully removed from university' })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Forbidden - Insufficient permissions', type: ErrorResponseDto })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Not Found - University, program, or association not found', type: ErrorResponseDto })
+  @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'Internal Server Error', type: ErrorResponseDto })
+  async removeProgram(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('programId', ParseUUIDPipe) programId: string
+  ): Promise<void> {
+    await this.universitiesService.removeUniversityProgram(id, programId);
+  }
 } 
