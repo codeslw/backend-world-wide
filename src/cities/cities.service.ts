@@ -61,6 +61,15 @@ export class CitiesService {
           where.countryCode = countryCode;
       }
 
+      // Extract the primary language code
+      let primaryLanguage = lang.split('-')[0].split(',')[0];
+      // Default to 'en' if the parsed language is not one of the expected (uz, ru, en)
+      if (!['uz', 'ru', 'en'].includes(primaryLanguage)) {
+        primaryLanguage = 'en';
+      }
+      
+      const orderByField = `name${primaryLanguage.charAt(0).toUpperCase() + primaryLanguage.slice(1)}`;
+
       const [cities, total] = await Promise.all([
         this.prisma.city.findMany({
           where,
@@ -70,7 +79,7 @@ export class CitiesService {
             country: true,
           },
           orderBy: {
-            [`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`]: 'asc',
+            [orderByField]: 'asc',
           },
         }),
         this.prisma.city.count({ where }),

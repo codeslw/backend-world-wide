@@ -191,6 +191,14 @@ model Profile {
   id                     String   @id @default(uuid())
   firstName              String
   lastName               String
+  middleName             String?
+  dateOfBirth            DateTime?
+  gender                 Gender?
+  nationality            String?
+  address                String?
+  passportNumber         String?
+  passportExpiryDate     DateTime?
+  passportCopyUrl        String?
   yearOfBirth            Int?
   passportSeriesAndNumber String?
   email                  String?
@@ -235,16 +243,16 @@ model Application {
   // Personal Information linked to profile
   profileId              String
   profile                Profile           @relation(fields: [profileId], references: [id])
-  middleName             String?
-  dateOfBirth            DateTime
-  gender                 Gender?
-  nationality            String
-  address                String
+  // middleName             String? // Moved to Profile
+  // dateOfBirth            DateTime // Moved to Profile
+  // gender                 Gender? // Moved to Profile
+  // nationality            String // Moved to Profile
+  // address                String // Moved to Profile
   
   // Passport Information
-  passportNumber         String
-  passportExpiryDate     DateTime
-  passportCopyUrl        String
+  // passportNumber         String // Moved to Profile
+  // passportExpiryDate     DateTime // Moved to Profile
+  // passportCopyUrl        String // Moved to Profile
   
   // Education Information
   currentEducationLevel  String
@@ -256,6 +264,11 @@ model Application {
   languageTest           LanguageTest?
   languageScore          String?
   languageCertificateUrl String?
+    
+  // Additional Documents
+  motivationLetterUrl    String?
+  recommendationLetterUrls String[]
+  cvUrl                  String?
   
   // University Preferences
   preferredCountry       String
@@ -264,10 +277,7 @@ model Application {
   intakeSeason           IntakeSeason
   intakeYear             Int
   
-  // Additional Documents
-  motivationLetterUrl    String?
-  recommendationLetterUrls String[]
-  cvUrl                  String?
+
   
   // Meta
   applicationStatus      ApplicationStatus @default(DRAFT)

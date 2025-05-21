@@ -315,70 +315,48 @@ export class ApplicationsService {
 
   // Use Prisma's Application type, relax Profile type slightly for mapping
   private mapToResponseDto(application: Application & { profile?: any }): ApplicationResponseDto {
-    const dto = new ApplicationResponseDto();
-    // Map fields present in ApplicationResponseDto
-    dto.id = application.id;
-    dto.profileId = application.profileId;
-    // Map optional fields carefully
-    dto.middleName = application.middleName ?? undefined;
-    dto.dateOfBirth = application.dateOfBirth;
-    dto.gender = application.gender ?? undefined;
-    dto.nationality = application.nationality;
-    dto.address = application.address;
-    dto.passportNumber = application.passportNumber;
-    dto.passportExpiryDate = application.passportExpiryDate;
-    dto.passportCopyUrl = application.passportCopyUrl;
-    dto.currentEducationLevel = application.currentEducationLevel;
-    dto.currentInstitutionName = application.currentInstitutionName ?? undefined;
-    dto.graduationYear = application.graduationYear ?? undefined;
-    dto.transcriptUrl = application.transcriptUrl ?? undefined;
-    dto.languageTest = application.languageTest ?? undefined;
-    dto.languageScore = application.languageScore ?? undefined;
-    dto.languageCertificateUrl = application.languageCertificateUrl ?? undefined;
-    dto.preferredCountry = application.preferredCountry;
-    dto.preferredUniversity = application.preferredUniversity;
-    dto.preferredProgram = application.preferredProgram;
-    dto.intakeSeason = application.intakeSeason;
-    dto.intakeYear = application.intakeYear;
-    dto.motivationLetterUrl = application.motivationLetterUrl ?? undefined;
-    dto.recommendationLetterUrls = application.recommendationLetterUrls ?? undefined;
-    dto.cvUrl = application.cvUrl ?? undefined;
-    // Map status and dates
-    dto.applicationStatus = application.applicationStatus;
-    dto.submittedAt = application.submittedAt ?? undefined;
-    dto.createdAt = application.createdAt;
-    dto.updatedAt = application.updatedAt;
+    // Ensure profile is handled, especially if not always included by repository
+    const profileDto = application.profile 
+      ? this.profilesService.mapToResponseDto(application.profile) // ProfilesService handles mapping of profile data
+      : undefined;
 
-    // Uncomment and map the newly added fields
-    // Assuming these fields exist on the Prisma Application model
-    // --- Prerequisite: Add these fields to schema.prisma and run `npx prisma generate` ---
-    // dto.programId = application.programId ?? undefined;
-    // dto.programType = application.programType ?? undefined;
-    // dto.academicYear = application.academicYear ?? undefined;
-    // dto.notes = application.notes ?? undefined;
-    // dto.adminNotes = application.adminNotes ?? undefined;
-    // dto.assignedTo = application.assignedTo ?? undefined;
-    // dto.reviewDate = application.reviewedAt ?? undefined; // Map reviewedAt to reviewDate
+    return {
+      id: application.id,
+      profileId: application.profileId,
+      profile: profileDto, // This correctly includes the moved fields via ProfileResponseDto
 
-    // Include profile if available
-    if (application.profile) {
-      dto.profile = {
-        id: application.profile.id,
-        // Ensure ProfileResponseDto structure is matched
-        firstName: application.profile.firstName,
-        lastName: application.profile.lastName,
-        // Map other required fields from ProfileResponseDto if they exist on profile
-        email: application.profile.email,
-        phoneNumber: application.profile.phoneNumber,
-        userId: application.profile.userId,
-        // Use nullish coalescing for potentially missing fields
-        yearOfBirth: application.profile.yearOfBirth ?? undefined,
-        passportSeriesAndNumber: application.profile.passportSeriesAndNumber ?? undefined,
-        createdAt: application.profile.createdAt,
-        updatedAt: application.profile.updatedAt,
-      };
-    }
+      // Fields that were moved to Profile are no longer mapped directly from the Application object here.
+      // They are part of the profileDto.
 
-    return dto;
+      currentEducationLevel: application.currentEducationLevel,
+      currentInstitutionName: application.currentInstitutionName,
+      graduationYear: application.graduationYear,
+      transcriptUrl: application.transcriptUrl,
+      languageTest: application.languageTest,
+      languageScore: application.languageScore,
+      languageCertificateUrl: application.languageCertificateUrl,
+      preferredCountry: application.preferredCountry,
+      preferredUniversity: application.preferredUniversity,
+      preferredProgram: application.preferredProgram,
+      intakeSeason: application.intakeSeason,
+      intakeYear: application.intakeYear,
+      motivationLetterUrl: application.motivationLetterUrl,
+      recommendationLetterUrls: application.recommendationLetterUrls,
+      cvUrl: application.cvUrl,
+      applicationStatus: application.applicationStatus,
+      submittedAt: application.submittedAt,
+      createdAt: application.createdAt,
+      updatedAt: application.updatedAt,
+
+      // Optional fields from ApplicationResponseDto; these should be on the 'application' object if populated.
+      // If 'application' object (from repository) doesn't include these, they'll be undefined, which is fine for optional DTO fields.
+      programId: (application as any).programId, 
+      programType: (application as any).programType,
+      academicYear: (application as any).academicYear,
+      notes: (application as any).notes,
+      adminNotes: (application as any).adminNotes,
+      assignedTo: (application as any).assignedTo,
+      reviewDate: (application as any).reviewDate,
+    };
   }
 }

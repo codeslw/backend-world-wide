@@ -2,22 +2,20 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../db/prisma.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
-import { Prisma, Gender, ApplicationStatus } from '@prisma/client';
+import { Prisma, ApplicationStatus } from '@prisma/client';
 
 @Injectable()
 export class ApplicationsRepository {
   constructor(private prisma: PrismaService) {}
 
   async create(profileId: string, createApplicationDto: CreateApplicationDto) {
-    // Convert date strings to Date objects
-    const { dateOfBirth, passportExpiryDate, submittedAt, ...restData } = createApplicationDto;
+    // Only handle submittedAt date conversion, other date fields are now in Profile
+    const { submittedAt, ...restData } = createApplicationDto;
     
     return this.prisma.application.create({
       data: {
         ...restData,
         profile: { connect: { id: profileId } },
-        dateOfBirth: new Date(dateOfBirth),
-        passportExpiryDate: new Date(passportExpiryDate),
         ...(submittedAt && { submittedAt: new Date(submittedAt) }),
       },
       include: {
@@ -75,14 +73,12 @@ export class ApplicationsRepository {
   }
 
   async update(id: string, updateApplicationDto: UpdateApplicationDto) {
-    // Process date fields
-    const { dateOfBirth, passportExpiryDate, submittedAt, ...restData } = updateApplicationDto;
+    // Only handle submittedAt date conversion, other date fields are now in Profile
+    const { submittedAt, ...restData } = updateApplicationDto;
     
     // Build the update data
     const data = {
       ...restData,
-      ...(dateOfBirth && { dateOfBirth: new Date(dateOfBirth) }),
-      ...(passportExpiryDate && { passportExpiryDate: new Date(passportExpiryDate) }),
       ...(submittedAt && { submittedAt: new Date(submittedAt) }),
     };
 

@@ -89,7 +89,7 @@ jobs:
             
             # Run migrations
             echo "Running database migrations..."
-            docker-compose exec -T api npx prisma migrate deploy
+            docker-compose exec -it api npx prisma migrate deploy
             
            
             # Verify containers are running

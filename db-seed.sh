@@ -8,9 +8,12 @@ run_curl() {
     echo "Executing: $1"
     if ! curl --fail -s -o /dev/null "$@"; then
         echo "Error: Failed to execute $1"
+        response=$(curl -s "$@")
+        echo "Error details: $response"
         exit 1
     fi
     echo "Success: $1 completed"
+    #else show error message
     sleep 2  # Wait 2 seconds between requests
 }
 

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../common/dto/pagination-response.dto';
+import { Gender } from '@prisma/client';
 
 export class ProfileResponseDto {
   @ApiProperty({ description: 'Profile ID' })
@@ -13,6 +14,30 @@ export class ProfileResponseDto {
 
   @ApiProperty({ description: 'Last name of the user' })
   lastName: string;
+
+  @ApiProperty({ description: 'Middle name of the user', required: false })
+  middleName?: string;
+
+  @ApiProperty({ description: 'Date of birth', required: false })
+  dateOfBirth?: Date;
+
+  @ApiProperty({ enum: Gender, description: 'Gender of the user', required: false })
+  gender?: Gender;
+
+  @ApiProperty({ description: 'Nationality of the user', required: false })
+  nationality?: string;
+
+  @ApiProperty({ description: 'Full address of the user', required: false })
+  address?: string;
+
+  @ApiProperty({ description: 'Passport number', required: false })
+  passportNumber?: string;
+
+  @ApiProperty({ description: 'Passport expiry date', required: false })
+  passportExpiryDate?: Date;
+
+  @ApiProperty({ description: 'URL to the uploaded passport copy', required: false })
+  passportCopyUrl?: string;
 
   @ApiProperty({ description: 'Year of birth', required: false })
   yearOfBirth?: number;

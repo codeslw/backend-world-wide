@@ -10,64 +10,64 @@ import {
   IsArray,
   IsUrl,
 } from 'class-validator';
-import { Gender, LanguageTest, IntakeSeason, ApplicationStatus } from '@prisma/client';
+import { LanguageTest, IntakeSeason, ApplicationStatus } from '@prisma/client';
 
 export class UpdateApplicationDto {
-  // Personal Information
-  @ApiProperty({ required: false, description: 'Middle name of the applicant' })
-  @IsOptional()
-  @IsString()
-  middleName?: string;
+  // Personal Information - Fields moved to Profile DTO
+  // @ApiProperty({ required: false, description: 'Middle name of the applicant' })
+  // @IsOptional()
+  // @IsString()
+  // middleName?: string;
 
-  @ApiProperty({ required: false, description: 'Date of birth in ISO format' })
-  @IsOptional()
-  @IsDateString()
-  dateOfBirth?: string;
+  // @ApiProperty({ required: false, description: 'Date of birth in ISO format' })
+  // @IsOptional()
+  // @IsDateString()
+  // dateOfBirth?: string;
 
-  @ApiProperty({
-    enum: Gender,
-    required: false,
-    description: 'Gender of the applicant',
-  })
-  @IsOptional()
-  @IsEnum(Gender)
-  gender?: Gender;
+  // @ApiProperty({
+  //   enum: Gender,
+  //   required: false,
+  //   description: 'Gender of the applicant',
+  // })
+  // @IsOptional()
+  // @IsEnum(Gender)
+  // gender?: Gender;
 
-  @ApiProperty({ required: false, description: 'Nationality of the applicant' })
-  @IsOptional()
-  @IsString()
-  nationality?: string;
+  // @ApiProperty({ required: false, description: 'Nationality of the applicant' })
+  // @IsOptional()
+  // @IsString()
+  // nationality?: string;
 
-  @ApiProperty({
-    required: false,
-    description: 'Full address of the applicant',
-  })
-  @IsOptional()
-  @IsString()
-  address?: string;
+  // @ApiProperty({
+  //   required: false,
+  //   description: 'Full address of the applicant',
+  // })
+  // @IsOptional()
+  // @IsString()
+  // address?: string;
 
-  // Passport Information
-  @ApiProperty({ required: false, description: 'Passport number' })
-  @IsOptional()
-  @IsString()
-  passportNumber?: string;
+  // Passport Information - Fields moved to Profile DTO
+  // @ApiProperty({ required: false, description: 'Passport number' })
+  // @IsOptional()
+  // @IsString()
+  // passportNumber?: string;
 
-  @ApiProperty({
-    required: false,
-    description: 'Passport expiry date in ISO format',
-  })
-  @IsOptional()
-  @IsDateString()
-  passportExpiryDate?: string;
+  // @ApiProperty({
+  //   required: false,
+  //   description: 'Passport expiry date in ISO format',
+  // })
+  // @IsOptional()
+  // @IsDateString()
+  // passportExpiryDate?: string;
 
-  @ApiProperty({
-    required: false,
-    description: 'URL to the uploaded passport copy',
-  })
-  @IsOptional()
-  @IsString()
-  @IsUrl()
-  passportCopyUrl?: string;
+  // @ApiProperty({
+  //   required: false,
+  //   description: 'URL to the uploaded passport copy',
+  // })
+  // @IsOptional()
+  // @IsString()
+  // @IsUrl()
+  // passportCopyUrl?: string;
 
   // Education Information
   @ApiProperty({

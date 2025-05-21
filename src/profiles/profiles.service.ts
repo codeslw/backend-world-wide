@@ -7,6 +7,8 @@ import { FilterService } from '../common/filters/filter.service';
 import { FilterOptions, PaginationOptions } from '../common/filters/filter.interface';
 import { PrismaService } from '../db/prisma.service';
 import { EntityNotFoundException, InvalidDataException } from '../common/exceptions/app.exceptions';
+import { ProfileResponseDto } from './dto/profile-response.dto';
+import { Profile } from '@prisma/client';
 
 @Injectable()
 export class ProfilesService {
@@ -146,5 +148,33 @@ export class ProfilesService {
       // Otherwise let the global exception filter handle it
       throw error;
     }
+  }
+
+  /**
+   * Maps a Profile entity to a ProfileResponseDto
+   * @param profile The profile entity to map
+   * @returns A ProfileResponseDto object
+   */
+  mapToResponseDto(profile: Profile): ProfileResponseDto {
+    return {
+      id: profile.id,
+      userId: profile.userId,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      middleName: profile.middleName || undefined,
+      dateOfBirth: profile.dateOfBirth || undefined,
+      gender: profile.gender || undefined,
+      nationality: profile.nationality || undefined,
+      address: profile.address || undefined,
+      passportNumber: profile.passportNumber || undefined,
+      passportExpiryDate: profile.passportExpiryDate || undefined,
+      passportCopyUrl: profile.passportCopyUrl || undefined,
+      yearOfBirth: profile.yearOfBirth || undefined,
+      passportSeriesAndNumber: profile.passportSeriesAndNumber || undefined,
+      email: profile.email || undefined,
+      phoneNumber: profile.phoneNumber || undefined,
+      createdAt: profile.createdAt,
+      updatedAt: profile.updatedAt
+    };
   }
 } 

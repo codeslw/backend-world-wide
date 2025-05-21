@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ProfileResponseDto } from '../../profiles/dto/profile-response.dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination-response.dto';
-import { Gender, LanguageTest, IntakeSeason, ApplicationStatus } from '@prisma/client';
+import { LanguageTest, IntakeSeason, ApplicationStatus } from '@prisma/client';
 
 export class ApplicationResponseDto {
   @ApiProperty({ description: 'Application ID' })
@@ -12,34 +12,6 @@ export class ApplicationResponseDto {
 
   @ApiProperty({ description: 'Profile details', type: ProfileResponseDto })
   profile: ProfileResponseDto;
-
-  @ApiProperty({ description: 'Middle name of the applicant', required: false })
-  middleName?: string;
-
-  @ApiProperty({ description: 'Date of birth' })
-  dateOfBirth: Date;
-
-  @ApiProperty({
-    enum: Gender,
-    description: 'Gender of the applicant',
-    required: false,
-  })
-  gender?: Gender;
-
-  @ApiProperty({ description: 'Nationality of the applicant' })
-  nationality: string;
-
-  @ApiProperty({ description: 'Full address of the applicant' })
-  address: string;
-
-  @ApiProperty({ description: 'Passport number' })
-  passportNumber: string;
-
-  @ApiProperty({ description: 'Passport expiry date' })
-  passportExpiryDate: Date;
-
-  @ApiProperty({ description: 'URL to the uploaded passport copy' })
-  passportCopyUrl: string;
 
   @ApiProperty({ description: 'Current education level' })
   currentEducationLevel: string;
