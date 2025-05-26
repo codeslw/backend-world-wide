@@ -135,27 +135,38 @@ export class FilesService {
   }
 
   async deleteFileByUrl(url: string) {
-    // Extract the key from the URL if it's a presigned URL
-    let key = url;
-    if (url.includes('?')) {
-      key = url.split('?')[0].split('/').slice(-2).join('/');
+    let objectKey: string;
+    try {
+      const parsedUrl = new URL(url);
+      // The key is the pathname without the leading slash if the hostname matches a DO spaces URL pattern
+      // Example: /folder/subfolder/file.ext -> folder/subfolder/file.ext
+      // This regex is a basic check, for more robust validation, consider DigitalOcean's exact domain patterns.
+      if (parsedUrl.hostname.endsWith('.digitaloceanspaces.com')) {
+        objectKey = parsedUrl.pathname.startsWith('/') ? parsedUrl.pathname.substring(1) : parsedUrl.pathname;
+      } else {
+        // If it's not a recognized DO URL, assume the passed URL is the key itself (e.g., if it's just 'folder/file.key')
+        // Or, this could be an error condition if only DO URLs are expected.
+        objectKey = url; 
+      }
+    } catch (e) {
+      // If URL parsing fails, assume the input `url` might be the key itself.
+      // This handles cases where a raw key is passed.
+      objectKey = url;
     }
-    
-    // Find the file in the database
+
+    // Find the file in the database using the exact key
     const file = await this.prisma.file.findFirst({
       where: { 
-        url: { 
-          contains: key 
-        } 
+        url: objectKey // Match the exact key stored in the database
       },
     });
     
     if (!file) {
-      throw new NotFoundException(`File with URL ${url} not found`);
+      throw new NotFoundException(`File with key ${objectKey} (derived from URL ${url}) not found in database`);
     }
     
-    // Delete the file
-    await this.digitalOceanService.deleteFile(key);
+    // Delete the file from DigitalOcean Spaces using the true object key
+    await this.digitalOceanService.deleteFile(file.url); // file.url IS the key
     
     // Delete from database
     return await this.prisma.file.delete({

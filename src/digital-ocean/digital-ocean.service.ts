@@ -54,8 +54,8 @@ export class DigitalOceanService {
       ContentType: file.mimetype,
     };
 
-    const result = await this.s3.upload(params).promise();
-    return result.Location;
+    await this.s3.upload(params).promise();
+    return uniqueFileName;
   }
   
   private async uploadLargeFile(file: Express.Multer.File, key: string): Promise<string> {
@@ -106,8 +106,8 @@ export class DigitalOceanService {
         },
       };
       
-      const completeResult = await this.s3.completeMultipartUpload(completeParams).promise();
-      return completeResult.Location;
+      await this.s3.completeMultipartUpload(completeParams).promise();
+      return key;
     } catch (error) {
       // Abort multipart upload if it fails
       await this.s3.abortMultipartUpload({
