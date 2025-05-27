@@ -2,6 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { UniversityType } from 'src/common/enum/university-type.enum';
 import { PaginatedResponseDto } from '../../common/dto/pagination-response.dto';
+import { CountryResponseDto } from 'src/countries/dto/country-response.dto';
+import { CityResponseDto } from 'src/cities/dto/city-response.dto';
 
 // DTO for representing program details within the university response
 class UniversityProgramResponseDto {
@@ -90,6 +92,12 @@ export class UniversityResponseDto {
 
   @ApiProperty({ description: 'Timestamp of last update' })
   updatedAt: Date;
+
+  @ApiProperty({ description: 'Country' })
+  country: CountryResponseDto;
+
+  @ApiProperty({ description: 'City' })
+  city: CityResponseDto;
 
   @ApiProperty({ type: [UniversityProgramResponseDto], description: 'Programs offered with specific tuition fees' })
   @Type(() => UniversityProgramResponseDto)

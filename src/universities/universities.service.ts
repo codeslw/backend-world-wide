@@ -304,7 +304,6 @@ export class UniversitiesService {
         where: { id },
         include: {
           universityPrograms: true,
-          miniApplications: true
         }
       });
       
@@ -320,12 +319,7 @@ export class UniversitiesService {
         );
       }
 
-      if (university.miniApplications.length > 0) {
-        throw new InvalidDataException(
-          'Cannot delete university with associated mini-applications. Please handle mini-applications first.',
-          { reason: 'RELATED_MINI_APPLICATIONS_EXIST', count: university.miniApplications.length }
-        );
-      }
+      
 
       // Now safe to delete
       await this.prisma.university.delete({ where: { id } });
@@ -436,6 +430,8 @@ export class UniversitiesService {
         tuitionFee: up.tuitionFee,
         tuitionFeeCurrency: up.tuitionFeeCurrency,
       })) || [],
+      country: university.country,
+      city: university.city,
     };
   }
 

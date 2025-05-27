@@ -30,16 +30,12 @@ export class MiniApplicationResponseDto {
   status: MiniApplicationStatus;
 
   @ApiProperty()
-  universityId: string;
-
-  @ApiProperty()
   createdAt: Date;
 
   @ApiProperty()
   updatedAt: Date;
 
-  @ApiProperty({ type: () => UniversityBriefDto, required: false })
-  university?: UniversityBriefDto; // Included from service
+
 }
 
 export class PaginatedMiniApplicationResponseDto {

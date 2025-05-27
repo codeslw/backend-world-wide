@@ -28,7 +28,7 @@ export class MiniApplicationsController {
   @ApiOperation({ summary: 'Create a new mini application' })
   @ApiResponse({ status: 201, description: 'The mini application has been successfully created.', type: MiniApplicationResponseDto })
   @ApiResponse({ status: 400, description: 'Invalid input data.' })
-  @ApiResponse({ status: 404, description: 'University not found.' })
+  // @ApiResponse({ status: 404, description: 'University not found.' })
   @ApiBody({ type: CreateMiniApplicationDto })
   async create(@Body() createMiniApplicationDto: CreateMiniApplicationDto): Promise<MiniApplication> {
     return this.miniApplicationsService.create(createMiniApplicationDto);

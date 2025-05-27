@@ -109,7 +109,6 @@ model University {
   // Removed direct relation to Program
   // programs              Program[] 
   universityPrograms    UniversityProgram[] // Relation to the join table
-  miniApplications    MiniApplication[]   // Relation to MiniApplication
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
@@ -305,14 +304,11 @@ model MiniApplication {
   lastName     String
   email        String
   phoneNumber  String
-  universityId String
-  university   University @relation(fields: [universityId], references: [id], onDelete: Restrict) // Changed from Cascade to Restrict
-  status       MiniApplicationStatus @default(NEW)
+ status       MiniApplicationStatus @default(NEW)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
   @@map("mini_applications")
-  @@index([universityId])
   @@index([email]) // Add index for potential lookup by email
   @@index([status]) // Add index for status
 }

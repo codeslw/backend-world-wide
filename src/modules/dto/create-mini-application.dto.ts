@@ -41,12 +41,5 @@ export class CreateMiniApplicationDto {
   })
   phoneNumber: string;
 
-  @ApiProperty({
-    example: 'a1b2c3d4-e5f6-7890-1234-567890abcdef',
-    description: 'UUID of the target university',
-    required: true,
-  })
-  @IsNotEmpty()
-  @IsUUID()
-  universityId: string;
+ 
 } 

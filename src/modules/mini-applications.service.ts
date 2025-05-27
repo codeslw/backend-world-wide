@@ -17,13 +17,7 @@ export class MiniApplicationsService {
   ) {}
 
   async create(createMiniApplicationDto: CreateMiniApplicationDto): Promise<MiniApplication> {
-    // Check if university exists
-    const university = await this.prisma.university.findUnique({
-      where: { id: createMiniApplicationDto.universityId },
-    });
-    if (!university) {
-      throw new NotFoundException(`University with ID "${createMiniApplicationDto.universityId}" not found`);
-    }
+   
 
     return this.prisma.miniApplication.create({
       data: createMiniApplicationDto,
@@ -66,7 +60,6 @@ export class MiniApplicationsService {
   async findOne(id: string): Promise<MiniApplication> {
     const miniApplication = await this.prisma.miniApplication.findUnique({
       where: { id },
-      include: { university: true }, // Optionally include university details
     });
     if (!miniApplication) {
       throw new NotFoundException(`MiniApplication with ID "${id}" not found`);
@@ -79,14 +72,7 @@ export class MiniApplicationsService {
     await this.findOne(id);
 
     // If universityId is being updated, check if the new university exists
-    if (updateMiniApplicationDto.universityId) {
-      const university = await this.prisma.university.findUnique({
-        where: { id: updateMiniApplicationDto.universityId },
-      });
-      if (!university) {
-        throw new NotFoundException(`University with ID "${updateMiniApplicationDto.universityId}" not found`);
-      }
-    }
+   
 
     try {
       return await this.prisma.miniApplication.update({
