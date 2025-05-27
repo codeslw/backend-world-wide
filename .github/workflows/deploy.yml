@@ -68,15 +68,16 @@ jobs:
             
             # Stop existing containers
             echo "Stopping existing containers..."
-            docker-compose down 
+            docker-compose down -v
             
-            # Clean up Docker resources but preserve volumes
-            echo "Cleaning up Docker resources..."
-            docker system prune -af --filter "label!=keep"
+             # SAFE cleanup - only remove unused containers and images, NOT volumes
+            echo "Cleaning up Docker resources (preserving volumes)..."
+            docker container prune -f
+            docker image prune -af
             
             # Pull latest images and rebuild
             echo "Building and starting containers..."
-            docker-compose build --no-cache
+            docker-compose build 
             docker-compose up -d
             
             # Wait for containers to be ready
@@ -89,7 +90,7 @@ jobs:
             
             # Run migrations
             echo "Running database migrations..."
-            docker-compose exec -it api npx prisma migrate deploy
+            docker-compose exec -T api npx prisma migrate deploy
             
            
             # Verify containers are running
