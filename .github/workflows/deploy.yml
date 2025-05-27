@@ -68,7 +68,7 @@ jobs:
             
             # Stop existing containers
             echo "Stopping existing containers..."
-            docker-compose down -v
+            docker-compose down
             
              # SAFE cleanup - only remove unused containers and images, NOT volumes
             echo "Cleaning up Docker resources (preserving volumes)..."

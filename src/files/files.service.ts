@@ -7,6 +7,7 @@ import axios from 'axios';
 import { lastValueFrom } from 'rxjs';
 import { parse } from 'url';
 import { basename } from 'path';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class FilesService {
@@ -14,6 +15,7 @@ export class FilesService {
     private readonly digitalOceanService: DigitalOceanService,
     private readonly prisma: PrismaService,
     private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
   ) {}
 
   async uploadFile(file: Express.Multer.File) {
@@ -136,38 +138,51 @@ export class FilesService {
 
   async deleteFileByUrl(url: string) {
     let objectKey: string;
+    const bucketName = this.configService.get<string>('DIGITAL_OCEAN_BUCKET');
+
     try {
       const parsedUrl = new URL(url);
-      // The key is the pathname without the leading slash if the hostname matches a DO spaces URL pattern
-      // Example: /folder/subfolder/file.ext -> folder/subfolder/file.ext
-      // This regex is a basic check, for more robust validation, consider DigitalOcean's exact domain patterns.
       if (parsedUrl.hostname.endsWith('.digitaloceanspaces.com')) {
-        objectKey = parsedUrl.pathname.startsWith('/') ? parsedUrl.pathname.substring(1) : parsedUrl.pathname;
+        let path = parsedUrl.pathname; // e.g., /bucketname/folder/key.ext or /folder/key.ext
+
+        if (path.startsWith('/')) {
+          path = path.substring(1); // e.g., bucketname/folder/key.ext or folder/key.ext
+        }
+
+        // If s3ForcePathStyle is used (common for DO), the bucket name might be the first part of the path.
+        // We need to remove it to get the actual object key that's stored in the DB.
+        if (bucketName && path.startsWith(`${bucketName}/`)) {
+          objectKey = path.substring(bucketName.length + 1); // +1 for the trailing slash
+        } else {
+          // This case might occur if not using path style, bucket in hostname, or URL is already just the key.
+          objectKey = path;
+        }
       } else {
-        // If it's not a recognized DO URL, assume the passed URL is the key itself (e.g., if it's just 'folder/file.key')
-        // Or, this could be an error condition if only DO URLs are expected.
-        objectKey = url; 
+        // If not a DO URL, assume 'url' is the key itself (e.g. a raw key was passed)
+        objectKey = url;
       }
     } catch (e) {
-      // If URL parsing fails, assume the input `url` might be the key itself.
-      // This handles cases where a raw key is passed.
+      // If URL parsing fails (e.g., 'url' is not a valid URL string),
+      // assume the input 'url' might be the raw key itself.
       objectKey = url;
     }
 
-    // Find the file in the database using the exact key
+    // Find the file in the database using the exact extracted key
     const file = await this.prisma.file.findFirst({
-      where: { 
-        url: objectKey // Match the exact key stored in the database
+      where: {
+        url: objectKey, // Match the exact key stored in the database
       },
     });
-    
+
     if (!file) {
-      throw new NotFoundException(`File with key ${objectKey} (derived from URL ${url}) not found in database`);
+      throw new NotFoundException(
+        `File with key '${objectKey}' (derived from URL '${url}') not found in database. Attempted with bucket: '${bucketName}'`,
+      );
     }
-    
-    // Delete the file from DigitalOcean Spaces using the true object key
-    await this.digitalOceanService.deleteFile(file.url); // file.url IS the key
-    
+
+    // Delete the file from DigitalOcean Spaces using the true object key (file.url from DB)
+    await this.digitalOceanService.deleteFile(file.url);
+
     // Delete from database
     return await this.prisma.file.delete({
       where: { id: file.id },
