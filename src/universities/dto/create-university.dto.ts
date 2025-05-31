@@ -20,22 +20,23 @@ import { UniversityType } from '../../common/enum/university-type.enum';
 import { UniversityProgramDto } from './university-program.dto';
 
 export class CreateUniversityDto {
-  @ApiProperty({ description: 'University name in Uzbek', example: 'Toshkent Axborot Texnologiyalari Universiteti' })
+  @ApiProperty({ description: 'University name', example: 'Toshkent Axborot Texnologiyalari Universiteti' })
   @IsString()
   @IsNotEmpty()
-  nameUz: string;
+  name: string;
 
-  @ApiProperty({ description: 'University name in Russian', example: 'Ташкентский Университет Информационных Технологий' })
-  @IsString()
-  @IsNotEmpty()
-  nameRu: string;
+  // @ApiProperty({ description: 'University name in Russian', example: 'Ташкентский Университет Информационных Технологий' })
+  // @IsString()
+  // @IsNotEmpty()
+  // nameRu: string;
 
-  @ApiProperty({ description: 'University name in English', example: 'Tashkent University of Information Technologies' })
-  @IsString()
-  @IsNotEmpty()
-  nameEn: string;
+  // @ApiProperty({ description: 'University name in English', example: 'Tashkent University of Information Technologies' })
+  // @IsString()
+  // @IsNotEmpty()
+  // nameEn: string;
 
   @ApiProperty({ description: 'Year of establishment', example: 1955 })
+  @IsOptional()
   @IsInt()
   established: number;
 
@@ -59,17 +60,17 @@ export class CreateUniversityDto {
 
   @ApiProperty({ description: 'Description in Uzbek', example: "O'zbekistondagi yetakchi IT universiteti." })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   descriptionUz: string;
 
   @ApiProperty({ description: 'Description in Russian', example: 'Ведущий ИТ-университет Узбекистана.' })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   descriptionRu: string;
 
   @ApiProperty({ description: 'Description in English', example: 'Leading IT university in Uzbekistan.' })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   descriptionEn: string;
 
   @ApiProperty({ description: 'Winter intake deadline (YYYY-MM-DD)', required: false, example: '2025-11-30' })
@@ -104,12 +105,13 @@ export class CreateUniversityDto {
 
   @ApiProperty({ description: 'University email', example: 'info@tuit.uz' })
   @IsEmail()
+  @IsOptional()
   email: string;
 
   @ApiProperty({ description: 'University phone number', example: '+998712386415' })
   // @IsPhoneNumber() // Commented out: Requires specific country code or use IsString
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   phone: string;
 
   @ApiProperty({ description: 'University address', example: 'Amir Temur Avenue 108, Tashkent, Uzbekistan' })

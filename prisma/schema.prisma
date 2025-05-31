@@ -79,17 +79,15 @@ model City {
 
 model University {
   id                    String   @id @default(uuid())
-  nameUz                String
-  nameRu                String
-  nameEn                String
-  established           Int
+  name                  String
+  established           Int?
   type                  String // Consider changing to UniversityType enum if values are fixed
-  descriptionUz         String
-  descriptionRu         String
-  descriptionEn         String
+  descriptionUz         String?
+  descriptionRu         String?
+  descriptionEn         String?
   website               String
-  email                 String
-  phone                 String
+  email                 String?
+  phone                 String?
   address               String
   winterIntakeDeadline  DateTime?
   autumnIntakeDeadline  DateTime?

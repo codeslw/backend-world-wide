@@ -24,14 +24,14 @@ export class UniversityResponseDto {
   @ApiProperty({ description: 'University ID' })
   id: string;
 
-  @ApiProperty({ description: 'University name in Uzbek' })
-  nameUz: string;
+  @ApiProperty({ description: 'University name' })
+  name: string;
 
-  @ApiProperty({ description: 'University name in Russian' })
-  nameRu: string;
+  // @ApiProperty({ description: 'University name in Russian' })
+  // nameRu: string;
 
-  @ApiProperty({ description: 'University name in English' })
-  nameEn: string;
+  // @ApiProperty({ description: 'University name in English' })
+  // nameEn: string;
 
   @ApiProperty({ description: 'Year of establishment' })
   established: number;

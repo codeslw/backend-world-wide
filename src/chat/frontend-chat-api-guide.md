@@ -37,6 +37,15 @@ const socket = io('wss://api.example.com', { // Or your specific WebSocket names
 });
 ```
 
+## 3.1. User Roles and Permissions
+
+This API distinguishes between two primary user roles:
+
+*   **Client:** Regular users who can create chats, send and receive messages in their own chats, and manage their chat sessions.
+*   **Admin:** Privileged users who can view all chats, assign themselves to chats, manage chat statuses, and participate in any chat.
+
+Specific endpoints and WebSocket events may have different behaviors or access restrictions based on the authenticated user's role. This will be noted in their respective descriptions.
+
 ## 4. Core Data Types
 
 These are the primary data structures you'll work with.
@@ -114,6 +123,7 @@ interface UpdateChatStatusDto {
 
 Creates a new chat for the authenticated user.
 
+*   **Available to:** Clients
 *   **Endpoint:** `POST /`
 *   **Request Body:** `CreateChatDto`
     ```json
@@ -148,6 +158,7 @@ Creates a new chat for the authenticated user.
 
 Retrieves all chats for the authenticated user.
 
+*   **Available to:** Clients
 *   **Endpoint:** `GET /`
 *   **Query Parameters:**
     *   `status` (optional): Filter by chat status (`ACTIVE`, `CLOSED`, `PENDING`).
@@ -165,8 +176,10 @@ Retrieves all chats for the authenticated user.
 
 #### 5.3. Get All Chats (Admin Only)
 
-Retrieves all chats in the system. Requires admin privileges.
+Retrieves all chats in the system.
 
+*   **Available to:** Admins
+*   **Requires:** Admin privileges.
 *   **Endpoint:** `GET /admin`
 *   **Query Parameters:**
     *   `status` (optional): Filter by chat status (`ACTIVE`, `CLOSED`, `PENDING`).
@@ -176,6 +189,7 @@ Retrieves all chats in the system. Requires admin privileges.
 
 Retrieves a specific chat by its ID.
 
+*   **Available to:** Clients (for their own chats), Admins (for any chat)
 *   **Endpoint:** `GET /:id` (where `:id` is the chat UUID)
 *   **Response:** `200 OK` - Returns the `Chat` object, usually including recent messages.
     ```json
@@ -189,8 +203,10 @@ Retrieves a specific chat by its ID.
 
 #### 5.5. Assign Admin to Chat (Admin Only)
 
-Assigns the authenticated admin to a chat. Requires admin privileges.
+Assigns the authenticated admin to a chat.
 
+*   **Available to:** Admins
+*   **Requires:** Admin privileges.
 *   **Endpoint:** `PATCH /:id/assign` (where `:id` is the chat UUID)
 *   **Response:** `200 OK` - Returns the updated `Chat` object.
     ```json
@@ -206,8 +222,9 @@ Assigns the authenticated admin to a chat. Requires admin privileges.
 
 #### 5.6. Update Chat Status
 
-Updates the status of a chat (e.g., to close it). Typically accessible by the client for their own chats, or by an admin.
+Updates the status of a chat (e.g., to close it).
 
+*   **Available to:** Clients (for their own chats, e.g., to 'CLOSED'), Admins (for any chat)
 *   **Endpoint:** `PATCH /:id/status` (where `:id` is the chat UUID)
 *   **Request Body:** `UpdateChatStatusDto`
     ```json
@@ -231,6 +248,7 @@ Updates the status of a chat (e.g., to close it). Typically accessible by the cl
 
 Sends a new message to a specific chat.
 
+*   **Available to:** Clients, Admins
 *   **Endpoint:** `POST /:id/messages` (where `:id` is the chat UUID)
 *   **Request Body:** `CreateMessageDto`
     ```json
@@ -259,6 +277,7 @@ Sends a new message to a specific chat.
 
 Retrieves messages for a specific chat with pagination.
 
+*   **Available to:** Clients, Admins
 *   **Endpoint:** `GET /:id/messages` (where `:id` is the chat UUID)
 *   **Query Parameters:**
     *   `page` (optional): Page number (default: 1).
@@ -332,6 +351,8 @@ Establish a connection as described in Section 3 (Authentication).
 
 These are events your client will emit to the server. For acknowledgment/response, Socket.IO callbacks can be used.
 
+Each event can be emitted by both Clients and Admins unless specified otherwise, provided they are part of the relevant chat.
+
 #### `joinChat`
 
 Join a specific chat room to send and receive messages for that chat.
@@ -356,6 +377,7 @@ Join a specific chat room to send and receive messages for that chat.
 
 Leave a chat room.
 
+*   **Available to:** Clients, Admins
 *   **Event Name:** `leaveChat`
 *   **Payload:** `string` (The Chat ID to leave)
     ```typescript
@@ -373,6 +395,7 @@ Leave a chat room.
 
 Send a message to a chat. The user must have joined the chat room first.
 
+*   **Available to:** Clients, Admins
 *   **Event Name:** `sendMessage`
 *   **Payload:**
     ```typescript
@@ -397,6 +420,7 @@ Send a message to a chat. The user must have joined the chat room first.
 
 Indicate that the current user is typing or has stopped typing in a chat.
 
+*   **Available to:** Clients, Admins
 *   **Event Name:** `typing`
 *   **Payload:**
     ```typescript
@@ -411,6 +435,7 @@ Indicate that the current user is typing or has stopped typing in a chat.
 
 Mark messages as read by the current user in a specific chat.
 
+*   **Available to:** Clients, Admins
 *   **Event Name:** `readMessages`
 *   **Payload:**
     ```typescript
@@ -431,6 +456,7 @@ Mark messages as read by the current user in a specific chat.
 
 Request a list of users currently active in a specific chat room.
 
+*   **Available to:** Clients, Admins
 *   **Event Name:** `getActiveUsers`
 *   **Payload:** `string` (Chat ID)
 *   **Server Acknowledgment (Example):**
@@ -446,7 +472,7 @@ Request a list of users currently active in a specific chat room.
 
 ### Server-to-Client Events
 
-These are events your client will listen for from the server.
+These are events your client will listen for from the server. These are broadcast to all relevant participants (Clients and Admins) in a chat room.
 
 #### `newMessage`
 
@@ -459,6 +485,7 @@ Emitted when a new message is sent to a chat room your client has joined.
 
 Emitted when another user in a joined chat room starts or stops typing.
 
+*   **Received by:** Clients, Admins
 *   **Event Name:** `userTyping`
 *   **Payload:**
     ```typescript
@@ -474,6 +501,7 @@ Emitted when another user in a joined chat room starts or stops typing.
 
 Emitted when messages in a chat have been marked as read by a user.
 
+*   **Received by:** Clients, Admins
 *   **Event Name:** `messagesRead`
 *   **Payload:**
     ```typescript
@@ -488,6 +516,7 @@ Emitted when messages in a chat have been marked as read by a user.
 
 Emitted when a user joins or leaves a chat room you are in.
 
+*   **Received by:** Clients, Admins
 *   **Event Name:** `participantUpdate`
 *   **Payload:**
     ```typescript
@@ -503,6 +532,7 @@ Emitted when a user joins or leaves a chat room you are in.
 
 Emitted when the status of a chat you are involved in changes (e.g., from 'ACTIVE' to 'CLOSED').
 
+*   **Received by:** Clients, Admins
 *   **Event Name:** `chatStatusChanged`
 *   **Payload:**
     ```typescript
@@ -514,7 +544,7 @@ Emitted when the status of a chat you are involved in changes (e.g., from 'ACTIV
 
 ### WebSocket Error Handling
 
-Generic errors on the WebSocket connection or related to specific events might be emitted via a standard `error` event, or as part of an acknowledgment callback for an emitted event.
+Generic errors on the WebSocket connection or related to specific events might be emitted via a standard `error` event, or as part of an acknowledgment callback for an emitted event. This applies to both Clients and Admins.
 
 *   **Event Name:** `error`
 *   **Payload (Example):**
