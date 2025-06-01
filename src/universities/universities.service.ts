@@ -397,9 +397,9 @@ export class UniversitiesService {
     // Explicitly map fields to ensure correct structure and types
     return {
       id: university.id,
-      nameUz: university.nameUz,
-      nameRu: university.nameRu,
-      nameEn: university.nameEn,
+      name: university.name,
+      // nameRu: university.nameRu,
+      // nameEn: university.nameEn,
       established: university.established,
       type: university.type,
       avgApplicationFee: university.avgApplicationFee,

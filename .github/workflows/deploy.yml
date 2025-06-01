@@ -69,8 +69,9 @@ jobs:
             # Stop existing containers
             echo "Stopping existing containers..."
             # Only restart the API container, keep postgres running
-            docker-compose up -d --no-deps api
-            
+            # docker-compose up -d --no-deps api
+            docker-compose down -v
+
              # SAFE cleanup - only remove unused containers and images, NOT volumes
             echo "Cleaning up Docker resources (preserving volumes)..."
             docker container prune -f
