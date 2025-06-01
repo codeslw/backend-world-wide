@@ -91,7 +91,7 @@ describe('ChatGateway', () => {
       } as unknown as Socket;
 
       const mockUser = { 
-        id: 1, 
+        id: '1', 
         email: 'user@example.com', 
         role: Role.CLIENT,
         password: 'hashed-password',
@@ -132,7 +132,22 @@ describe('ChatGateway', () => {
   describe('notifyNewMessage', () => {
     it('should emit new message to chat room', () => {
       const chatId = 'chat-id';
-      const message = { id: 'message-id', text: 'Hello' };
+      const message = { 
+        id: 'message-id', 
+        text: 'Hello',
+        senderId: '1',
+        sender: { 
+          id: '1', 
+          email: 'user@example.com',
+          role: Role.CLIENT,
+          profile: null
+        },
+        createdAt: new Date(),
+        chatId: 'chat-id',
+        replyToId: null,
+        fileUrl: null,
+        readBy: []
+      };
       
       gateway.notifyNewMessage(chatId, message);
       

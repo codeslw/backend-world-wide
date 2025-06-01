@@ -112,7 +112,7 @@ describe('ChatService', () => {
       
       mockPrismaService.chat.findUnique.mockResolvedValue(mockChat);
       
-      const result = await service.getChatById(chatId, userId);
+      const result = await service.getChatById(chatId, userId, Role.CLIENT);
       
       expect(mockPrismaService.chat.findUnique).toHaveBeenCalledWith({
         where: { id: chatId },
@@ -127,20 +127,20 @@ describe('ChatService', () => {
     it('should throw NotFoundException if chat not found', async () => {
       mockPrismaService.chat.findUnique.mockResolvedValue(null);
       
-      await expect(service.getChatById('non-existent', 'user-id'))
+      await expect(service.getChatById('non-existent', 'user-id', Role.CLIENT))
         .rejects.toThrow(NotFoundException);
     });
 
     it('should throw ForbiddenException if user has no access', async () => {
       const mockChat = {
         id: 'chat-id',
-        clientId: 2, // Different from userId
-        adminId: 3,   // Different from userId
+        clientId: '2', // Different from userId
+        adminId: '3',   // Different from userId
       };
       
       mockPrismaService.chat.findUnique.mockResolvedValue(mockChat);
       
-      await expect(service.getChatById('chat-id', 'user-id'))
+      await expect(service.getChatById('chat-id', 'user-id', Role.CLIENT))
         .rejects.toThrow(ForbiddenException);
     });
   });
@@ -170,7 +170,7 @@ describe('ChatService', () => {
       mockPrismaService.chat.findUnique.mockResolvedValue(mockChat);
       mockPrismaService.message.create.mockResolvedValue(mockMessage);
       
-      const result = await service.createMessage(userId, chatId, createMessageDto);
+      const result = await service.createMessage(userId, Role.CLIENT, createMessageDto);
       
       expect(mockPrismaService.message.create).toHaveBeenCalled();
       expect(mockChatGateway.notifyNewMessage).toHaveBeenCalledWith(chatId, mockMessage);
