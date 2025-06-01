@@ -47,5 +47,4 @@ USER node
 EXPOSE 3000
 
 # Default command - Updated to use the correct path to main.js
-#  "npx prisma migrate deploy && node dist/src/main.js"
-CMD ["sh", "-c", "node dist/src/main.js"]
+CMD ["sh", "-c", "node dist/main.js"]

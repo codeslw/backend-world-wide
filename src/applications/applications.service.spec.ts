@@ -3,7 +3,8 @@ import { ApplicationsService } from './applications.service';
 import { ApplicationsRepository } from './applications.repository';
 import { ProfilesService } from '../profiles/profiles.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
-import { ApplicationStatus } from './enums/application.enum';
+import { ApplicationStatus } from '../common/enums/application.enum';
+import { Role } from '../common/enum/roles.enum';
 import { EntityNotFoundException, ForbiddenActionException } from '../common/exceptions/app.exceptions';
 
 describe('ApplicationsService', () => {
@@ -132,7 +133,7 @@ describe('ApplicationsService', () => {
       mockApplicationsRepository.findById.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.remove('nonexistent-id', mockUser.id))
+      await expect(service.remove('nonexistent-id', mockUser.id, Role.CLIENT))
         .rejects
         .toThrow(EntityNotFoundException);
     });
@@ -148,7 +149,7 @@ describe('ApplicationsService', () => {
       mockProfilesService.findByUserId.mockResolvedValue(mockProfile);
 
       // Act & Assert
-      await expect(service.remove('app1', mockUser.id))
+      await expect(service.remove('app1', mockUser.id, Role.CLIENT))
         .rejects
         .toThrow(ForbiddenActionException);
     });
