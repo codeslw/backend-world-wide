@@ -38,10 +38,10 @@ export class UsersController {
 
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
-  @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Get all users with pagination and search (Admin only)' })
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles(Role.ADMIN)
+  // @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get all users with pagination and search' })
   @ApiResponse({ status: 200, description: 'List of users', type: PaginatedUserResponseDto })
   @ApiResponse({ status: 401, description: 'Unauthorized - Authentication required', type: ErrorResponseDto })
   @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions', type: ErrorResponseDto })

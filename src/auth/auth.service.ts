@@ -20,10 +20,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
     
-    // Get the associated profile if it exists
-    const profile = await this.prisma.profile.findUnique({
-      where: { userId: user.id },
-    });
+    
     
     const payload = { email: user.email, sub: user.id, role: user.role };
     return { 
@@ -32,7 +29,7 @@ export class AuthService {
         id: user.id,
         email: user.email,
         role: user.role,
-        profile
+        // profile
       }
     };
   }

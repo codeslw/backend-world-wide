@@ -8,58 +8,48 @@ datasource db {
 }
 
 model User {
-  id        String      @id @default(uuid())
-  email     String   @unique
-  password  String
-  role      Role     @default(CLIENT)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  clientChats Chat[]    @relation("ClientChats")
-  adminChats  Chat[]    @relation("AdminChats")
-  messages    Message[]
+  id           String    @id @default(uuid())
+  email        String    @unique
+  password     String
+  role         Role      @default(CLIENT)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  adminChats   Chat[]    @relation("AdminChats")
+  clientChats  Chat[]    @relation("ClientChats")
+  messages     Message[]
+  profile      Profile?
   readMessages Message[] @relation("MessageReads")
-  profile    Profile?
+
   @@map("users")
 }
 
-enum Role {
-  ADMIN
-  CLIENT
-  PARTNER
-}
-
 model Program {
-  id          String    @id @default(uuid())
-  titleUz     String
-  titleRu     String
-  titleEn     String?
-  descriptionUz String?
-  descriptionRu String?
-  descriptionEn String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  // Parent-child relationship
-  parentId    String?
-  parent      Program?  @relation("ProgramToProgram", fields: [parentId], references: [id], onDelete: SetNull)
-  children    Program[] @relation("ProgramToProgram")
-
-  // Removed direct relation to University
-  // universities University[] 
-  universityPrograms UniversityProgram[] // Relation to the join table
+  id                 String              @id @default(uuid())
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  parentId           String?
+  descriptionEn      String?
+  descriptionRu      String?
+  descriptionUz      String?
+  titleEn            String?
+  titleRu            String
+  titleUz            String
+  parent             Program?            @relation("ProgramToProgram", fields: [parentId], references: [id])
+  children           Program[]           @relation("ProgramToProgram")
+  universityPrograms UniversityProgram[]
 
   @@map("programs")
 }
 
 model Country {
-  code      Int      @id
-  nameUz    String
-  nameRu    String
-  nameEn    String
-  cities    City[]
+  code         Int          @id
+  nameUz       String
+  nameRu       String
+  nameEn       String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  cities       City[]
   universities University[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model City {
@@ -71,93 +61,75 @@ model City {
   descriptionRu String?
   descriptionEn String?
   countryCode   Int
-  country       Country      @relation(fields: [countryCode], references: [code])
-  universities  University[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+  country       Country      @relation(fields: [countryCode], references: [code])
+  universities  University[]
 }
 
 model University {
-  id                    String   @id @default(uuid())
-  name                  String
-  established           Int?
-  type                  String // Consider changing to UniversityType enum if values are fixed
-  descriptionUz         String?
-  descriptionRu         String?
-  descriptionEn         String?
-  website               String
-  email                 String?
-  phone                 String?
-  address               String
-  winterIntakeDeadline  DateTime?
-  autumnIntakeDeadline  DateTime?
-  ranking               Int
-  studentsCount         Int
-  acceptanceRate        Float
-  avgApplicationFee     Float
-  // Removed university-wide tuition fields
-  // tuitionFeeMin         Float 
-  // tuitionFeeMax         Float
-  // tuitionFeeCurrency    String?  @default("USD")
-  photoUrl              String?
-  cityId                String
-  city                  City     @relation(fields: [cityId], references: [id])
-  countryCode           Int
-  country               Country  @relation(fields: [countryCode], references: [code])
-  // Removed direct relation to Program
-  // programs              Program[] 
-  universityPrograms    UniversityProgram[] // Relation to the join table
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                   String              @id @default(uuid())
+  established          Int?
+  type                 String
+  descriptionUz        String?
+  descriptionRu        String?
+  descriptionEn        String?
+  website              String
+  email                String?
+  phone                String?
+  address              String
+  winterIntakeDeadline DateTime?
+  autumnIntakeDeadline DateTime?
+  ranking              Int
+  studentsCount        Int
+  acceptanceRate       Float
+  avgApplicationFee    Float
+  photoUrl             String?
+  cityId               String
+  countryCode          Int
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  name                 String
+  city                 City                @relation(fields: [cityId], references: [id])
+  country              Country             @relation(fields: [countryCode], references: [code])
+  universityPrograms   UniversityProgram[]
 
-  @@map("universities") // Added map explicitly
+  @@map("universities")
 }
 
-// New join table for University-Program relationship with tuition fees
 model UniversityProgram {
-  id                 String   @id @default(uuid())
+  id                 String     @id @default(uuid())
   universityId       String
-  university         University @relation(fields: [universityId], references: [id], onDelete: Restrict)
   programId          String
-  program            Program  @relation(fields: [programId], references: [id], onDelete: Restrict)
   tuitionFee         Float
-  tuitionFeeCurrency String   @default("USD")
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  tuitionFeeCurrency String     @default("USD")
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  program            Program    @relation(fields: [programId], references: [id])
+  university         University @relation(fields: [universityId], references: [id])
 
-  @@unique([universityId, programId]) // Ensure a program is added only once per university
+  @@unique([universityId, programId])
   @@index([universityId])
   @@index([programId])
   @@map("university_programs")
 }
 
-enum UniversityType {
-  PUBLIC
-  PRIVATE
-}
-
 model File {
-  id        String      @id @default(uuid())
+  id        String   @id @default(uuid())
   filename  String
   url       String
   createdAt DateTime @default(now())
 }
 
-enum ChatStatus {
-  ACTIVE
-  CLOSED
-  PENDING
-}
-
 model Chat {
   id        String     @id @default(uuid())
-  clientId  String        // Reference to User model
-  client    User       @relation("ClientChats", fields: [clientId], references: [id])
-  adminId   String?       // Optional admin ID (null until assigned)
-  admin     User?      @relation("AdminChats", fields: [adminId], references: [id])
+  clientId  String
+  adminId   String?
   status    ChatStatus @default(ACTIVE)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+  admin     User?      @relation("AdminChats", fields: [adminId], references: [id])
+  client    User       @relation("ClientChats", fields: [clientId], references: [id])
   messages  Message[]
 
   @@index([clientId])
@@ -166,62 +138,108 @@ model Chat {
 }
 
 model Message {
-  id         String    @id @default(uuid())
-  chatId     String
-  chat       Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  senderId   String       // Reference to User model
-  sender     User      @relation(fields: [senderId], references: [id])
-  text       String?
-  fileUrl    String?
-  replyToId  String?   // Self-reference for replies
-  replyTo    Message?  @relation("Replies", fields: [replyToId], references: [id])
-  replies    Message[] @relation("Replies")
-  createdAt  DateTime  @default(now())
-  readBy     User[]    @relation("MessageReads")
-  
+  id        String    @id @default(uuid())
+  chatId    String
+  senderId  String
+  text      String?
+  fileUrl   String?
+  replyToId String?
+  createdAt DateTime  @default(now())
+  chat      Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  replyTo   Message?  @relation("Replies", fields: [replyToId], references: [id])
+  replies   Message[] @relation("Replies")
+  sender    User      @relation(fields: [senderId], references: [id])
+  readBy    User[]    @relation("MessageReads")
+
   @@index([chatId])
   @@index([senderId])
   @@index([replyToId])
 }
 
 model Profile {
-  id                     String   @id @default(uuid())
-  firstName              String
-  lastName               String
-  middleName             String?
-  dateOfBirth            DateTime?
-  gender                 Gender?
-  nationality            String?
-  address                String?
-  passportNumber         String?
-  passportExpiryDate     DateTime?
-  passportCopyUrl        String?
-  // Education Information
-  currentEducationLevel  String?
-  currentInstitutionName String?
-  graduationYear         Int?
-  transcriptUrl          String?
-  
-  // Language Proficiency
-  languageTest           LanguageTest?
-  languageScore          String?
-  languageCertificateUrl String?
-    
-  // Additional Documents
-  motivationLetterUrl    String?
-  recommendationLetterUrls String[] @default([])
-  cvUrl                  String?
-  yearOfBirth            Int?
-  passportSeriesAndNumber String?
-  email                  String?
-  phoneNumber            String?
-  userId                 String   @unique
-  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
-  applications           Application[]
+  id                       String        @id @default(uuid())
+  firstName                String
+  lastName                 String
+  yearOfBirth              Int?
+  passportSeriesAndNumber  String?
+  email                    String?
+  phoneNumber              String?
+  userId                   String        @unique
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+  address                  String?
+  dateOfBirth              DateTime?
+  gender                   Gender?
+  middleName               String?
+  nationality              String?
+  passportCopyUrl          String?
+  passportExpiryDate       DateTime?
+  passportNumber           String?
+  currentEducationLevel    String?
+  currentInstitutionName   String?
+  cvUrl                    String?
+  graduationYear           Int?
+  languageCertificateUrl   String?
+  languageScore            String?
+  languageTest             LanguageTest?
+  motivationLetterUrl      String?
+  recommendationLetterUrls String[]      @default([])
+  transcriptUrl            String?
+  applications             Application[]
+  user                     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("profiles")
+}
+
+model Application {
+  id                  String            @id @default(uuid())
+  profileId           String
+  preferredCountry    String
+  preferredUniversity String
+  preferredProgram    String
+  intakeSeason        IntakeSeason
+  intakeYear          Int
+  applicationStatus   ApplicationStatus @default(DRAFT)
+  submittedAt         DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  profile             Profile           @relation(fields: [profileId], references: [id])
+
+  @@index([profileId])
+  @@index([applicationStatus])
+  @@map("applications")
+}
+
+model MiniApplication {
+  id          String                @id @default(uuid())
+  firstName   String
+  lastName    String
+  email       String
+  phoneNumber String
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  status      MiniApplicationStatus @default(NEW)
+
+  @@index([email])
+  @@index([status])
+  @@map("mini_applications")
+}
+
+enum Role {
+  ADMIN
+  CLIENT
+  PARTNER
+}
+
+enum UniversityType {
+  PUBLIC
+  PRIVATE
+}
+
+enum ChatStatus {
+  ACTIVE
+  CLOSED
+  PENDING
 }
 
 enum ApplicationStatus {
@@ -250,63 +268,8 @@ enum Gender {
   FEMALE
 }
 
-model Application {
-  id                     String            @id @default(uuid())
-  // Personal Information linked to profile
-  profileId              String
-  profile                Profile           @relation(fields: [profileId], references: [id])
-  
-  // Education Information - moved to Profile
-  // currentEducationLevel  String
-  // currentInstitutionName String?
-  // graduationYear         Int?
-  // transcriptUrl          String?
-  
-  // Language Proficiency - moved to Profile
-  // languageTest           LanguageTest?
-  // languageScore          String?
-  // languageCertificateUrl String?
-    
-  // Additional Documents - moved to Profile
-  // motivationLetterUrl    String?
-  // recommendationLetterUrls String[]
-  // cvUrl                  String?
-  
-  // University Preferences
-  preferredCountry       String
-  preferredUniversity    String
-  preferredProgram       String
-  intakeSeason           IntakeSeason
-  intakeYear             Int
-  
-  // Meta
-  applicationStatus      ApplicationStatus @default(DRAFT)
-  submittedAt            DateTime?
-  createdAt              DateTime          @default(now())
-  updatedAt              DateTime          @updatedAt
-  
-  @@map("applications")
-  @@index([profileId])
-  @@index([applicationStatus])
-}
-
 enum MiniApplicationStatus {
   NEW
   CONTACTED
   CLOSED
-}
-
-model MiniApplication {
-  id           String     @id @default(uuid())
-  firstName    String
-  lastName     String
-  email        String
-  phoneNumber  String
- status       MiniApplicationStatus @default(NEW)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-
-  @@map("mini_applications")
-  @@index([email]) // Add index for potential lookup by email
-  @@index([status]) // Add index for status
 }
