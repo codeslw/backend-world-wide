@@ -20,7 +20,10 @@ import { UniversityType } from '../../common/enum/university-type.enum';
 import { UniversityProgramDto } from './university-program.dto';
 
 export class CreateUniversityDto {
-  @ApiProperty({ description: 'University name', example: 'Toshkent Axborot Texnologiyalari Universiteti' })
+  @ApiProperty({
+    description: 'University name',
+    example: 'Toshkent Axborot Texnologiyalari Universiteti',
+  })
   @IsString()
   @IsNotEmpty()
   name: string;
@@ -40,7 +43,11 @@ export class CreateUniversityDto {
   @IsInt()
   established: number;
 
-  @ApiProperty({ enum: UniversityType, description: 'Type of university', example: UniversityType.PUBLIC })
+  @ApiProperty({
+    enum: UniversityType,
+    description: 'Type of university',
+    example: UniversityType.PUBLIC,
+  })
   @IsEnum(UniversityType)
   type: UniversityType;
 
@@ -53,32 +60,52 @@ export class CreateUniversityDto {
   @IsInt() // Assuming country code is an integer ID from Country model
   countryCode: number;
 
-  @ApiProperty({ description: 'City ID', example: 'b7a3f4e0-8e1f-4f8f-b8f4-9a7b1c2d3e4f' })
+  @ApiProperty({
+    description: 'City ID',
+    example: 'b7a3f4e0-8e1f-4f8f-b8f4-9a7b1c2d3e4f',
+  })
   @IsString() // Assuming city ID is a string UUID from City model
   @IsNotEmpty()
   cityId: string;
 
-  @ApiProperty({ description: 'Description in Uzbek', example: "O'zbekistondagi yetakchi IT universiteti." })
+  @ApiProperty({
+    description: 'Description in Uzbek',
+    example: "O'zbekistondagi yetakchi IT universiteti.",
+  })
   @IsString()
   @IsOptional()
   descriptionUz: string;
 
-  @ApiProperty({ description: 'Description in Russian', example: 'Ведущий ИТ-университет Узбекистана.' })
+  @ApiProperty({
+    description: 'Description in Russian',
+    example: 'Ведущий ИТ-университет Узбекистана.',
+  })
   @IsString()
   @IsOptional()
   descriptionRu: string;
 
-  @ApiProperty({ description: 'Description in English', example: 'Leading IT university in Uzbekistan.' })
+  @ApiProperty({
+    description: 'Description in English',
+    example: 'Leading IT university in Uzbekistan.',
+  })
   @IsString()
   @IsOptional()
   descriptionEn: string;
 
-  @ApiProperty({ description: 'Winter intake deadline (YYYY-MM-DD)', required: false, example: '2025-11-30' })
+  @ApiProperty({
+    description: 'Winter intake deadline (YYYY-MM-DD)',
+    required: false,
+    example: '2025-11-30',
+  })
   @IsOptional()
   @IsDateString()
   winterIntakeDeadline?: string;
 
-  @ApiProperty({ description: 'Autumn intake deadline (YYYY-MM-DD)', required: false, example: '2025-07-31' })
+  @ApiProperty({
+    description: 'Autumn intake deadline (YYYY-MM-DD)',
+    required: false,
+    example: '2025-07-31',
+  })
   @IsOptional()
   @IsDateString()
   autumnIntakeDeadline?: string;
@@ -93,13 +120,19 @@ export class CreateUniversityDto {
   @Min(0)
   studentsCount: number;
 
-  @ApiProperty({ description: 'Acceptance rate (percentage, 0-100)', example: 35.5 })
+  @ApiProperty({
+    description: 'Acceptance rate (percentage, 0-100)',
+    example: 35.5,
+  })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @Max(100)
   acceptanceRate: number;
 
-  @ApiProperty({ description: 'University website URL', example: 'https://tuit.uz' })
+  @ApiProperty({
+    description: 'University website URL',
+    example: 'https://tuit.uz',
+  })
   @IsUrl()
   website: string;
 
@@ -108,24 +141,35 @@ export class CreateUniversityDto {
   @IsOptional()
   email: string;
 
-  @ApiProperty({ description: 'University phone number', example: '+998712386415' })
+  @ApiProperty({
+    description: 'University phone number',
+    example: '+998712386415',
+  })
   // @IsPhoneNumber() // Commented out: Requires specific country code or use IsString
   @IsString()
   @IsOptional()
   phone: string;
 
-  @ApiProperty({ description: 'University address', example: 'Amir Temur Avenue 108, Tashkent, Uzbekistan' })
+  @ApiProperty({
+    description: 'University address',
+    example: 'Amir Temur Avenue 108, Tashkent, Uzbekistan',
+  })
   @IsString()
   @IsNotEmpty()
   address: string;
 
-  @ApiProperty({ description: 'University photo URL', required: false, example: 'https://example.com/photo.jpg' })
+  @ApiProperty({
+    description: 'University photo URL',
+    required: false,
+    example: 'https://example.com/photo.jpg',
+  })
   @IsUrl()
   @IsOptional()
   photoUrl?: string;
 
   @ApiProperty({
-    description: 'List of programs offered by the university with their specific tuition fees.',
+    description:
+      'List of programs offered by the university with their specific tuition fees.',
     type: [UniversityProgramDto],
   })
   @IsArray()
@@ -144,4 +188,4 @@ export class CreateManyUniversitiesDto {
   @ValidateNested({ each: true })
   @Type(() => CreateUniversityDto)
   universities: CreateUniversityDto[];
-} 
+}

@@ -22,13 +22,16 @@ jest.mock('socket.io-client', () => {
           if (event === 'joinChat') {
             callback({ event: 'joinedChat', data: { chatId: data } });
           } else if (event === 'sendMessage') {
-            callback({ event: 'messageSent', data: { id: 'message-id', text: data.message.text } });
+            callback({
+              event: 'messageSent',
+              data: { id: 'message-id', text: data.message.text },
+            });
           }
         }
         return this;
       }),
-      disconnect: jest.fn()
-    }))
+      disconnect: jest.fn(),
+    })),
   };
 });
 
@@ -36,7 +39,11 @@ jest.mock('socket.io-client', () => {
 jest.mock('@prisma/client', () => {
   const mockPrismaClient = {
     user: {
-      create: jest.fn().mockResolvedValue({ id: 1, email: 'test@example.com', role: 'CLIENT' }),
+      create: jest.fn().mockResolvedValue({
+        id: 1,
+        email: 'test@example.com',
+        role: 'CLIENT',
+      }),
       findFirst: jest.fn().mockResolvedValue({ id: 1 }),
       findUnique: jest.fn().mockResolvedValue({ id: 1 }),
       deleteMany: jest.fn(),
@@ -45,7 +52,11 @@ jest.mock('@prisma/client', () => {
       create: jest.fn().mockResolvedValue({ id: 'chat-id', status: 'ACTIVE' }),
       findUnique: jest.fn().mockResolvedValue({ id: 'chat-id', messages: [] }),
       findMany: jest.fn().mockResolvedValue([{ id: 'chat-id' }]),
-      update: jest.fn().mockImplementation((args) => Promise.resolve({ id: 'chat-id', ...args.data })),
+      update: jest
+        .fn()
+        .mockImplementation((args) =>
+          Promise.resolve({ id: 'chat-id', ...args.data }),
+        ),
       deleteMany: jest.fn(),
     },
     message: {
@@ -57,7 +68,7 @@ jest.mock('@prisma/client', () => {
     $connect: jest.fn(),
     $disconnect: jest.fn(),
   };
-  
+
   return {
     PrismaClient: jest.fn(() => mockPrismaClient),
   };
@@ -81,8 +92,16 @@ describe('ChatController (e2e)', () => {
     jwtService = app.get<JwtService>(JwtService);
 
     // Generate tokens directly without creating users
-    userToken = jwtService.sign({ sub: 1, email: 'test-user@example.com', role: Role.CLIENT });
-    adminToken = jwtService.sign({ sub: 2, email: 'test-admin@example.com', role: Role.ADMIN });
+    userToken = jwtService.sign({
+      sub: 1,
+      email: 'test-user@example.com',
+      role: Role.CLIENT,
+    });
+    adminToken = jwtService.sign({
+      sub: 2,
+      email: 'test-admin@example.com',
+      role: Role.ADMIN,
+    });
   });
 
   afterAll(async () => {
@@ -96,7 +115,7 @@ describe('ChatController (e2e)', () => {
     it('should join a chat room', () => {
       const io = require('socket.io-client');
       const socket = io.connect();
-      
+
       socket.emit('joinChat', 'chat-id', (response) => {
         expect(response.event).toBe('joinedChat');
         expect(response.data.chatId).toBe('chat-id');
@@ -106,14 +125,18 @@ describe('ChatController (e2e)', () => {
     it('should send messages', () => {
       const io = require('socket.io-client');
       const socket = io.connect();
-      
-      socket.emit('sendMessage', {
-        chatId: 'chat-id',
-        message: { text: 'Hello via WebSocket' }
-      }, (response) => {
-        expect(response.event).toBe('messageSent');
-        expect(response.data.text).toBe('Hello via WebSocket');
-      });
+
+      socket.emit(
+        'sendMessage',
+        {
+          chatId: 'chat-id',
+          message: { text: 'Hello via WebSocket' },
+        },
+        (response) => {
+          expect(response.event).toBe('messageSent');
+          expect(response.data.text).toBe('Hello via WebSocket');
+        },
+      );
     });
   });
-}); 
+});

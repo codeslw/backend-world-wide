@@ -14,7 +14,9 @@ export class ProgramResponseDto {
   @ApiProperty({ description: 'Program name in English' })
   nameEn: string;
 
-  @ApiProperty({ description: 'Localized program name based on language preference' })
+  @ApiProperty({
+    description: 'Localized program name based on language preference',
+  })
   name: string;
 
   @ApiProperty({ description: 'Program description in Uzbek' })
@@ -26,23 +28,25 @@ export class ProgramResponseDto {
   @ApiProperty({ description: 'Program description in English' })
   descriptionEn: string;
 
-  @ApiProperty({ description: 'Localized program description based on language preference' })
+  @ApiProperty({
+    description: 'Localized program description based on language preference',
+  })
   description: string;
 
   @ApiProperty({ description: 'Parent program ID', required: false })
   parentId?: string;
 
-  @ApiProperty({ 
-    description: 'Parent program', 
+  @ApiProperty({
+    description: 'Parent program',
     type: () => ProgramResponseDto,
-    required: false 
+    required: false,
   })
   parent?: ProgramResponseDto;
 
-  @ApiProperty({ 
-    description: 'Child programs', 
+  @ApiProperty({
+    description: 'Child programs',
     type: () => [ProgramResponseDto],
-    required: false 
+    required: false,
   })
   children?: ProgramResponseDto[];
 }
@@ -50,4 +54,4 @@ export class ProgramResponseDto {
 export class PaginatedProgramResponseDto extends PaginatedResponseDto<ProgramResponseDto> {
   @ApiProperty({ type: [ProgramResponseDto] })
   data: ProgramResponseDto[];
-} 
+}

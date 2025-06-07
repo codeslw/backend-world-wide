@@ -28,7 +28,10 @@ import {
 } from '@nestjs/swagger';
 import { Request } from 'express';
 import { PaginationDto } from '../common/dto/pagination.dto';
-import { ApplicationResponseDto, PaginatedApplicationResponseDto } from './dto/application-response.dto';
+import {
+  ApplicationResponseDto,
+  PaginatedApplicationResponseDto,
+} from './dto/application-response.dto';
 import { ErrorResponseDto } from '../common/dto/error-response.dto';
 import { ForbiddenActionException } from '../common/exceptions/app.exceptions';
 
@@ -76,7 +79,10 @@ export class ApplicationsController {
     @Req() req: RequestWithUser,
     @Body() createApplicationDto: CreateApplicationDto,
   ) {
-    return this.applicationsService.create(req.user.userId, createApplicationDto);
+    return this.applicationsService.create(
+      req.user.userId,
+      createApplicationDto,
+    );
   }
 
   @Get()
@@ -101,12 +107,11 @@ export class ApplicationsController {
   })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  async findAll(
-    @Req() req: RequestWithUser,
-    @Query() queryDto: PaginationDto,
-  ) {
+  async findAll(@Req() req: RequestWithUser, @Query() queryDto: PaginationDto) {
     if (req.user.role !== Role.ADMIN) {
-      throw new ForbiddenActionException('Access denied. Use /applications/my to retrieve your applications.');
+      throw new ForbiddenActionException(
+        'Access denied. Use /applications/my to retrieve your applications.',
+      );
     }
 
     const { page = 1, limit = 10 } = queryDto;
@@ -137,7 +142,9 @@ export class ApplicationsController {
   @Get('my')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.CLIENT)
-  @ApiOperation({ summary: 'Get all applications submitted by the current client' })
+  @ApiOperation({
+    summary: 'Get all applications submitted by the current client',
+  })
   @ApiBearerAuth('access-token')
   @ApiResponse({
     status: 200,
@@ -186,7 +193,10 @@ export class ApplicationsController {
   async findOne(@Param('id') id: string, @Req() req: RequestWithUser) {
     const application = await this.applicationsService.findOne(id);
 
-    if (req.user.role === Role.CLIENT && application.profileId !== req.user.userId) {
+    if (
+      req.user.role === Role.CLIENT &&
+      application.profileId !== req.user.userId
+    ) {
       // Check if profileId on the DTO matches the user ID.
       // The service layer might need adjustment if profile details aren't mapped directly.
       // Let's refine this check based on the actual ApplicationResponseDto structure.
@@ -235,7 +245,12 @@ export class ApplicationsController {
     @Body() updateApplicationDto: UpdateApplicationDto,
     @Req() req: RequestWithUser,
   ) {
-    return this.applicationsService.update(id, req.user.userId, updateApplicationDto, req.user.role === Role.ADMIN);
+    return this.applicationsService.update(
+      id,
+      req.user.userId,
+      updateApplicationDto,
+      req.user.role === Role.ADMIN,
+    );
   }
 
   @Delete(':id')
@@ -244,10 +259,25 @@ export class ApplicationsController {
   @Roles(Role.CLIENT, Role.ADMIN)
   @ApiOperation({ summary: 'Delete an application' })
   @ApiBearerAuth('access-token')
-  @ApiResponse({ status: 204, description: 'The application has been successfully deleted.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized', type: ErrorResponseDto })
-  @ApiResponse({ status: 403, description: 'Forbidden', type: ErrorResponseDto })
-  @ApiResponse({ status: 404, description: 'Application not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 204,
+    description: 'The application has been successfully deleted.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Application not found',
+    type: ErrorResponseDto,
+  })
   remove(@Param('id') id: string, @Req() req: RequestWithUser) {
     return this.applicationsService.remove(id, req.user.userId, req.user.role);
   }
@@ -258,11 +288,32 @@ export class ApplicationsController {
   @Roles(Role.CLIENT)
   @ApiOperation({ summary: 'Submit an application' })
   @ApiBearerAuth('access-token')
-  @ApiResponse({ status: 200, description: 'The application has been successfully submitted.', type: ApplicationResponseDto })
-  @ApiResponse({ status: 400, description: 'Bad Request - Application already submitted or cannot be submitted', type: ErrorResponseDto })
-  @ApiResponse({ status: 401, description: 'Unauthorized', type: ErrorResponseDto })
-  @ApiResponse({ status: 403, description: 'Forbidden - Only the owner can submit', type: ErrorResponseDto })
-  @ApiResponse({ status: 404, description: 'Application not found', type: ErrorResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'The application has been successfully submitted.',
+    type: ApplicationResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Bad Request - Application already submitted or cannot be submitted',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Only the owner can submit',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Application not found',
+    type: ErrorResponseDto,
+  })
   submit(@Param('id') id: string, @Req() req: RequestWithUser) {
     return this.applicationsService.submit(id, req.user.userId);
   }

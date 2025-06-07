@@ -20,4 +20,4 @@ export class CreateMessageDto {
   @IsOptional()
   @IsUUID()
   replyToId?: string;
-} 
+}

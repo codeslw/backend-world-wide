@@ -15,4 +15,4 @@ export class UpdateMiniApplicationDto extends PartialType(
   @IsOptional()
   @IsEnum(MiniApplicationStatus)
   status?: MiniApplicationStatus;
-} 
+}

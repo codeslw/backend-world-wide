@@ -8,4 +8,4 @@ import { PrismaService } from '../db/prisma.service';
   providers: [CitiesService, PrismaService],
   exports: [CitiesService],
 })
-export class CitiesModule {} 
+export class CitiesModule {}

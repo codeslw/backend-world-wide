@@ -20,7 +20,12 @@ export class CatalogService {
     return this.countriesService.findOne(code, lang);
   }
 
-  async getCities(lang: string = 'uz', page: number = 1, limit: number = 10, countryCode?: number) {
+  async getCities(
+    lang: string = 'uz',
+    page: number = 1,
+    limit: number = 10,
+    countryCode?: number,
+  ) {
     return this.citiesService.findAll(lang, page, limit, countryCode);
   }
 
@@ -28,7 +33,11 @@ export class CatalogService {
     return this.citiesService.findOne(id, lang);
   }
 
-  async getPrograms(parentId?: string, lang: string = 'uz', paginationDto?: PaginationDto) {
+  async getPrograms(
+    parentId?: string,
+    lang: string = 'uz',
+    paginationDto?: PaginationDto,
+  ) {
     return this.programsService.findAll(parentId, lang, paginationDto);
   }
 
@@ -40,4 +49,4 @@ export class CatalogService {
     // Only get programs that don't have a parent (root programs)
     return this.programsService.findAll(null, lang, paginationDto);
   }
-} 
+}

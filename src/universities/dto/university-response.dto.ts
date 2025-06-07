@@ -13,7 +13,9 @@ class UniversityProgramResponseDto {
   @ApiProperty({ description: 'Program Title (e.g., in Uzbek)' }) // Adjust language as needed
   titleUz: string;
 
-  @ApiProperty({ description: 'Tuition fee for this program at this university' })
+  @ApiProperty({
+    description: 'Tuition fee for this program at this university',
+  })
   tuitionFee: number;
 
   @ApiProperty({ description: 'Tuition fee currency' })
@@ -57,10 +59,18 @@ export class UniversityResponseDto {
   @ApiProperty({ description: 'Description in English' })
   descriptionEn: string;
 
-  @ApiProperty({ description: 'Winter intake deadline (YYYY-MM-DD)', required: false, type: String })
+  @ApiProperty({
+    description: 'Winter intake deadline (YYYY-MM-DD)',
+    required: false,
+    type: String,
+  })
   winterIntakeDeadline?: string | null; // Allow string or null
 
-  @ApiProperty({ description: 'Autumn intake deadline (YYYY-MM-DD)', required: false, type: String })
+  @ApiProperty({
+    description: 'Autumn intake deadline (YYYY-MM-DD)',
+    required: false,
+    type: String,
+  })
   autumnIntakeDeadline?: string | null; // Allow string or null
 
   @ApiProperty({ description: 'University ranking' })
@@ -99,7 +109,10 @@ export class UniversityResponseDto {
   @ApiProperty({ description: 'City' })
   city: CityResponseDto;
 
-  @ApiProperty({ type: [UniversityProgramResponseDto], description: 'Programs offered with specific tuition fees' })
+  @ApiProperty({
+    type: [UniversityProgramResponseDto],
+    description: 'Programs offered with specific tuition fees',
+  })
   @Type(() => UniversityProgramResponseDto)
   universityPrograms: UniversityProgramResponseDto[];
 }
@@ -107,4 +120,4 @@ export class UniversityResponseDto {
 export class PaginatedUniversityResponseDto extends PaginatedResponseDto<UniversityResponseDto> {
   @ApiProperty({ type: [UniversityResponseDto] })
   data: UniversityResponseDto[];
-} 
+}

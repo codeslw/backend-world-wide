@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString, IsUUID, Matches } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  IsUUID,
+  Matches,
+} from 'class-validator';
 
 export class CreateMiniApplicationDto {
   @ApiProperty({
@@ -37,9 +43,8 @@ export class CreateMiniApplicationDto {
   @IsNotEmpty()
   @IsString()
   @Matches(/^\+[1-9]\d{1,14}$/, {
-    message: 'PhoneNumber must be a valid E.164 phone number (e.g., +1234567890)'
+    message:
+      'PhoneNumber must be a valid E.164 phone number (e.g., +1234567890)',
   })
   phoneNumber: string;
-
- 
-} 
+}

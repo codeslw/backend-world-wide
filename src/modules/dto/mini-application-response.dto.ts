@@ -34,21 +34,19 @@ export class MiniApplicationResponseDto {
 
   @ApiProperty()
   updatedAt: Date;
-
-
 }
 
 export class PaginatedMiniApplicationResponseDto {
   @ApiProperty({ type: [MiniApplicationResponseDto] })
   data: MiniApplicationResponseDto[];
 
-  @ApiProperty({ 
-    example: { 
-      total: 100, 
-      page: 1, 
-      limit: 10, 
-      totalPages: 10 
-    } 
+  @ApiProperty({
+    example: {
+      total: 100,
+      page: 1,
+      limit: 10,
+      totalPages: 10,
+    },
   })
   meta: any;
-} 
+}

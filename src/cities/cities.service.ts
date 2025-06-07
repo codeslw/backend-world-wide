@@ -4,14 +4,20 @@ import { CreateCityDto } from './dto/create-city.dto';
 import { UpdateCityDto } from './dto/update-city.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { FilterService } from '../common/filters/filter.service';
-import { FilterOptions, PaginationOptions } from '../common/filters/filter.interface';
-import { EntityNotFoundException, InvalidDataException } from '../common/exceptions/app.exceptions';
+import {
+  FilterOptions,
+  PaginationOptions,
+} from '../common/filters/filter.interface';
+import {
+  EntityNotFoundException,
+  InvalidDataException,
+} from '../common/exceptions/app.exceptions';
 
 @Injectable()
 export class CitiesService {
   constructor(
     private prisma: PrismaService,
-    private filterService: FilterService
+    private filterService: FilterService,
   ) {}
 
   async create(createCityDto: CreateCityDto) {
@@ -37,14 +43,14 @@ export class CitiesService {
   async createMany(cities: CreateCityDto[]) {
     try {
       const createdCities = await Promise.all(
-        cities.map(cityDto => {
+        cities.map((cityDto) => {
           return this.create(cityDto);
-        })
+        }),
       );
-      
-      return { 
+
+      return {
         count: createdCities.length,
-        cities: createdCities
+        cities: createdCities,
       };
     } catch (error) {
       // Let the global exception filter handle Prisma errors
@@ -52,13 +58,18 @@ export class CitiesService {
     }
   }
 
-  async findAll(lang: string = 'uz', page: number = 1, limit: number = 10, countryCode?: number) {
+  async findAll(
+    lang: string = 'uz',
+    page: number = 1,
+    limit: number = 10,
+    countryCode?: number,
+  ) {
     try {
       const skip = (page - 1) * limit;
 
       const where: any = {};
       if (countryCode !== undefined) {
-          where.countryCode = countryCode;
+        where.countryCode = countryCode;
       }
 
       // Extract the primary language code
@@ -67,7 +78,7 @@ export class CitiesService {
       if (!['uz', 'ru', 'en'].includes(primaryLanguage)) {
         primaryLanguage = 'en';
       }
-      
+
       const orderByField = `name${primaryLanguage.charAt(0).toUpperCase() + primaryLanguage.slice(1)}`;
 
       const [cities, total] = await Promise.all([
@@ -86,7 +97,9 @@ export class CitiesService {
       ]);
 
       // Map cities to localized format
-      const localizedCities = cities.map(city => this.localizeCity(city, lang));
+      const localizedCities = cities.map((city) =>
+        this.localizeCity(city, lang),
+      );
 
       return {
         data: localizedCities,
@@ -131,13 +144,13 @@ export class CitiesService {
     try {
       // First check if city exists
       const existingCity = await this.prisma.city.findUnique({
-        where: { id }
+        where: { id },
       });
-      
+
       if (!existingCity) {
         throw new EntityNotFoundException('City', id);
       }
-      
+
       // Proceed with update
       const city = await this.prisma.city.update({
         where: { id },
@@ -167,13 +180,13 @@ export class CitiesService {
     try {
       // First check if city exists
       const existingCity = await this.prisma.city.findUnique({
-        where: { id }
+        where: { id },
       });
-      
+
       if (!existingCity) {
         throw new EntityNotFoundException('City', id);
       }
-      
+
       // Proceed with deletion
       const city = await this.prisma.city.delete({
         where: { id },
@@ -195,38 +208,42 @@ export class CitiesService {
 
   private localizeCity(city: any, lang: string) {
     const result = { ...city };
-    
+
     // Set name based on language
-    result.name = city[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || 
-                  city.nameUz || 
-                  city.nameRu;
-    
+    result.name =
+      city[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+      city.nameUz ||
+      city.nameRu;
+
     // Set description based on language
-    result.description = city[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || 
-                         city.descriptionUz || 
-                         city.descriptionRu;
-    
+    result.description =
+      city[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+      city.descriptionUz ||
+      city.descriptionRu;
+
     // Localize country if it exists
     if (result.country) {
       result.country = this.localizeCountry(result.country, lang);
     }
-    
+
     return result;
   }
 
   private localizeCountry(country: any, lang: string) {
     const result = { ...country };
-    
+
     // Set name based on language
-    result.name = country[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || 
-                  country.nameUz || 
-                  country.nameRu;
-    
+    result.name =
+      country[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+      country.nameUz ||
+      country.nameRu;
+
     // Set description based on language
-    result.description = country[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || 
-                         country.descriptionUz || 
-                         country.descriptionRu;
-    
+    result.description =
+      country[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+      country.descriptionUz ||
+      country.descriptionRu;
+
     return result;
   }
-} 
+}

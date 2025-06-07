@@ -1,25 +1,45 @@
 import { Injectable } from '@nestjs/common';
-import { FilterConfig, FilterOptions, SortConfig, PaginationOptions } from './filter.interface';
+import {
+  FilterConfig,
+  FilterOptions,
+  SortConfig,
+  PaginationOptions,
+} from './filter.interface';
 import { PaginationDto } from '../dto/pagination.dto';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class FilterService {
   buildFilterQuery(query: any, options: FilterOptions): any {
-    const { filters, searchFields = [], searchMode = 'any', caseSensitive = false } = options;
+    const {
+      filters,
+      searchFields = [],
+      searchMode = 'any',
+      caseSensitive = false,
+    } = options;
     const where: any = {};
-    
+
     // Apply specific filters
     for (const filter of filters) {
-      const { field, queryParam, operator = 'equals', transform, isArray = false } = filter;
-      
+      const {
+        field,
+        queryParam,
+        operator = 'equals',
+        transform,
+        isArray = false,
+      } = filter;
+
       // Skip undefined, null or empty string values
-      if (query[queryParam] === undefined || query[queryParam] === null || query[queryParam] === '') {
+      if (
+        query[queryParam] === undefined ||
+        query[queryParam] === null ||
+        query[queryParam] === ''
+      ) {
         continue;
       }
-      
+
       let value = query[queryParam];
-      
+
       // Apply transformation if provided
       if (transform) {
         try {
@@ -33,33 +53,33 @@ export class FilterService {
           continue;
         }
       }
-      
+
       // Handle array values
       if (isArray && !Array.isArray(value)) {
         value = value.toString().split(',');
       }
-      
+
       // Apply the filter based on the operator
       switch (operator) {
         case 'equals':
           where[field] = value;
           break;
         case 'contains':
-          where[field] = { 
+          where[field] = {
             contains: value,
-            ...(caseSensitive ? {} : { mode: 'insensitive' })
+            ...(caseSensitive ? {} : { mode: 'insensitive' }),
           };
           break;
         case 'startsWith':
-          where[field] = { 
+          where[field] = {
             startsWith: value,
-            ...(caseSensitive ? {} : { mode: 'insensitive' })
+            ...(caseSensitive ? {} : { mode: 'insensitive' }),
           };
           break;
         case 'endsWith':
-          where[field] = { 
+          where[field] = {
             endsWith: value,
-            ...(caseSensitive ? {} : { mode: 'insensitive' })
+            ...(caseSensitive ? {} : { mode: 'insensitive' }),
           };
           break;
         case 'in':
@@ -96,17 +116,22 @@ export class FilterService {
           break;
       }
     }
-    
+
     // Apply search if provided with improved validation
-    if (query.search && typeof query.search === 'string' && query.search.trim() !== '' && searchFields.length > 0) {
+    if (
+      query.search &&
+      typeof query.search === 'string' &&
+      query.search.trim() !== '' &&
+      searchFields.length > 0
+    ) {
       const searchValue = query.search.trim();
-      const searchConditions = searchFields.map(field => ({
-        [field]: { 
+      const searchConditions = searchFields.map((field) => ({
+        [field]: {
           contains: searchValue,
-          ...(caseSensitive ? {} : { mode: 'insensitive' })
-        }
+          ...(caseSensitive ? {} : { mode: 'insensitive' }),
+        },
       }));
-      
+
       if (searchMode === 'contains') {
         // For 'contains' mode, we just use OR like 'any' mode
         where.OR = searchConditions;
@@ -116,48 +141,44 @@ export class FilterService {
         where.AND = searchConditions;
       }
     }
-    
+
     return where;
   }
-  
+
   buildSortOptions(query: any, options: PaginationOptions = {}): any {
-    const { 
-      defaultSortField = 'createdAt', 
-      defaultSortDirection = 'desc' 
-    } = options;
-    
-    let orderBy: any = {};
-    
+    const { defaultSortField = 'createdAt', defaultSortDirection = 'desc' } =
+      options;
+
+    const orderBy: any = {};
+
     // Check if sort parameters are provided
     if (query.sortBy) {
       const sortField = query.sortBy;
-      const sortDirection = query.sortDirection?.toLowerCase() === 'asc' ? 'asc' : 'desc';
+      const sortDirection =
+        query.sortDirection?.toLowerCase() === 'asc' ? 'asc' : 'desc';
       orderBy[sortField] = sortDirection;
     } else {
       // Use default sort
       orderBy[defaultSortField] = defaultSortDirection;
     }
-    
+
     return orderBy;
   }
-  
+
   async applyPagination<T>(
     model: any,
     where: any,
     paginationDto: PaginationDto,
     include?: any,
     orderBy?: any,
-    options: PaginationOptions = {}
+    options: PaginationOptions = {},
   ): Promise<{ data: T[]; meta: any }> {
-    const { 
-      defaultLimit = 10,
-      maxLimit = 100
-    } = options;
-    
+    const { defaultLimit = 10, maxLimit = 100 } = options;
+
     // Extract pagination parameters with safer defaults
     let page = 1;
     let limit = defaultLimit;
-    
+
     if (paginationDto) {
       // Parse pagination values more safely
       if (paginationDto.page !== undefined) {
@@ -166,7 +187,7 @@ export class FilterService {
           page = parsedPage;
         }
       }
-      
+
       if (paginationDto.limit !== undefined) {
         const parsedLimit = Number(paginationDto.limit);
         if (!isNaN(parsedLimit) && parsedLimit > 0) {
@@ -174,20 +195,21 @@ export class FilterService {
         }
       }
     }
-    
+
     // Ensure limit doesn't exceed maximum
     limit = Math.min(limit, maxLimit);
-    
+
     // Calculate skip value
     const skip = (page - 1) * limit;
-    
+
     // Use provided orderBy or build from query
-    const sortOptions = orderBy || this.buildSortOptions(paginationDto || {}, options);
-    
+    const sortOptions =
+      orderBy || this.buildSortOptions(paginationDto || {}, options);
+
     try {
       // Get total count for pagination
       const total = await model.count({ where });
-      
+
       // Get paginated results
       const data = await model.findMany({
         where,
@@ -196,7 +218,7 @@ export class FilterService {
         take: limit,
         orderBy: sortOptions,
       });
-      
+
       return {
         data,
         meta: {
@@ -220,4 +242,4 @@ export class FilterService {
       };
     }
   }
-} 
+}

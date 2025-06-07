@@ -15,8 +15,15 @@ import { CreateMessageDto } from './dto/create-message.dto';
 import { WsJwtGuard } from '../auth/guards/ws-jwt.guard';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../db/prisma.service';
-import { ChatService, MessageWithSender, PartialAdminInfo } from './chat.service';
-import { Role as PrismaRole, ChatStatus as PrismaChatStatus } from '@prisma/client';
+import {
+  ChatService,
+  MessageWithSender,
+  PartialAdminInfo,
+} from './chat.service';
+import {
+  Role as PrismaRole,
+  ChatStatus as PrismaChatStatus,
+} from '@prisma/client';
 
 interface AuthenticatedSocket extends Socket {
   user: {
@@ -31,9 +38,11 @@ interface AuthenticatedSocket extends Socket {
     origin: '*', // In production, restrict this to your frontend domain
   },
 })
-export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer() server: Server;
-  
+
   // Store active connections by user ID and chat ID
   private userSockets: Map<string, Set<string>> = new Map();
   private chatRooms: Map<string, Set<string>> = new Map();
@@ -51,17 +60,21 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     console.log('WebSocket Gateway initialized');
     // Ensure the service knows about the gateway if using setChatGateway approach
     // This depends on your module setup (forwardRef vs. onModuleInit)
-    if (this.chatService && typeof (this.chatService as any).setChatGateway === 'function') {
-       (this.chatService as any).setChatGateway(this);
+    if (
+      this.chatService &&
+      typeof (this.chatService as any).setChatGateway === 'function'
+    ) {
+      (this.chatService as any).setChatGateway(this);
     }
   }
 
   async handleConnection(client: Socket) {
     try {
       // Extract and verify JWT token
-      const token = client.handshake.auth.token || 
-                    client.handshake.headers.authorization?.split(' ')[1];
-      
+      const token =
+        client.handshake.auth.token ||
+        client.handshake.headers.authorization?.split(' ')[1];
+
       if (!token) {
         client.disconnect();
         return;
@@ -91,7 +104,9 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       }
       this.userSockets.get(user.id)!.add(client.id);
 
-      console.log(`Client connected: ${client.id}, User: ${user.id}, Role: ${user.role}`);
+      console.log(
+        `Client connected: ${client.id}, User: ${user.id}, Role: ${user.role}`,
+      );
 
       // Join admin room if applicable
       if (user.role === PrismaRole.ADMIN) {
@@ -100,7 +115,6 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       }
 
       client.emit('connected', { userId: user.id }); // Confirm connection to client
-
     } catch (error) {
       console.error('WebSocket connection error:', error.message);
       client.disconnect();
@@ -109,7 +123,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
   handleDisconnect(client: Socket) {
     const user = (client as AuthenticatedSocket).user;
-    
+
     if (user) {
       // Remove socket from user's connections
       const userSockets = this.userSockets.get(user.id);
@@ -143,7 +157,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     try {
       const userId = client.user.id;
       const userRole = client.user.role;
-      
+
       // Verify user has access to this chat
       const chat = await this.prisma.chat.findUnique({
         where: { id: chatId },
@@ -154,7 +168,11 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       }
 
       // Check if user has access to this chat
-      if (chat.clientId !== userId && chat.adminId !== userId && userRole !== PrismaRole.ADMIN) {
+      if (
+        chat.clientId !== userId &&
+        chat.adminId !== userId &&
+        userRole !== PrismaRole.ADMIN
+      ) {
         return { event: 'error', data: 'Access denied' };
       }
 
@@ -168,10 +186,19 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       this.chatRooms.get(chatId).add(userId);
 
       // Get recent messages
-      const messagesPayload = await this.chatService.getChatMessages(chatId, userId, userRole, 1, 20);
-      
+      const messagesPayload = await this.chatService.getChatMessages(
+        chatId,
+        userId,
+        userRole,
+        1,
+        20,
+      );
+
       console.log(`User ${userId} joined chat room: ${chatId}`);
-      return { event: 'joinedChat', data: { chatId, messages: messagesPayload } };
+      return {
+        event: 'joinedChat',
+        data: { chatId, messages: messagesPayload },
+      };
     } catch (error) {
       console.error('Join chat error:', error);
       return { event: 'error', data: 'Failed to join chat' };
@@ -186,7 +213,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   ): WsResponse<any> {
     const userId = client.user.id;
     client.leave(`chat:${chatId}`);
-    
+
     // Remove user from chat room tracking
     const chatRoom = this.chatRooms.get(chatId);
     if (chatRoom) {
@@ -195,7 +222,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         this.chatRooms.delete(chatId);
       }
     }
-    
+
     console.log(`User ${userId} left chat room: ${chatId}`);
     return { event: 'leftChat', data: { chatId } };
   }
@@ -204,12 +231,18 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   @SubscribeMessage('sendMessage')
   async handleSendMessage(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() payload: { chatId: string; text?: string; fileId?: string; replyToId?: string },
+    @MessageBody()
+    payload: {
+      chatId: string;
+      text?: string;
+      fileId?: string;
+      replyToId?: string;
+    },
   ): Promise<WsResponse<any>> {
     try {
       const userId = client.user.id;
       const userRole = client.user.role;
-      
+
       // Verify user has access to this chat
       const chat = await this.prisma.chat.findUnique({
         where: { id: payload.chatId },
@@ -220,7 +253,11 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       }
 
       // Check if user has access to this chat
-      if (chat.clientId !== userId && chat.adminId !== userId && userRole !== PrismaRole.ADMIN) {
+      if (
+        chat.clientId !== userId &&
+        chat.adminId !== userId &&
+        userRole !== PrismaRole.ADMIN
+      ) {
         return { event: 'error', data: 'Access denied' };
       }
 
@@ -233,14 +270,23 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       };
 
       // Call service - it handles permissions, assignment, and notifications
-      const messageResult = await this.chatService.createMessage(userId, userRole, createMessageDto);
+      const messageResult = await this.chatService.createMessage(
+        userId,
+        userRole,
+        createMessageDto,
+      );
 
       return { event: 'messageSent', data: messageResult };
     } catch (error) {
       console.error('Send message error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to send message';
       // It's often better to emit exceptions back to the calling client
-      client.emit('exception', { status: 'error', message: errorMessage, event: 'sendMessage' });
+      client.emit('exception', {
+        status: 'error',
+        message: errorMessage,
+        event: 'sendMessage',
+      });
       return { event: 'error', data: errorMessage };
     }
   }
@@ -253,7 +299,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   ) {
     const { chatId, isTyping } = data;
     const user = client.user;
-    
+
     // Broadcast typing status to other users in the chat
     client.to(`chat:${chatId}`).emit('userTyping', {
       chatId,
@@ -272,25 +318,33 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     try {
       const userId = client.user.id;
       const { chatId, messageIds } = data;
-      
+
       if (!chatId || !messageIds || messageIds.length === 0) {
-         return { event: 'error', data: 'Invalid payload for readMessages' };
+        return { event: 'error', data: 'Invalid payload for readMessages' };
       }
-      
+
       // Delegate to service
       await this.chatService.markMessagesAsRead(chatId, messageIds, userId);
-            
+
       // Service handles broadcasting the 'messagesRead' event now
       return { event: 'messagesMarkedRead', data: { chatId, messageIds } };
     } catch (error) {
       console.error('Read messages error:', error);
-      client.emit('exception', { status: 'error', message: 'Failed to mark messages as read', event: 'readMessages' });
+      client.emit('exception', {
+        status: 'error',
+        message: 'Failed to mark messages as read',
+        event: 'readMessages',
+      });
       return { event: 'error', data: 'Failed to mark messages as read' };
     }
   }
 
   // Utility method to notify users when someone joins/leaves a chat
-  private notifyChatParticipants(chatId: string, userId: number, action: 'joined' | 'left') {
+  private notifyChatParticipants(
+    chatId: string,
+    userId: number,
+    action: 'joined' | 'left',
+  ) {
     this.server.to(`chat:${chatId}`).emit('participantUpdate', {
       chatId,
       userId,
@@ -316,13 +370,21 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
     // Notify admins if it's a new client message in an unassigned chat
     try {
-      const chat = await this.prisma.chat.findUnique({ where: { id: chatId }, select: { adminId: true } });
-      if (chat && !chat.adminId && message.sender.role === PrismaRole.CLIENT) { 
-        this.server.to(this.adminRoom).emit('newClientMessage', { chatId, message });
+      const chat = await this.prisma.chat.findUnique({
+        where: { id: chatId },
+        select: { adminId: true },
+      });
+      if (chat && !chat.adminId && message.sender.role === PrismaRole.CLIENT) {
+        this.server
+          .to(this.adminRoom)
+          .emit('newClientMessage', { chatId, message });
         console.log(`Notified admins: new msg in unassigned chat ${chatId}`);
       }
     } catch (error) {
-        console.error(`Error checking chat ${chatId} for admin notification:`, error);
+      console.error(
+        `Error checking chat ${chatId} for admin notification:`,
+        error,
+      );
     }
   }
 
@@ -333,25 +395,31 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       status,
     });
   }
-  
+
   // Method to notify when an admin is assigned to a chat
-  notifyAdminAssigned(chatId: string, adminId: string, admin: PartialAdminInfo) {
-    const payload = { 
-      chatId, 
-      adminId, 
+  notifyAdminAssigned(
+    chatId: string,
+    adminId: string,
+    admin: PartialAdminInfo,
+  ) {
+    const payload = {
+      chatId,
+      adminId,
       // Selectively send profile info
-      adminProfile: admin?.profile ? { 
-        firstName: admin.profile.firstName, 
-        lastName: admin.profile.lastName 
-        // Add other needed fields, e.g., email: admin.email? 
-      } : { email: admin?.email }, // Send email if profile missing
-    }; 
+      adminProfile: admin?.profile
+        ? {
+            firstName: admin.profile.firstName,
+            lastName: admin.profile.lastName,
+            // Add other needed fields, e.g., email: admin.email?
+          }
+        : { email: admin?.email }, // Send email if profile missing
+    };
     // Notify participants in the specific chat
     this.server.to(`chat:${chatId}`).emit('adminAssigned', payload);
     // Notify all admins that the chat is taken
-    this.server.to(this.adminRoom).emit('chatAssigned', { chatId, adminId }); 
+    this.server.to(this.adminRoom).emit('chatAssigned', { chatId, adminId });
   }
-  
+
   notifyMessagesRead(chatId: string, userId: string, messageIds: string[]) {
     if (messageIds.length === 0) return;
     this.server.to(`chat:${chatId}`).emit('messagesRead', {

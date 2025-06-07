@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { DigitalOceanService } from '../digital-ocean/digital-ocean.service';
 import { PrismaService } from '../db/prisma.service';
@@ -48,13 +52,13 @@ export class FilesService {
   }
 
   async uploadMultipleFiles(files: Express.Multer.File[]) {
-    const uploadPromises = files.map(file => this.uploadFile(file));
+    const uploadPromises = files.map((file) => this.uploadFile(file));
     return Promise.all(uploadPromises);
   }
 
   async getAllFiles(page: number = 1, limit: number = 10) {
     const skip = (page - 1) * limit;
-    
+
     const [files, total] = await Promise.all([
       this.prisma.file.findMany({
         skip,
@@ -63,7 +67,7 @@ export class FilesService {
       }),
       this.prisma.file.count(),
     ]);
-    
+
     return {
       data: files,
       meta: {
@@ -79,14 +83,16 @@ export class FilesService {
     const file = await this.prisma.file.findUnique({
       where: { id },
     });
-    
+
     if (!file) {
       throw new NotFoundException(`File with ID ${id} not found`);
     }
-    
+
     // Generate a fresh presigned URL
-    const presignedUrl = await this.digitalOceanService.getPresignedUrl(file.url);
-    
+    const presignedUrl = await this.digitalOceanService.getPresignedUrl(
+      file.url,
+    );
+
     return {
       ...file,
       url: presignedUrl, // Return with presigned URL
@@ -101,11 +107,14 @@ export class FilesService {
         url: file.url,
         responseType: 'stream',
       });
-      
+
       // Set headers
-      res.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${file.filename}"`,
+      );
       res.setHeader('Content-Type', response.headers['content-type']);
-      
+
       // Pipe the file stream to the response
       return response.data.pipe(res);
     } catch (error) {
@@ -118,21 +127,23 @@ export class FilesService {
     const file = await this.prisma.file.findUnique({
       where: { id },
     });
-    
+
     if (!file) {
       throw new NotFoundException(`File with ID ${id} not found`);
     }
-    
+
     try {
       // Delete from DigitalOcean
       await this.digitalOceanService.deleteFile(file.url);
-      
+
       // Delete from database
       return await this.prisma.file.delete({
         where: { id },
       });
     } catch (error) {
-      throw new NotFoundException(`Error deleting file with ID ${id}: ${error.message}`);
+      throw new NotFoundException(
+        `Error deleting file with ID ${id}: ${error.message}`,
+      );
     }
   }
 
@@ -192,18 +203,21 @@ export class FilesService {
   async downloadFileByUrl(url: string, res: Response): Promise<void> {
     try {
       const response = await lastValueFrom(
-        this.httpService.get(url, { responseType: 'stream' })
+        this.httpService.get(url, { responseType: 'stream' }),
       );
 
       const parsedUrl = parse(url);
       const filename = basename(parsedUrl.pathname || 'downloaded-file');
-      const contentType = response.headers['content-type'] || 'application/octet-stream';
+      const contentType =
+        response.headers['content-type'] || 'application/octet-stream';
 
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${filename}"`,
+      );
       res.setHeader('Content-Type', contentType);
 
       response.data.pipe(res);
-
     } catch (error) {
       this.handleDownloadError(error, url);
     }
@@ -214,8 +228,12 @@ export class FilesService {
       if (error.response?.status === 404) {
         throw new NotFoundException(`File not found at URL: ${url}`);
       }
-      throw new BadRequestException(`Error downloading file from URL: ${error.message}`);
+      throw new BadRequestException(
+        `Error downloading file from URL: ${error.message}`,
+      );
     }
-    throw new BadRequestException(`An unexpected error occurred while downloading the file: ${error.message}`);
+    throw new BadRequestException(
+      `An unexpected error occurred while downloading the file: ${error.message}`,
+    );
   }
 }

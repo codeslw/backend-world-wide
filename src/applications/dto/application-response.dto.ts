@@ -46,25 +46,46 @@ export class ApplicationResponseDto {
   @ApiProperty({ description: 'Application last update date' })
   updatedAt: Date;
 
-  @ApiProperty({ description: 'ID of the specific program applied for', required: false })
+  @ApiProperty({
+    description: 'ID of the specific program applied for',
+    required: false,
+  })
   programId?: string;
 
-  @ApiProperty({ description: 'Type of program (e.g., Bachelor, Master)', required: false })
+  @ApiProperty({
+    description: 'Type of program (e.g., Bachelor, Master)',
+    required: false,
+  })
   programType?: string;
 
-  @ApiProperty({ description: 'Academic year of the application', required: false })
+  @ApiProperty({
+    description: 'Academic year of the application',
+    required: false,
+  })
   academicYear?: number;
 
-  @ApiProperty({ description: 'General notes about the application', required: false })
+  @ApiProperty({
+    description: 'General notes about the application',
+    required: false,
+  })
   notes?: string;
 
-  @ApiProperty({ description: 'Internal notes added by admin', required: false })
+  @ApiProperty({
+    description: 'Internal notes added by admin',
+    required: false,
+  })
   adminNotes?: string;
 
-  @ApiProperty({ description: 'ID of the admin assigned to this application', required: false })
+  @ApiProperty({
+    description: 'ID of the admin assigned to this application',
+    required: false,
+  })
   assignedTo?: string;
 
-  @ApiProperty({ description: 'Date when the application was reviewed', required: false })
+  @ApiProperty({
+    description: 'Date when the application was reviewed',
+    required: false,
+  })
   reviewDate?: Date;
 }
 

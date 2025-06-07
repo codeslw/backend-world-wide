@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export class CreateProgramDto {
   @ApiProperty({ description: 'Program title in Uzbek' })
@@ -26,20 +32,29 @@ export class CreateProgramDto {
   @MaxLength(500)
   descriptionUz?: string;
 
-  @ApiProperty({ description: 'Program description in Russian', required: false })
+  @ApiProperty({
+    description: 'Program description in Russian',
+    required: false,
+  })
   @IsString()
   @IsOptional()
   @MaxLength(500)
   descriptionRu?: string;
 
-  @ApiProperty({ description: 'Program description in English', required: false })
+  @ApiProperty({
+    description: 'Program description in English',
+    required: false,
+  })
   @IsString()
   @IsOptional()
   @MaxLength(500)
   descriptionEn?: string;
 
-  @ApiProperty({ description: 'Parent program ID (if this is a child program)', required: false })
+  @ApiProperty({
+    description: 'Parent program ID (if this is a child program)',
+    required: false,
+  })
   @IsUUID()
   @IsOptional()
   parentId?: string;
-} 
+}

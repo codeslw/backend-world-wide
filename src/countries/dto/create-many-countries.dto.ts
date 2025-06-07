@@ -12,26 +12,26 @@ export class CreateManyCountriesDto {
       {
         code: 998,
         nameUz: "O'zbekiston",
-        nameRu: "Узбекистан",
-        nameEn: "Uzbekistan",
+        nameRu: 'Узбекистан',
+        nameEn: 'Uzbekistan',
         descriptionUz: "O'zbekiston Respublikasi",
-        descriptionRu: "Республика Узбекистан",
-        descriptionEn: "Republic of Uzbekistan"
+        descriptionRu: 'Республика Узбекистан',
+        descriptionEn: 'Republic of Uzbekistan',
       },
       {
         code: 7,
-        nameUz: "Rossiya",
-        nameRu: "Россия",
-        nameEn: "Russia",
-        descriptionUz: "Rossiya Federatsiyasi",
-        descriptionRu: "Российская Федерация",
-        descriptionEn: "Russian Federation"
-      }
-    ]
+        nameUz: 'Rossiya',
+        nameRu: 'Россия',
+        nameEn: 'Russia',
+        descriptionUz: 'Rossiya Federatsiyasi',
+        descriptionRu: 'Российская Федерация',
+        descriptionEn: 'Russian Federation',
+      },
+    ],
   })
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => CreateCountryDto)
   countries: CreateCountryDto[];
-} 
+}

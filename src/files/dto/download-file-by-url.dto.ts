@@ -9,4 +9,4 @@ export class DownloadFileByUrlDto {
   @IsNotEmpty()
   @IsUrl()
   url: string;
-} 
+}

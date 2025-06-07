@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+} from 'class-validator';
 
 export class UniversityProgramDto {
   @ApiProperty({
@@ -11,7 +18,8 @@ export class UniversityProgramDto {
   programId: string;
 
   @ApiProperty({
-    description: 'The tuition fee for this specific program at this university.',
+    description:
+      'The tuition fee for this specific program at this university.',
     example: 15000.0,
     minimum: 0,
   })
@@ -29,4 +37,4 @@ export class UniversityProgramDto {
   @IsString()
   @IsOptional()
   tuitionFeeCurrency?: string = 'USD';
-} 
+}

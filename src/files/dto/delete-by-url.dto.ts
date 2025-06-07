@@ -6,4 +6,4 @@ export class DeleteByUrlDto {
   @IsNotEmpty()
   @IsString()
   url: string;
-} 
+}

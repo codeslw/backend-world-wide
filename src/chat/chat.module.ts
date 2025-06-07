@@ -21,11 +21,7 @@ import { WebSocketDocsController } from './websocket-docs.controller';
     }),
   ],
   controllers: [ChatController, WebSocketDocsController],
-  providers: [
-    ChatService,
-    ChatGateway,
-    PrismaService,
-  ],
-  exports: [ChatService, ChatGateway]
+  providers: [ChatService, ChatGateway, PrismaService],
+  exports: [ChatService, ChatGateway],
 })
-export class ChatModule {} 
+export class ChatModule {}

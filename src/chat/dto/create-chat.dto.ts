@@ -5,4 +5,4 @@ export class CreateChatDto {
   @ApiProperty({ description: 'Optional initial message', required: false })
   @IsOptional()
   initialMessage?: string;
-} 
+}

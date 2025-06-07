@@ -6,12 +6,9 @@ import { DigitalOceanModule } from '../digital-ocean/digital-ocean.module';
 import { PrismaService } from '../db/prisma.service';
 
 @Module({
-  imports: [
-    DigitalOceanModule,
-    HttpModule
-  ],
+  imports: [DigitalOceanModule, HttpModule],
   controllers: [FilesController],
   providers: [FilesService, PrismaService],
-  exports: [FilesService]
+  exports: [FilesService],
 })
 export class FilesModule {}

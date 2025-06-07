@@ -23,7 +23,9 @@ describe('ChatGateway', () => {
 
   const mockPrismaService = {
     user: {
-      findUnique: jest.fn().mockResolvedValue({ id: 1, email: 'test@example.com', role: 'USER' }),
+      findUnique: jest
+        .fn()
+        .mockResolvedValue({ id: 1, email: 'test@example.com', role: 'USER' }),
     },
     chat: {
       findUnique: jest.fn().mockResolvedValue({ id: 'chat-id' }),
@@ -34,30 +36,34 @@ describe('ChatGateway', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ChatGateway,
-        { 
-          provide: 'CHAT_SERVICE_PROVIDER', 
+        {
+          provide: 'CHAT_SERVICE_PROVIDER',
           useValue: {
             getChatMessages: jest.fn(),
             createMessage: jest.fn(),
             markMessagesAsRead: jest.fn(),
-          } 
+          },
         },
-        { 
-          provide: JwtService, 
+        {
+          provide: JwtService,
           useValue: {
             verify: jest.fn().mockReturnValue({ sub: 1 }),
-          } 
+          },
         },
-        { 
-          provide: PrismaService, 
+        {
+          provide: PrismaService,
           useValue: {
             user: {
-              findUnique: jest.fn().mockResolvedValue({ id: 1, email: 'test@example.com', role: 'USER' }),
+              findUnique: jest.fn().mockResolvedValue({
+                id: 1,
+                email: 'test@example.com',
+                role: 'USER',
+              }),
             },
             chat: {
               findUnique: jest.fn().mockResolvedValue({ id: 'chat-id' }),
             },
-          } 
+          },
         },
       ],
     }).compile();
@@ -90,20 +96,20 @@ describe('ChatGateway', () => {
         disconnect: jest.fn(),
       } as unknown as Socket;
 
-      const mockUser = { 
-        id: '1', 
-        email: 'user@example.com', 
+      const mockUser = {
+        id: '1',
+        email: 'user@example.com',
         role: Role.CLIENT,
         password: 'hashed-password',
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
-      
+
       jest.spyOn(jwtService, 'verify').mockReturnValue({ sub: 1 });
       jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser);
-      
+
       await gateway.handleConnection(mockClient);
-      
+
       expect(jwtService.verify).toHaveBeenCalledWith('valid-token');
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
         where: { id: 1 },
@@ -118,13 +124,13 @@ describe('ChatGateway', () => {
         },
         disconnect: jest.fn(),
       } as unknown as Socket;
-      
+
       jest.spyOn(jwtService, 'verify').mockImplementation(() => {
         throw new Error('Invalid token');
       });
-      
+
       await gateway.handleConnection(mockClient);
-      
+
       expect(mockClient.disconnect).toHaveBeenCalled();
     });
   });
@@ -132,27 +138,30 @@ describe('ChatGateway', () => {
   describe('notifyNewMessage', () => {
     it('should emit new message to chat room', () => {
       const chatId = 'chat-id';
-      const message = { 
-        id: 'message-id', 
+      const message = {
+        id: 'message-id',
         text: 'Hello',
         senderId: '1',
-        sender: { 
-          id: '1', 
+        sender: {
+          id: '1',
           email: 'user@example.com',
           role: Role.CLIENT,
-          profile: null
+          profile: null,
         },
         createdAt: new Date(),
         chatId: 'chat-id',
         replyToId: null,
         fileUrl: null,
-        readBy: []
+        readBy: [],
       };
-      
+
       gateway.notifyNewMessage(chatId, message);
-      
+
       expect(gateway.server.to).toHaveBeenCalledWith(`chat:${chatId}`);
-      expect(gateway.server.to(`chat:${chatId}`).emit).toHaveBeenCalledWith('newMessage', message);
+      expect(gateway.server.to(`chat:${chatId}`).emit).toHaveBeenCalledWith(
+        'newMessage',
+        message,
+      );
     });
   });
 
@@ -160,14 +169,14 @@ describe('ChatGateway', () => {
     it('should emit status change to chat room', () => {
       const chatId = 'chat-id';
       const status = 'CLOSED';
-      
+
       gateway.notifyChatStatusChange(chatId, status);
-      
+
       expect(gateway.server.to).toHaveBeenCalledWith(`chat:${chatId}`);
       expect(gateway.server.to(`chat:${chatId}`).emit).toHaveBeenCalledWith(
-        'chatStatusChanged', 
-        { chatId, status }
+        'chatStatusChanged',
+        { chatId, status },
       );
     });
   });
-}); 
+});

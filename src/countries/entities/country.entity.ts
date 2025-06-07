@@ -20,10 +20,16 @@ export class Country {
   @ApiProperty({ description: 'Country description in Uzbek', required: false })
   descriptionUz?: string;
 
-  @ApiProperty({ description: 'Country description in Russian', required: false })
+  @ApiProperty({
+    description: 'Country description in Russian',
+    required: false,
+  })
   descriptionRu?: string;
 
-  @ApiProperty({ description: 'Country description in English', required: false })
+  @ApiProperty({
+    description: 'Country description in English',
+    required: false,
+  })
   descriptionEn?: string;
 
   @ApiProperty({ description: 'Creation timestamp' })
@@ -32,6 +38,10 @@ export class Country {
   @ApiProperty({ description: 'Last update timestamp' })
   updatedAt: Date;
 
-  @ApiProperty({ description: 'Cities in this country', type: [City], required: false })
+  @ApiProperty({
+    description: 'Cities in this country',
+    type: [City],
+    required: false,
+  })
   cities?: City[];
-} 
+}

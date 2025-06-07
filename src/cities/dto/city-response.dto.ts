@@ -45,4 +45,4 @@ export class PaginatedCityResponseDto {
     limit: number;
     totalPages: number;
   };
-} 
+}

@@ -1,4 +1,4 @@
 export enum UniversityType {
   PUBLIC = 'PUBLIC',
-  PRIVATE = 'PRIVATE'
-} 
+  PRIVATE = 'PRIVATE',
+}

@@ -1,10 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsInt, Min, Max, IsString, IsNumber, IsEnum, IsArray, IsUUID } from 'class-validator';
+import {
+  IsOptional,
+  IsInt,
+  Min,
+  Max,
+  IsString,
+  IsNumber,
+  IsEnum,
+  IsArray,
+  IsUUID,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { UniversityType } from '../../common/enum/university-type.enum';
 
 export class UniversityFilterDto {
-
   @ApiProperty({ description: 'Search query', required: false })
   @IsOptional()
   @IsString()
@@ -21,7 +30,11 @@ export class UniversityFilterDto {
   @IsString()
   cityId?: string;
 
-  @ApiProperty({ description: 'University type', required: false, enum: UniversityType })
+  @ApiProperty({
+    description: 'University type',
+    required: false,
+    enum: UniversityType,
+  })
   @IsOptional()
   @IsEnum(UniversityType)
   type?: string;
@@ -54,7 +67,10 @@ export class UniversityFilterDto {
   @Type(() => Number)
   maxEstablished?: number;
 
-  @ApiProperty({ description: 'Minimum acceptance rate (percentage)', required: false })
+  @ApiProperty({
+    description: 'Minimum acceptance rate (percentage)',
+    required: false,
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -62,7 +78,10 @@ export class UniversityFilterDto {
   @Type(() => Number)
   minAcceptanceRate?: number;
 
-  @ApiProperty({ description: 'Maximum acceptance rate (percentage)', required: false })
+  @ApiProperty({
+    description: 'Maximum acceptance rate (percentage)',
+    required: false,
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -89,16 +108,20 @@ export class UniversityFilterDto {
   @IsString()
   sortBy?: string;
 
-  @ApiProperty({ description: 'Sort direction', required: false, enum: ['asc', 'desc'] })
+  @ApiProperty({
+    description: 'Sort direction',
+    required: false,
+    enum: ['asc', 'desc'],
+  })
   @IsOptional()
   @IsString()
   sortDirection?: 'asc' | 'desc';
 
-  @ApiProperty({ 
-    description: 'Filter by program IDs', 
-    required: false, 
+  @ApiProperty({
+    description: 'Filter by program IDs',
+    required: false,
     isArray: true,
-    type: [String]
+    type: [String],
   })
   @IsOptional()
   @IsArray()
@@ -116,8 +139,4 @@ export class UniversityFilterDto {
   @IsInt()
   @Type(() => Number)
   limit?: number;
-
-
-  
-  
-} 
+}

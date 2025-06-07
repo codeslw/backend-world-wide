@@ -5,7 +5,10 @@ import { ProfilesService } from '../profiles/profiles.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { ApplicationStatus } from '../common/enums/application.enum';
 import { Role } from '../common/enum/roles.enum';
-import { EntityNotFoundException, ForbiddenActionException } from '../common/exceptions/app.exceptions';
+import {
+  EntityNotFoundException,
+  ForbiddenActionException,
+} from '../common/exceptions/app.exceptions';
 
 describe('ApplicationsService', () => {
   let service: ApplicationsService;
@@ -19,7 +22,7 @@ describe('ApplicationsService', () => {
     id: 'app1',
     profileId: 'profile1',
     profile: { userId: 'user1' },
-    applicationStatus: ApplicationStatus.DRAFT
+    applicationStatus: ApplicationStatus.DRAFT,
   };
 
   // Mock repositories
@@ -56,7 +59,9 @@ describe('ApplicationsService', () => {
     }).compile();
 
     service = module.get<ApplicationsService>(ApplicationsService);
-    applicationsRepository = module.get<ApplicationsRepository>(ApplicationsRepository);
+    applicationsRepository = module.get<ApplicationsRepository>(
+      ApplicationsRepository,
+    );
     profilesService = module.get<ProfilesService>(ProfilesService);
   });
 
@@ -68,20 +73,20 @@ describe('ApplicationsService', () => {
     it('should throw EntityNotFoundException when profile not found', async () => {
       // Arrange
       mockProfilesService.findByUserId.mockResolvedValue(null);
-      
+
       const createDto = new CreateApplicationDto();
 
       // Act & Assert
-      await expect(service.create(mockUser.id, createDto))
-        .rejects
-        .toThrow(EntityNotFoundException);
+      await expect(service.create(mockUser.id, createDto)).rejects.toThrow(
+        EntityNotFoundException,
+      );
     });
 
     it('should create an application when profile exists', async () => {
       // Arrange
       mockProfilesService.findByUserId.mockResolvedValue(mockProfile);
       mockApplicationsRepository.create.mockResolvedValue(mockApplication);
-      
+
       const createDto = new CreateApplicationDto();
 
       // Act
@@ -89,8 +94,13 @@ describe('ApplicationsService', () => {
 
       // Assert
       expect(result).toEqual(mockApplication);
-      expect(mockProfilesService.findByUserId).toHaveBeenCalledWith(mockUser.id);
-      expect(mockApplicationsRepository.create).toHaveBeenCalledWith(mockProfile.id, createDto);
+      expect(mockProfilesService.findByUserId).toHaveBeenCalledWith(
+        mockUser.id,
+      );
+      expect(mockApplicationsRepository.create).toHaveBeenCalledWith(
+        mockProfile.id,
+        createDto,
+      );
     });
   });
 
@@ -98,13 +108,13 @@ describe('ApplicationsService', () => {
     it('should throw EntityNotFoundException when application not found', async () => {
       // Arrange
       mockApplicationsRepository.findById.mockResolvedValue(null);
-      
+
       const updateDto = {};
 
       // Act & Assert
-      await expect(service.update('nonexistent-id', mockUser.id, updateDto))
-        .rejects
-        .toThrow(EntityNotFoundException);
+      await expect(
+        service.update('nonexistent-id', mockUser.id, updateDto),
+      ).rejects.toThrow(EntityNotFoundException);
     });
 
     it('should throw ForbiddenActionException when user does not own the application', async () => {
@@ -112,18 +122,23 @@ describe('ApplicationsService', () => {
       const differentUser = { id: 'user2' };
       const mockApplicationWithDifferentOwner = {
         ...mockApplication,
-        profile: { userId: 'user1' }
+        profile: { userId: 'user1' },
       };
-      
-      mockApplicationsRepository.findById.mockResolvedValue(mockApplicationWithDifferentOwner);
-      mockProfilesService.findByUserId.mockResolvedValue({ id: 'profile2', userId: 'user2' });
-      
+
+      mockApplicationsRepository.findById.mockResolvedValue(
+        mockApplicationWithDifferentOwner,
+      );
+      mockProfilesService.findByUserId.mockResolvedValue({
+        id: 'profile2',
+        userId: 'user2',
+      });
+
       const updateDto = {};
 
       // Act & Assert
-      await expect(service.update('app1', differentUser.id, updateDto))
-        .rejects
-        .toThrow(ForbiddenActionException);
+      await expect(
+        service.update('app1', differentUser.id, updateDto),
+      ).rejects.toThrow(ForbiddenActionException);
     });
   });
 
@@ -133,25 +148,27 @@ describe('ApplicationsService', () => {
       mockApplicationsRepository.findById.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.remove('nonexistent-id', mockUser.id, Role.CLIENT))
-        .rejects
-        .toThrow(EntityNotFoundException);
+      await expect(
+        service.remove('nonexistent-id', mockUser.id, Role.CLIENT),
+      ).rejects.toThrow(EntityNotFoundException);
     });
 
     it('should throw ForbiddenActionException when application is not in DRAFT status', async () => {
       // Arrange
       const submittedApplication = {
         ...mockApplication,
-        applicationStatus: ApplicationStatus.SUBMITTED
+        applicationStatus: ApplicationStatus.SUBMITTED,
       };
-      
-      mockApplicationsRepository.findById.mockResolvedValue(submittedApplication);
+
+      mockApplicationsRepository.findById.mockResolvedValue(
+        submittedApplication,
+      );
       mockProfilesService.findByUserId.mockResolvedValue(mockProfile);
 
       // Act & Assert
-      await expect(service.remove('app1', mockUser.id, Role.CLIENT))
-        .rejects
-        .toThrow(ForbiddenActionException);
+      await expect(
+        service.remove('app1', mockUser.id, Role.CLIENT),
+      ).rejects.toThrow(ForbiddenActionException);
     });
   });
 
@@ -161,38 +178,40 @@ describe('ApplicationsService', () => {
       mockApplicationsRepository.findById.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.submit('nonexistent-id', mockUser.id))
-        .rejects
-        .toThrow(EntityNotFoundException);
+      await expect(
+        service.submit('nonexistent-id', mockUser.id),
+      ).rejects.toThrow(EntityNotFoundException);
     });
 
     it('should throw ForbiddenActionException when application is not in DRAFT status', async () => {
       // Arrange
       const submittedApplication = {
         ...mockApplication,
-        applicationStatus: ApplicationStatus.SUBMITTED
+        applicationStatus: ApplicationStatus.SUBMITTED,
       };
-      
-      mockApplicationsRepository.findById.mockResolvedValue(submittedApplication);
+
+      mockApplicationsRepository.findById.mockResolvedValue(
+        submittedApplication,
+      );
       mockProfilesService.findByUserId.mockResolvedValue(mockProfile);
 
       // Act & Assert
-      await expect(service.submit('app1', mockUser.id))
-        .rejects
-        .toThrow(ForbiddenActionException);
+      await expect(service.submit('app1', mockUser.id)).rejects.toThrow(
+        ForbiddenActionException,
+      );
     });
 
     it('should successfully submit a draft application', async () => {
       // Arrange
       mockApplicationsRepository.findById.mockResolvedValue(mockApplication);
       mockProfilesService.findByUserId.mockResolvedValue(mockProfile);
-      
+
       const updatedApplication = {
         ...mockApplication,
         applicationStatus: ApplicationStatus.SUBMITTED,
-        submittedAt: expect.any(Date)
+        submittedAt: expect.any(Date),
       };
-      
+
       mockApplicationsRepository.update.mockResolvedValue(updatedApplication);
 
       // Act
@@ -202,8 +221,8 @@ describe('ApplicationsService', () => {
       expect(result).toEqual(updatedApplication);
       expect(mockApplicationsRepository.update).toHaveBeenCalledWith('app1', {
         applicationStatus: ApplicationStatus.SUBMITTED,
-        submittedAt: expect.any(Date)
+        submittedAt: expect.any(Date),
       });
     });
   });
-}); 
+});

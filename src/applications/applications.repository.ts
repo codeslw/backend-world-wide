@@ -11,7 +11,7 @@ export class ApplicationsRepository {
   async create(profileId: string, createApplicationDto: CreateApplicationDto) {
     // Only handle submittedAt date conversion, other date fields are now in Profile
     const { submittedAt, ...restData } = createApplicationDto;
-    
+
     return this.prisma.application.create({
       data: {
         ...restData,
@@ -75,7 +75,7 @@ export class ApplicationsRepository {
   async update(id: string, updateApplicationDto: UpdateApplicationDto) {
     // Only handle submittedAt date conversion, other date fields are now in Profile
     const { submittedAt, ...restData } = updateApplicationDto;
-    
+
     // Build the update data
     const data = {
       ...restData,

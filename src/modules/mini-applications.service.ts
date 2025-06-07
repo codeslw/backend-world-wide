@@ -5,7 +5,10 @@ import { UpdateMiniApplicationDto } from './dto/update-mini-application.dto';
 import { MiniApplication, MiniApplicationStatus } from '@prisma/client';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { FilterService } from '../common/filters/filter.service';
-import { FilterOptions, PaginationOptions } from '../common/filters/filter.interface';
+import {
+  FilterOptions,
+  PaginationOptions,
+} from '../common/filters/filter.interface';
 import { Prisma } from '@prisma/client';
 import { InvalidDataException } from '../common/exceptions/app.exceptions';
 
@@ -16,15 +19,17 @@ export class MiniApplicationsService {
     private filterService: FilterService,
   ) {}
 
-  async create(createMiniApplicationDto: CreateMiniApplicationDto): Promise<MiniApplication> {
-   
-
+  async create(
+    createMiniApplicationDto: CreateMiniApplicationDto,
+  ): Promise<MiniApplication> {
     return this.prisma.miniApplication.create({
       data: createMiniApplicationDto,
     });
   }
 
-  async findAll(paginationDto: PaginationDto): Promise<{ data: MiniApplication[]; meta: any }> {
+  async findAll(
+    paginationDto: PaginationDto,
+  ): Promise<{ data: MiniApplication[]; meta: any }> {
     // Define filters (can be extended based on query parameters)
     const filterOptions: FilterOptions = {
       filters: [
@@ -36,7 +41,10 @@ export class MiniApplicationsService {
     };
 
     // Build the Prisma 'where' clause based on query parameters and filter definitions
-    const where = this.filterService.buildFilterQuery(paginationDto, filterOptions);
+    const where = this.filterService.buildFilterQuery(
+      paginationDto,
+      filterOptions,
+    );
 
     // Define pagination/sorting configuration
     const paginationOptions: PaginationOptions = {
@@ -67,12 +75,14 @@ export class MiniApplicationsService {
     return miniApplication;
   }
 
-  async update(id: string, updateMiniApplicationDto: UpdateMiniApplicationDto): Promise<MiniApplication> {
+  async update(
+    id: string,
+    updateMiniApplicationDto: UpdateMiniApplicationDto,
+  ): Promise<MiniApplication> {
     // Check if the mini-application exists first
     await this.findOne(id);
 
     // If universityId is being updated, check if the new university exists
-   
 
     try {
       return await this.prisma.miniApplication.update({
@@ -99,7 +109,7 @@ export class MiniApplicationsService {
           // Foreign key constraint error
           throw new InvalidDataException(
             'Cannot delete mini-application because it has relationships that prevent deletion.',
-            { reason: 'FOREIGN_KEY_CONSTRAINT', errorCode: error.code }
+            { reason: 'FOREIGN_KEY_CONSTRAINT', errorCode: error.code },
           );
         }
       }

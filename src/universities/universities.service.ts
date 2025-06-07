@@ -5,8 +5,14 @@ import { CreateUniversityDto } from './dto/create-university.dto';
 import { UpdateUniversityDto } from './dto/update-university.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { FilterService } from '../common/filters/filter.service';
-import { FilterOptions, PaginationOptions } from '../common/filters/filter.interface';
-import { EntityNotFoundException, InvalidDataException } from '../common/exceptions/app.exceptions';
+import {
+  FilterOptions,
+  PaginationOptions,
+} from '../common/filters/filter.interface';
+import {
+  EntityNotFoundException,
+  InvalidDataException,
+} from '../common/exceptions/app.exceptions';
 import { UniversityFilterDto } from './dto/university-filter.dto';
 import { UniversityResponseDto } from './dto/university-response.dto';
 
@@ -14,14 +20,17 @@ import { UniversityResponseDto } from './dto/university-response.dto';
 export class UniversitiesService {
   constructor(
     private prisma: PrismaService,
-    private filterService: FilterService
+    private filterService: FilterService,
   ) {}
 
-  async create(createUniversityDto: CreateUniversityDto): Promise<UniversityResponseDto> {
-    const { programs, countryCode, cityId, ...universityData } = createUniversityDto;
+  async create(
+    createUniversityDto: CreateUniversityDto,
+  ): Promise<UniversityResponseDto> {
+    const { programs, countryCode, cityId, ...universityData } =
+      createUniversityDto;
 
     // Validate that all provided programIds exist
-    await this.validateProgramIds(programs.map(p => p.programId));
+    await this.validateProgramIds(programs.map((p) => p.programId));
 
     try {
       const createdUniversity = await this.prisma.university.create({
@@ -30,7 +39,7 @@ export class UniversitiesService {
           country: { connect: { code: countryCode } },
           city: { connect: { id: cityId } },
           universityPrograms: {
-            create: programs.map(program => ({
+            create: programs.map((program) => ({
               program: { connect: { id: program.programId } },
               tuitionFee: program.tuitionFee,
               tuitionFeeCurrency: program.tuitionFeeCurrency || 'USD',
@@ -50,39 +59,47 @@ export class UniversitiesService {
       return this.mapToResponseDto(createdUniversity);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2002') { // Unique constraint violation
-          throw new InvalidDataException(`University creation failed due to duplicate data: ${error.meta?.target}`);
-        } else if (error.code === 'P2025') { // Foreign key constraint failed
-          throw new InvalidDataException(`Invalid country code (${countryCode}) or city ID (${cityId}) provided.`);
+        if (error.code === 'P2002') {
+          // Unique constraint violation
+          throw new InvalidDataException(
+            `University creation failed due to duplicate data: ${error.meta?.target}`,
+          );
+        } else if (error.code === 'P2025') {
+          // Foreign key constraint failed
+          throw new InvalidDataException(
+            `Invalid country code (${countryCode}) or city ID (${cityId}) provided.`,
+          );
         }
       }
-      console.error("Error creating university:", error);
+      console.error('Error creating university:', error);
       throw error; // Rethrow other errors
     }
   }
 
   // Added method signature for bulk creation
-  async createMany(createManyUniversitiesDto: CreateUniversityDto[]): Promise<UniversityResponseDto[]> {
-    // Implementation pending: 
+  async createMany(
+    createManyUniversitiesDto: CreateUniversityDto[],
+  ): Promise<UniversityResponseDto[]> {
+    // Implementation pending:
     // - Iterate through createManyUniversitiesDto array
     // - Validate each DTO (perhaps using validateProgramIds for all programs first)
     // - Use Prisma's createMany or transaction for batch insertion
     // - Map results to UniversityResponseDto array
     // - Handle potential errors for individual or batch operations
-    console.log("createMany called with:", createManyUniversitiesDto);
+    console.log('createMany called with:', createManyUniversitiesDto);
     // Placeholder implementation - replace with actual logic
     const createdUniversities = await Promise.all(
-      createManyUniversitiesDto.map(dto => this.create(dto))
+      createManyUniversitiesDto.map((dto) => this.create(dto)),
     );
     return createdUniversities;
   }
 
-  async findAll(
-    filterDto: UniversityFilterDto,
-    lang: string = 'uz',
-  ) {
+  async findAll(filterDto: UniversityFilterDto, lang: string = 'uz') {
     try {
-      const paginationDto: PaginationDto = { page: filterDto.page, limit: filterDto.limit };
+      const paginationDto: PaginationDto = {
+        page: filterDto.page,
+        limit: filterDto.limit,
+      };
       const { programs: programFilters, ...otherFilters } = filterDto;
 
       const filterOptions: FilterOptions = {
@@ -90,16 +107,66 @@ export class UniversitiesService {
           { field: 'countryCode', queryParam: 'countryCode' },
           { field: 'cityId', queryParam: 'cityId' },
           { field: 'type', queryParam: 'type' },
-          { field: 'ranking', queryParam: 'minRanking', operator: 'gte', transform: (value) => parseInt(value) },
-          { field: 'ranking', queryParam: 'maxRanking', operator: 'lte', transform: (value) => parseInt(value) },
-          { field: 'established', queryParam: 'minEstablished', operator: 'gte', transform: (value) => parseInt(value) },
-          { field: 'established', queryParam: 'maxEstablished', operator: 'lte', transform: (value) => parseInt(value) },
-          { field: 'acceptanceRate', queryParam: 'minAcceptanceRate', operator: 'gte', transform: (value) => parseFloat(value) },
-          { field: 'acceptanceRate', queryParam: 'maxAcceptanceRate', operator: 'lte', transform: (value) => parseFloat(value) },
-          { field: 'avgApplicationFee', queryParam: 'minApplicationFee', operator: 'gte', transform: (value) => parseFloat(value) },
-          { field: 'avgApplicationFee', queryParam: 'maxApplicationFee', operator: 'lte', transform: (value) => parseFloat(value) },
-          { field: 'createdAt', queryParam: 'createdAfter', operator: 'gte', transform: (value) => new Date(value) },
-          { field: 'createdAt', queryParam: 'createdBefore', operator: 'lte', transform: (value) => new Date(value) },
+          {
+            field: 'ranking',
+            queryParam: 'minRanking',
+            operator: 'gte',
+            transform: (value) => parseInt(value),
+          },
+          {
+            field: 'ranking',
+            queryParam: 'maxRanking',
+            operator: 'lte',
+            transform: (value) => parseInt(value),
+          },
+          {
+            field: 'established',
+            queryParam: 'minEstablished',
+            operator: 'gte',
+            transform: (value) => parseInt(value),
+          },
+          {
+            field: 'established',
+            queryParam: 'maxEstablished',
+            operator: 'lte',
+            transform: (value) => parseInt(value),
+          },
+          {
+            field: 'acceptanceRate',
+            queryParam: 'minAcceptanceRate',
+            operator: 'gte',
+            transform: (value) => parseFloat(value),
+          },
+          {
+            field: 'acceptanceRate',
+            queryParam: 'maxAcceptanceRate',
+            operator: 'lte',
+            transform: (value) => parseFloat(value),
+          },
+          {
+            field: 'avgApplicationFee',
+            queryParam: 'minApplicationFee',
+            operator: 'gte',
+            transform: (value) => parseFloat(value),
+          },
+          {
+            field: 'avgApplicationFee',
+            queryParam: 'maxApplicationFee',
+            operator: 'lte',
+            transform: (value) => parseFloat(value),
+          },
+          {
+            field: 'createdAt',
+            queryParam: 'createdAfter',
+            operator: 'gte',
+            transform: (value) => new Date(value),
+          },
+          {
+            field: 'createdAt',
+            queryParam: 'createdBefore',
+            operator: 'lte',
+            transform: (value) => new Date(value),
+          },
           { field: 'id', queryParam: 'ids', operator: 'in', isArray: true },
           // Updated program filter to target the join table
           {
@@ -111,22 +178,26 @@ export class UniversitiesService {
               if (Array.isArray(value)) {
                 programIds = value;
               } else if (typeof value === 'string') {
-                programIds = value.split(',').filter(id => id);
+                programIds = value.split(',').filter((id) => id);
               }
               if (programIds.length > 0) {
                 return { programId: { in: programIds } };
               }
               return undefined; // Don't filter if no valid program IDs are provided
-            }
-          }
+            },
+          },
         ],
         searchFields: [
-          'nameUz', 'nameRu', 'nameEn',
-          'descriptionUz', 'descriptionRu', 'descriptionEn',
-          'website'
+          'nameUz',
+          'nameRu',
+          'nameEn',
+          'descriptionUz',
+          'descriptionRu',
+          'descriptionEn',
+          'website',
         ],
         searchMode: 'contains',
-        caseSensitive: false
+        caseSensitive: false,
       };
 
       const query = { ...otherFilters, programs: programFilters }; // Pass original filter DTO
@@ -136,7 +207,7 @@ export class UniversitiesService {
         defaultLimit: 10,
         maxLimit: 300,
         defaultSortField: 'ranking', // Consider allowing sort by other fields
-        defaultSortDirection: 'asc'
+        defaultSortDirection: 'asc',
       };
 
       const result = await this.filterService.applyPagination(
@@ -148,7 +219,14 @@ export class UniversitiesService {
           city: true,
           universityPrograms: {
             include: {
-              program: { select: { id: true, titleUz: true, titleRu: true, titleEn: true } }, // Select specific program fields
+              program: {
+                select: {
+                  id: true,
+                  titleUz: true,
+                  titleRu: true,
+                  titleEn: true,
+                },
+              }, // Select specific program fields
             },
           },
         },
@@ -156,19 +234,24 @@ export class UniversitiesService {
         paginationOptions,
       );
 
-      const localizedData = result.data.map(university => this.localizeAndMapUniversity(university, lang));
+      const localizedData = result.data.map((university) =>
+        this.localizeAndMapUniversity(university, lang),
+      );
 
       return {
         data: localizedData,
-        meta: result.meta
+        meta: result.meta,
       };
     } catch (error) {
-      console.error("Error finding universities:", error);
+      console.error('Error finding universities:', error);
       throw error;
     }
   }
 
-  async findOne(id: string, lang: string = 'uz'): Promise<UniversityResponseDto> {
+  async findOne(
+    id: string,
+    lang: string = 'uz',
+  ): Promise<UniversityResponseDto> {
     try {
       const university = await this.prisma.university.findUnique({
         where: { id },
@@ -197,13 +280,17 @@ export class UniversitiesService {
     }
   }
 
-  async update(id: string, updateUniversityDto: UpdateUniversityDto): Promise<UniversityResponseDto> {
-    const { programs, countryCode, cityId, ...otherFields } = updateUniversityDto;
+  async update(
+    id: string,
+    updateUniversityDto: UpdateUniversityDto,
+  ): Promise<UniversityResponseDto> {
+    const { programs, countryCode, cityId, ...otherFields } =
+      updateUniversityDto;
 
     // 1. Check if university exists
     const existingUniversity = await this.prisma.university.findUnique({
       where: { id },
-      include: { universityPrograms: true } // Include existing program relations
+      include: { universityPrograms: true }, // Include existing program relations
     });
     if (!existingUniversity) {
       throw new EntityNotFoundException('University', id);
@@ -211,7 +298,7 @@ export class UniversitiesService {
 
     // 2. Validate incoming program IDs if programs are being updated
     if (programs) {
-      await this.validateProgramIds(programs.map(p => p.programId));
+      await this.validateProgramIds(programs.map((p) => p.programId));
     }
 
     try {
@@ -232,21 +319,29 @@ export class UniversitiesService {
 
         // 4. Handle UniversityProgram updates if programs array is provided
         if (programs) {
-          const existingProgramIds = new Set(existingUniversity.universityPrograms.map(up => up.programId));
-          const incomingProgramsMap = new Map(programs.map(p => [p.programId, p]));
+          const existingProgramIds = new Set(
+            existingUniversity.universityPrograms.map((up) => up.programId),
+          );
+          const incomingProgramsMap = new Map(
+            programs.map((p) => [p.programId, p]),
+          );
 
           // Deletions: Find programs in existing set but not in incoming map
           const programsToDelete = existingUniversity.universityPrograms
-            .filter(up => !incomingProgramsMap.has(up.programId))
-            .map(up => up.id);
+            .filter((up) => !incomingProgramsMap.has(up.programId))
+            .map((up) => up.id);
 
           if (programsToDelete.length > 0) {
-            await tx.universityProgram.deleteMany({ where: { id: { in: programsToDelete } } });
+            await tx.universityProgram.deleteMany({
+              where: { id: { in: programsToDelete } },
+            });
           }
 
           // Upserts: Iterate through incoming programs
           for (const [programId, programData] of incomingProgramsMap) {
-            const existingEntry = existingUniversity.universityPrograms.find(up => up.programId === programId);
+            const existingEntry = existingUniversity.universityPrograms.find(
+              (up) => up.programId === programId,
+            );
 
             await tx.universityProgram.upsert({
               where: { id: existingEntry?.id ?? '' }, // Use existing ID if available, otherwise dummy ID for create
@@ -281,15 +376,18 @@ export class UniversitiesService {
 
       // Ensure we return non-null, though findUnique after successful update should guarantee it
       if (!updatedUniversity) {
-           throw new Error('Failed to retrieve updated university after transaction.');
+        throw new Error(
+          'Failed to retrieve updated university after transaction.',
+        );
       }
 
       return this.localizeAndMapUniversity(updatedUniversity, 'uz'); // Or get lang from context
-
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2025') {
-          throw new InvalidDataException(`Update failed: Invalid country code, city ID, or program ID provided.`);
+          throw new InvalidDataException(
+            `Update failed: Invalid country code, city ID, or program ID provided.`,
+          );
         }
       }
       console.error(`Error updating university with id ${id}:`, error);
@@ -304,9 +402,9 @@ export class UniversitiesService {
         where: { id },
         include: {
           universityPrograms: true,
-        }
+        },
       });
-      
+
       if (!university) {
         throw new EntityNotFoundException('University', id);
       }
@@ -315,16 +413,20 @@ export class UniversitiesService {
       if (university.universityPrograms.length > 0) {
         throw new InvalidDataException(
           'Cannot delete university with associated programs. Please remove university-program associations first.',
-          { reason: 'RELATED_PROGRAMS_EXIST', count: university.universityPrograms.length }
+          {
+            reason: 'RELATED_PROGRAMS_EXIST',
+            count: university.universityPrograms.length,
+          },
         );
       }
-
-      
 
       // Now safe to delete
       await this.prisma.university.delete({ where: { id } });
     } catch (error) {
-      if (error instanceof EntityNotFoundException || error instanceof InvalidDataException) {
+      if (
+        error instanceof EntityNotFoundException ||
+        error instanceof InvalidDataException
+      ) {
         throw error;
       }
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -336,7 +438,7 @@ export class UniversitiesService {
           // Foreign key constraint failed
           throw new InvalidDataException(
             'Cannot delete university because it has related records.',
-            { reason: 'FOREIGN_KEY_CONSTRAINT', errorCode: error.code }
+            { reason: 'FOREIGN_KEY_CONSTRAINT', errorCode: error.code },
           );
         }
       }
@@ -346,14 +448,17 @@ export class UniversitiesService {
   }
 
   // Add this method after the remove() method
-  async removeUniversityProgram(universityId: string, programId: string): Promise<void> {
+  async removeUniversityProgram(
+    universityId: string,
+    programId: string,
+  ): Promise<void> {
     try {
       // Check if the association exists
       const universityProgram = await this.prisma.universityProgram.findFirst({
         where: {
           universityId,
-          programId
-        }
+          programId,
+        },
       });
 
       if (!universityProgram) {
@@ -362,7 +467,7 @@ export class UniversitiesService {
 
       // Delete the association
       await this.prisma.universityProgram.delete({
-        where: { id: universityProgram.id }
+        where: { id: universityProgram.id },
       });
     } catch (error) {
       if (error instanceof EntityNotFoundException) {
@@ -371,7 +476,7 @@ export class UniversitiesService {
       console.error(`Error removing university-program association:`, error);
       throw new InvalidDataException(
         'Failed to remove university-program association',
-        { universityId, programId }
+        { universityId, programId },
       );
     }
   }
@@ -386,10 +491,14 @@ export class UniversitiesService {
       where: { id: { in: programIds } },
       select: { id: true },
     });
-    const existingProgramIdsSet = new Set(existingPrograms.map(p => p.id));
-    const invalidIds = programIds.filter(id => !existingProgramIdsSet.has(id));
+    const existingProgramIdsSet = new Set(existingPrograms.map((p) => p.id));
+    const invalidIds = programIds.filter(
+      (id) => !existingProgramIdsSet.has(id),
+    );
     if (invalidIds.length > 0) {
-      throw new InvalidDataException(`Invalid program IDs provided: ${invalidIds.join(', ')}`);
+      throw new InvalidDataException(
+        `Invalid program IDs provided: ${invalidIds.join(', ')}`,
+      );
     }
   }
 
@@ -409,8 +518,10 @@ export class UniversitiesService {
       descriptionRu: university.descriptionRu,
       descriptionEn: university.descriptionEn,
       // Format dates as ISO strings or YYYY-MM-DD
-      winterIntakeDeadline: university.winterIntakeDeadline?.toISOString().split('T')[0] ?? null,
-      autumnIntakeDeadline: university.autumnIntakeDeadline?.toISOString().split('T')[0] ?? null,
+      winterIntakeDeadline:
+        university.winterIntakeDeadline?.toISOString().split('T')[0] ?? null,
+      autumnIntakeDeadline:
+        university.autumnIntakeDeadline?.toISOString().split('T')[0] ?? null,
       ranking: university.ranking,
       studentsCount: university.studentsCount,
       acceptanceRate: university.acceptanceRate,
@@ -421,22 +532,26 @@ export class UniversitiesService {
       photoUrl: university.photoUrl,
       createdAt: university.createdAt,
       updatedAt: university.updatedAt,
-      universityPrograms: university.universityPrograms?.map(up => ({
-        programId: up.programId,
-        // Include localized program title if needed, based on lang
-        titleUz: up.program?.titleUz, // Example: use Uzbek title
-        // titleRu: up.program?.titleRu,
-        // titleEn: up.program?.titleEn,
-        tuitionFee: up.tuitionFee,
-        tuitionFeeCurrency: up.tuitionFeeCurrency,
-      })) || [],
+      universityPrograms:
+        university.universityPrograms?.map((up) => ({
+          programId: up.programId,
+          // Include localized program title if needed, based on lang
+          titleUz: up.program?.titleUz, // Example: use Uzbek title
+          // titleRu: up.program?.titleRu,
+          // titleEn: up.program?.titleEn,
+          tuitionFee: up.tuitionFee,
+          tuitionFeeCurrency: up.tuitionFeeCurrency,
+        })) || [],
       country: university.country,
       city: university.city,
     };
   }
 
   // Combines localization and mapping
-  private localizeAndMapUniversity(university: any, lang: string): UniversityResponseDto {
+  private localizeAndMapUniversity(
+    university: any,
+    lang: string,
+  ): UniversityResponseDto {
     const localized = this.localizeUniversity(university, lang);
     return this.mapToResponseDto(localized);
   }
@@ -447,10 +562,11 @@ export class UniversitiesService {
     // Localize nested Country, City, and Program within UniversityProgram
     const localizedCountry = this.localizeCountry(university.country, lang);
     const localizedCity = this.localizeCity(university.city, lang);
-    const localizedPrograms = university.universityPrograms?.map(up => ({
-      ...up,
-      program: this.localizeProgram(up.program, lang),
-    })) || [];
+    const localizedPrograms =
+      university.universityPrograms?.map((up) => ({
+        ...up,
+        program: this.localizeProgram(up.program, lang),
+      })) || [];
 
     return {
       ...university,
@@ -463,24 +579,34 @@ export class UniversitiesService {
 
   private localizeCountry(country: any, lang: string) {
     if (!country) return null;
-    const name = country[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || country.nameUz;
+    const name =
+      country[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+      country.nameUz;
     return { ...country, name }; // Return all fields + localized name
   }
 
   private localizeCity(city: any, lang: string) {
     if (!city) return null;
-    const name = city[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || city.nameUz;
-    const description = city[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || city.descriptionUz;
+    const name =
+      city[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+      city.nameUz;
+    const description =
+      city[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+      city.descriptionUz;
     return { ...city, name, description };
   }
 
   private localizeProgram(program: any, lang: string) {
     if (!program) return null;
-    const title = program[`title${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || program.titleUz;
-    const description = program[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || program.descriptionUz;
+    const title =
+      program[`title${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+      program.titleUz;
+    const description =
+      program[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+      program.descriptionUz;
     return { ...program, title, description };
   }
 
   // Note: createMany is omitted for brevity but would need similar updates as `create`
   // async createMany(createUniversityDtos: CreateUniversityDto[]) { ... }
-} 
+}

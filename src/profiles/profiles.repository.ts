@@ -23,7 +23,7 @@ export class ProfilesRepository {
     where?: any;
   }) {
     const { skip, take, orderBy, where } = options || {};
-    
+
     return this.prisma.profile.findMany({
       skip,
       take,
@@ -60,4 +60,4 @@ export class ProfilesRepository {
       where: { id },
     });
   }
-} 
+}

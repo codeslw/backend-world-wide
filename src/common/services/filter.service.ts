@@ -5,4 +5,4 @@ export class FilterService {
   buildFilterQuery(filters: any) {
     return {};
   }
-} 
+}

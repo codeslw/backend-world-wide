@@ -1,4 +1,10 @@
-import { IsEmail, IsString, MinLength, IsOptional, ValidateNested } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  IsOptional,
+  ValidateNested,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Role } from '../../common/enum/roles.enum';
 import { Type } from 'class-transformer';
@@ -18,8 +24,11 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   role?: Role;
-  
-  @ApiProperty({ type: CreateProfileDto, description: 'User profile information' })
+
+  @ApiProperty({
+    type: CreateProfileDto,
+    description: 'User profile information',
+  })
   @ValidateNested()
   @Type(() => CreateProfileDto)
   @IsOptional()

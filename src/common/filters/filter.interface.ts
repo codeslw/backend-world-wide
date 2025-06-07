@@ -1,6 +1,20 @@
 export interface FilterConfig {
   field: string;
-  operator?: 'equals' | 'contains' | 'in' | 'gt' | 'gte' | 'lt' | 'lte' | 'between' | 'startsWith' | 'endsWith' | 'not' | 'some' | 'every' | 'none';
+  operator?:
+    | 'equals'
+    | 'contains'
+    | 'in'
+    | 'gt'
+    | 'gte'
+    | 'lt'
+    | 'lte'
+    | 'between'
+    | 'startsWith'
+    | 'endsWith'
+    | 'not'
+    | 'some'
+    | 'every'
+    | 'none';
   queryParam: string;
   transform?: (value: any) => any;
   isArray?: boolean;
@@ -14,8 +28,6 @@ export interface FilterOptions {
   caseSensitive?: boolean;
 }
 
-
-
 export interface SortConfig {
   field: string;
   direction: 'asc' | 'desc';
@@ -26,4 +38,4 @@ export interface PaginationOptions {
   maxLimit?: number;
   defaultSortField?: string;
   defaultSortDirection?: 'asc' | 'desc';
-} 
+}

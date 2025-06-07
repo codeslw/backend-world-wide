@@ -9,7 +9,7 @@ jest.mock('@prisma/client', () => {
     $connect: jest.fn(),
     $disconnect: jest.fn(),
   };
-  
+
   return {
     PrismaClient: jest.fn(() => mockPrismaClient),
   };
@@ -32,8 +32,6 @@ describe('AppController (e2e)', () => {
   });
 
   it('should return 404 for non-existent route', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(404);
+    return request(app.getHttpServer()).get('/').expect(404);
   });
 });

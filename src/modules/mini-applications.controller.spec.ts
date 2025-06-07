@@ -9,7 +9,9 @@ describe('MiniApplicationsController', () => {
       controllers: [MiniApplicationsController],
     }).compile();
 
-    controller = module.get<MiniApplicationsController>(MiniApplicationsController);
+    controller = module.get<MiniApplicationsController>(
+      MiniApplicationsController,
+    );
   });
 
   it('should be defined', () => {

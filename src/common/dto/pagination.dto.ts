@@ -3,7 +3,11 @@ import { IsOptional, IsInt, Min, Max, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class PaginationDto {
-  @ApiProperty({ description: 'Page number (starts from 1)', default: 1, required: false })
+  @ApiProperty({
+    description: 'Page number (starts from 1)',
+    default: 1,
+    required: false,
+  })
   @IsOptional()
   @IsInt()
   @Min(1)
@@ -22,4 +26,4 @@ export class PaginationDto {
   @IsOptional()
   @IsString()
   search?: string;
-} 
+}

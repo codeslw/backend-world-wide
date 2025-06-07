@@ -21,4 +21,4 @@ export class CreateCityDto {
   @IsNumber()
   @IsNotEmpty()
   countryCode: number;
-} 
+}

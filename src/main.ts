@@ -6,12 +6,9 @@ import * as fs from 'fs';
 import { Request, Response } from 'express';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
-
-
-
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
+
   // Apply global validation pipe with detailed error messages
   app.useGlobalPipes(
     new ValidationPipe({
@@ -23,20 +20,22 @@ async function bootstrap() {
           acc[error.property] = Object.values(error.constraints || {});
           return acc;
         }, {});
-        
-        return new Error(JSON.stringify({
-          statusCode: 400,
-          message: 'Validation failed',
-          error: 'Bad Request',
-          details: formattedErrors,
-        }));
+
+        return new Error(
+          JSON.stringify({
+            statusCode: 400,
+            message: 'Validation failed',
+            error: 'Bad Request',
+            details: formattedErrors,
+          }),
+        );
       },
     }),
   );
-  
+
   // Apply global exception filter
   app.useGlobalFilters(new GlobalExceptionFilter());
-  
+
   //Apply base context for apis api/v1
   app.setGlobalPrefix('api/v1');
 
@@ -57,9 +56,9 @@ async function bootstrap() {
       'access-token', // This is the key used for @ApiBearerAuth() decorator
     )
     .build();
-  
+
   const document = SwaggerModule.createDocument(app, config);
-  
+
   // Add Swagger UI options for auth persistence
   const customOptions = {
     swaggerOptions: {
@@ -70,15 +69,14 @@ async function bootstrap() {
     },
     customSiteTitle: 'EduWorldWide API Docs v2.0.1',
   };
-  
-  SwaggerModule.setup('api', app, document, customOptions);
-  
 
-   // Expose Swagger document at /swagger-spec endpoint
-   app.getHttpAdapter().get('/swagger-spec', (req, res) => {
+  SwaggerModule.setup('api', app, document, customOptions);
+
+  // Expose Swagger document at /swagger-spec endpoint
+  app.getHttpAdapter().get('/swagger-spec', (req, res) => {
     res.json(document);
   });
-  
+
   // Enable CORS
   app.enableCors({
     origin: true, // Or specify your frontend domain
@@ -87,15 +85,15 @@ async function bootstrap() {
     allowedHeaders: 'Content-Type, Accept, Authorization',
     maxAge: 86400, // 24 hours
   });
-  
+
   // Basic health check endpoint
   app.use('/api/v1/health', (req, res) => {
     res.status(200).json({
       status: 'ok',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   });
-  
+
   await app.listen(process.env.PORT || 3000);
 }
 bootstrap();

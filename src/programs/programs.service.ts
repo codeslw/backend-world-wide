@@ -4,15 +4,21 @@ import { CreateProgramDto } from './dto/create-program.dto';
 import { UpdateProgramDto } from './dto/update-program.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { FilterService } from '../common/filters/filter.service';
-import { FilterOptions, PaginationOptions } from 'src/common/filters/filter.interface';
-import { EntityNotFoundException, InvalidDataException } from '../common/exceptions/app.exceptions';
+import {
+  FilterOptions,
+  PaginationOptions,
+} from 'src/common/filters/filter.interface';
+import {
+  EntityNotFoundException,
+  InvalidDataException,
+} from '../common/exceptions/app.exceptions';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ProgramsService {
   constructor(
     private prisma: PrismaService,
-    private filterService: FilterService
+    private filterService: FilterService,
   ) {}
 
   async create(createProgramDto: CreateProgramDto) {
@@ -24,9 +30,9 @@ export class ProgramsService {
         descriptionUz: createProgramDto.descriptionUz,
         descriptionRu: createProgramDto.descriptionRu,
         descriptionEn: createProgramDto.descriptionEn,
-        parent: createProgramDto.parentId 
-          ? { connect: { id: createProgramDto.parentId } } 
-          : undefined
+        parent: createProgramDto.parentId
+          ? { connect: { id: createProgramDto.parentId } }
+          : undefined,
       };
 
       return this.prisma.program.create({ data });
@@ -39,14 +45,14 @@ export class ProgramsService {
   async createMany(programs: CreateProgramDto[]) {
     try {
       const createdPrograms = await Promise.all(
-        programs.map(programDto => {
+        programs.map((programDto) => {
           return this.create(programDto);
-        })
+        }),
       );
-      
-      return { 
+
+      return {
         count: createdPrograms.length,
-        programs: createdPrograms
+        programs: createdPrograms,
       };
     } catch (error) {
       // Let the global exception filter handle Prisma errors
@@ -54,51 +60,62 @@ export class ProgramsService {
     }
   }
 
-  async findAll(parentId?: string, lang: string = 'uz', paginationDto?: PaginationDto) {
+  async findAll(
+    parentId?: string,
+    lang: string = 'uz',
+    paginationDto?: PaginationDto,
+  ) {
     try {
       // Define filter options
       const filterOptions = {
         filters: [
           { field: 'parentId', queryParam: 'parentId' },
-          { 
-            field: 'createdAt', 
-            queryParam: 'createdAfter', 
+          {
+            field: 'createdAt',
+            queryParam: 'createdAfter',
             operator: 'gte',
-            transform: (value) => new Date(value)
+            transform: (value) => new Date(value),
           },
-          { 
-            field: 'createdAt', 
-            queryParam: 'createdBefore', 
+          {
+            field: 'createdAt',
+            queryParam: 'createdBefore',
             operator: 'lte',
-            transform: (value) => new Date(value)
+            transform: (value) => new Date(value),
           },
           {
             field: 'id',
             queryParam: 'ids',
             operator: 'in',
-            isArray: true
-          }
+            isArray: true,
+          },
         ],
         searchFields: [
-          'titleUz', 'titleRu', 'titleEn', 
-          'descriptionUz', 'descriptionRu', 'descriptionEn'
+          'titleUz',
+          'titleRu',
+          'titleEn',
+          'descriptionUz',
+          'descriptionRu',
+          'descriptionEn',
         ],
         searchMode: 'contains',
-        caseSensitive: false
+        caseSensitive: false,
       };
-      
+
       // Build filter query
       const query = { ...paginationDto, parentId };
-      const where = this.filterService.buildFilterQuery(query, filterOptions as FilterOptions);
-      
+      const where = this.filterService.buildFilterQuery(
+        query,
+        filterOptions as FilterOptions,
+      );
+
       // Define pagination options
       const paginationOptions = {
         defaultLimit: 10,
         maxLimit: 300,
         defaultSortField: 'createdAt',
-        defaultSortDirection: 'desc'
+        defaultSortDirection: 'desc',
       };
-      
+
       // Apply pagination and get results
       const result = await this.filterService.applyPagination(
         this.prisma.program,
@@ -106,15 +123,17 @@ export class ProgramsService {
         paginationDto,
         { parent: true, children: true },
         undefined,
-        paginationOptions as PaginationOptions
+        paginationOptions as PaginationOptions,
       );
-      
+
       // Localize results
-      const localizedData = result.data.map(program => this.localizeProgram(program, lang));
-      
+      const localizedData = result.data.map((program) =>
+        this.localizeProgram(program, lang),
+      );
+
       return {
         data: localizedData,
-        meta: result.meta
+        meta: result.meta,
       };
     } catch (error) {
       // Let the global exception filter handle database errors
@@ -151,16 +170,16 @@ export class ProgramsService {
     try {
       // First check if program exists
       const program = await this.prisma.program.findUnique({
-        where: { id }
+        where: { id },
       });
-      
+
       if (!program) {
         throw new EntityNotFoundException('Program', id);
       }
-      
+
       // Prepare data for update
       const data: any = { ...updateProgramDto };
-      
+
       // Handle parent relationship if parentId is provided
       if (updateProgramDto.parentId) {
         data.parent = { connect: { id: updateProgramDto.parentId } };
@@ -188,10 +207,10 @@ export class ProgramsService {
         where: { id },
         include: {
           children: true,
-          universityPrograms: true
-        }
+          universityPrograms: true,
+        },
       });
-      
+
       if (!program) {
         throw new EntityNotFoundException('Program', id);
       }
@@ -200,7 +219,7 @@ export class ProgramsService {
       if (program.children.length > 0) {
         throw new InvalidDataException(
           'Cannot delete program with child programs. Please update or remove child programs first.',
-          { reason: 'RELATED_CHILDREN_EXIST', count: program.children.length }
+          { reason: 'RELATED_CHILDREN_EXIST', count: program.children.length },
         );
       }
 
@@ -208,16 +227,22 @@ export class ProgramsService {
       if (program.universityPrograms.length > 0) {
         throw new InvalidDataException(
           'Cannot delete program that is offered by universities. Please remove university-program associations first.',
-          { reason: 'RELATED_UNIVERSITIES_EXIST', count: program.universityPrograms.length }
+          {
+            reason: 'RELATED_UNIVERSITIES_EXIST',
+            count: program.universityPrograms.length,
+          },
         );
       }
-      
+
       return await this.prisma.program.delete({
         where: { id },
       });
     } catch (error) {
       // If it's already our custom exception, just rethrow it
-      if (error instanceof EntityNotFoundException || error instanceof InvalidDataException) {
+      if (
+        error instanceof EntityNotFoundException ||
+        error instanceof InvalidDataException
+      ) {
         throw error;
       }
 
@@ -227,7 +252,7 @@ export class ProgramsService {
           // Foreign key constraint error
           throw new InvalidDataException(
             'Cannot delete program because it is referenced by other records.',
-            { reason: 'FOREIGN_KEY_CONSTRAINT', errorCode: error.code }
+            { reason: 'FOREIGN_KEY_CONSTRAINT', errorCode: error.code },
           );
         }
       }
@@ -239,27 +264,31 @@ export class ProgramsService {
 
   private localizeProgram(program: any, lang: string) {
     const result = { ...program };
-    
+
     // Set title based on language
-    result.title = program[`title${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || 
-                  program.titleUz || 
-                  program.titleRu;
-    
+    result.title =
+      program[`title${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+      program.titleUz ||
+      program.titleRu;
+
     // Set description based on language
-    result.description = program[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || 
-                         program.descriptionUz || 
-                         program.descriptionRu;
-    
+    result.description =
+      program[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+      program.descriptionUz ||
+      program.descriptionRu;
+
     // Localize parent if it exists
     if (result.parent) {
       result.parent = this.localizeProgram(result.parent, lang);
     }
-    
+
     // Localize children if they exist
     if (result.children && result.children.length > 0) {
-      result.children = result.children.map(child => this.localizeProgram(child, lang));
+      result.children = result.children.map((child) =>
+        this.localizeProgram(child, lang),
+      );
     }
-    
+
     return result;
   }
-} 
+}

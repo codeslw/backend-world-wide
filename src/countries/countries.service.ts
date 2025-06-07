@@ -4,25 +4,31 @@ import { CreateCountryDto } from './dto/create-country.dto';
 import { UpdateCountryDto } from './dto/update-country.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { FilterService } from '../common/filters/filter.service';
-import { FilterOptions, PaginationOptions } from '../common/filters/filter.interface';
-import { EntityNotFoundException, InvalidDataException } from '../common/exceptions/app.exceptions';
+import {
+  FilterOptions,
+  PaginationOptions,
+} from '../common/filters/filter.interface';
+import {
+  EntityNotFoundException,
+  InvalidDataException,
+} from '../common/exceptions/app.exceptions';
 
 @Injectable()
 export class CountriesService {
   constructor(
     private prisma: PrismaService,
-    private filterService: FilterService
+    private filterService: FilterService,
   ) {}
 
   async create(createCountryDto: CreateCountryDto) {
     try {
-      return this.prisma.country.create({ 
+      return this.prisma.country.create({
         data: {
           code: createCountryDto.code,
           nameUz: createCountryDto.nameUz,
           nameRu: createCountryDto.nameRu,
-          nameEn: createCountryDto.nameEn
-        } 
+          nameEn: createCountryDto.nameEn,
+        },
       });
     } catch (error) {
       // Let the global exception filter handle Prisma errors
@@ -33,14 +39,14 @@ export class CountriesService {
   async createMany(countries: CreateCountryDto[]) {
     try {
       const createdCountries = await Promise.all(
-        countries.map(countryDto => {
+        countries.map((countryDto) => {
           return this.create(countryDto);
-        })
+        }),
       );
-      
-      return { 
+
+      return {
         count: createdCountries.length,
-        countries: createdCountries
+        countries: createdCountries,
       };
     } catch (error) {
       // Let the global exception filter handle Prisma errors
@@ -53,44 +59,52 @@ export class CountriesService {
       // Define filter options
       const filterOptions = {
         filters: [
-          { 
-            field: 'createdAt', 
-            queryParam: 'createdAfter', 
+          {
+            field: 'createdAt',
+            queryParam: 'createdAfter',
             operator: 'gte',
-            transform: (value) => new Date(value)
+            transform: (value) => new Date(value),
           },
-          { 
-            field: 'createdAt', 
-            queryParam: 'createdBefore', 
+          {
+            field: 'createdAt',
+            queryParam: 'createdBefore',
             operator: 'lte',
-            transform: (value) => new Date(value)
+            transform: (value) => new Date(value),
           },
           {
             field: 'code',
             queryParam: 'codes',
             operator: 'in',
-            isArray: true
-          }
+            isArray: true,
+          },
         ],
         searchFields: [
-          'nameUz', 'nameRu', 'nameEn', 
-          'descriptionUz', 'descriptionRu', 'descriptionEn', 'code'
+          'nameUz',
+          'nameRu',
+          'nameEn',
+          'descriptionUz',
+          'descriptionRu',
+          'descriptionEn',
+          'code',
         ],
         searchMode: 'contains',
-        caseSensitive: false
+        caseSensitive: false,
       };
-      
+
       // Build filter query
-      const where = this.filterService.buildFilterQuery(paginationDto || {}, filterOptions as FilterOptions);
-      
+      const where = this.filterService.buildFilterQuery(
+        paginationDto || {},
+        filterOptions as FilterOptions,
+      );
+
       // Define pagination options
       const paginationOptions = {
         defaultLimit: 10,
         maxLimit: 300,
         defaultSortField: 'nameUz',
-        defaultSortDirection: 'asc'
+        defaultSortDirection: 'asc',
       };
-      
+
       // Apply pagination and get results
       const result = await this.filterService.applyPagination(
         this.prisma.country,
@@ -98,15 +112,17 @@ export class CountriesService {
         paginationDto,
         { cities: false },
         undefined,
-        paginationOptions as PaginationOptions
+        paginationOptions as PaginationOptions,
       );
-      
+
       // Localize results
-      const localizedData = result.data.map(country => this.localizeCountry(country, lang));
-      
+      const localizedData = result.data.map((country) =>
+        this.localizeCountry(country, lang),
+      );
+
       return {
         data: localizedData,
-        meta: result.meta
+        meta: result.meta,
       };
     } catch (error) {
       // Let the global exception filter handle database errors
@@ -142,13 +158,13 @@ export class CountriesService {
     try {
       // First check if country exists
       const country = await this.prisma.country.findUnique({
-        where: { code }
+        where: { code },
       });
-      
+
       if (!country) {
         throw new EntityNotFoundException('Country', code);
       }
-      
+
       // Proceed with update
       return await this.prisma.country.update({
         where: { code },
@@ -168,13 +184,13 @@ export class CountriesService {
     try {
       // First check if country exists
       const country = await this.prisma.country.findUnique({
-        where: { code }
+        where: { code },
       });
-      
+
       if (!country) {
         throw new EntityNotFoundException('Country', code);
       }
-      
+
       // Proceed with deletion
       return await this.prisma.country.delete({
         where: { code },
@@ -191,31 +207,35 @@ export class CountriesService {
 
   private localizeCountry(country: any, lang: string) {
     const result = { ...country };
-    
+
     // Set name based on language
-    result.name = country[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || 
-                  country.nameUz || 
-                  country.nameRu;
-    
+    result.name =
+      country[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+      country.nameUz ||
+      country.nameRu;
+
     // Set description based on language
-    result.description = country[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || 
-                         country.descriptionUz || 
-                         country.descriptionRu;
-    
+    result.description =
+      country[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+      country.descriptionUz ||
+      country.descriptionRu;
+
     // Localize cities if they exist
     if (result.cities && result.cities.length > 0) {
-      result.cities = result.cities.map(city => {
+      result.cities = result.cities.map((city) => {
         const localizedCity = { ...city };
-        localizedCity.name = city[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || 
-                            city.nameUz || 
-                            city.nameRu;
-        localizedCity.description = city[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || 
-                                   city.descriptionUz || 
-                                   city.descriptionRu;
+        localizedCity.name =
+          city[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+          city.nameUz ||
+          city.nameRu;
+        localizedCity.description =
+          city[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+          city.descriptionUz ||
+          city.descriptionRu;
         return localizedCity;
       });
     }
-    
+
     return result;
   }
-} 
+}

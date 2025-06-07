@@ -6,4 +6,4 @@ import { FilterService } from './filters/filter.service';
   providers: [FilterService],
   exports: [FilterService],
 })
-export class CommonModule {} 
+export class CommonModule {}

@@ -13,7 +13,11 @@ class UserWithProfileDto {
   @ApiProperty({ description: 'User role' })
   role: string;
 
-  @ApiProperty({ description: 'User profile', type: ProfileResponseDto, required: false })
+  @ApiProperty({
+    description: 'User profile',
+    type: ProfileResponseDto,
+    required: false,
+  })
   profile?: ProfileResponseDto;
 }
 
@@ -24,7 +28,11 @@ export class ChatResponseDto {
   @ApiProperty({ description: 'Client user', type: UserWithProfileDto })
   client: UserWithProfileDto;
 
-  @ApiProperty({ description: 'Admin user', type: UserWithProfileDto, required: false })
+  @ApiProperty({
+    description: 'Admin user',
+    type: UserWithProfileDto,
+    required: false,
+  })
   admin?: UserWithProfileDto;
 
   @ApiProperty({ description: 'Chat status', enum: ChatStatus })
@@ -36,9 +44,15 @@ export class ChatResponseDto {
   @ApiProperty({ description: 'Last update date' })
   updatedAt: Date;
 
-  @ApiProperty({ description: 'Latest messages (or recent messages for getById)', type: [MessageResponseDto], required: false })
+  @ApiProperty({
+    description: 'Latest messages (or recent messages for getById)',
+    type: [MessageResponseDto],
+    required: false,
+  })
   messages?: MessageResponseDto[];
 
-  @ApiProperty({ description: 'Number of messages unread by the current user in this chat' })
+  @ApiProperty({
+    description: 'Number of messages unread by the current user in this chat',
+  })
   unreadCount: number;
-} 
+}

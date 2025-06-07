@@ -1,5 +1,5 @@
 export enum ChatStatus {
-    ACTIVE = "ACTIVE",
-    CLOSED = "CLOSED",
-    PENDING = "PENDING"
-  }
+  ACTIVE = 'ACTIVE',
+  CLOSED = 'CLOSED',
+  PENDING = 'PENDING',
+}

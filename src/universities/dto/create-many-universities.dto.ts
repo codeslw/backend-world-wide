@@ -12,4 +12,4 @@ export class CreateManyUniversitiesDto {
   @ValidateNested({ each: true })
   @Type(() => CreateUniversityDto)
   universities: CreateUniversityDto[];
-} 
+}

@@ -11,4 +11,4 @@ import { CommonModule } from '../common/common.module';
   providers: [ProfilesService, ProfilesRepository, PrismaService],
   exports: [ProfilesService],
 })
-export class ProfilesModule {} 
+export class ProfilesModule {}

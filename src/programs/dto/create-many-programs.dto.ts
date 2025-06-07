@@ -10,28 +10,28 @@ export class CreateManyProgramsDto {
     isArray: true,
     example: [
       {
-        titleUz: "Bakalavr",
-        titleRu: "Бакалавр",
-        titleEn: "Bachelor",
-        descriptionUz: "Bakalavr dasturi",
-        descriptionRu: "Программа бакалавриата",
-        descriptionEn: "Bachelor program",
-        parentId: null
+        titleUz: 'Bakalavr',
+        titleRu: 'Бакалавр',
+        titleEn: 'Bachelor',
+        descriptionUz: 'Bakalavr dasturi',
+        descriptionRu: 'Программа бакалавриата',
+        descriptionEn: 'Bachelor program',
+        parentId: null,
       },
       {
-        titleUz: "Magistratura",
-        titleRu: "Магистратура",
-        titleEn: "Master",
-        descriptionUz: "Magistratura dasturi",
-        descriptionRu: "Программа магистратуры",
-        descriptionEn: "Master program",
-        parentId: null
-      }
-    ]
+        titleUz: 'Magistratura',
+        titleRu: 'Магистратура',
+        titleEn: 'Master',
+        descriptionUz: 'Magistratura dasturi',
+        descriptionRu: 'Программа магистратуры',
+        descriptionEn: 'Master program',
+        parentId: null,
+      },
+    ],
   })
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => CreateProgramDto)
   programs: CreateProgramDto[];
-} 
+}

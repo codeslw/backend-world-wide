@@ -13,17 +13,21 @@ export class DigitalOceanService {
     const key = this.configService.get<string>('DIGITAL_OCEAN_ACCESS_KEY');
     const secret = this.configService.get<string>('DIGITAL_OCEAN_SECRET_KEY');
     const bucket = this.configService.get<string>('DIGITAL_OCEAN_BUCKET');
-    
+
     // Log configuration (without secrets)
-    this.logger.log(`Initializing Digital Ocean service with endpoint: ${endpoint}, bucket: ${bucket}`);
-    
+    this.logger.log(
+      `Initializing Digital Ocean service with endpoint: ${endpoint}, bucket: ${bucket}`,
+    );
+
     if (!endpoint || !key || !secret || !bucket) {
       this.logger.error('Missing Digital Ocean configuration');
-      throw new Error('Missing Digital Ocean configuration. Check your environment variables.');
+      throw new Error(
+        'Missing Digital Ocean configuration. Check your environment variables.',
+      );
     }
-    
+
     const spacesEndpoint = new AWS.Endpoint(endpoint);
-    
+
     this.s3 = new AWS.S3({
       endpoint: spacesEndpoint,
       accessKeyId: key,
@@ -37,14 +41,18 @@ export class DigitalOceanService {
     });
   }
 
-  async uploadFile(file: Express.Multer.File, folder: string = 'uploads'): Promise<string> {
+  async uploadFile(
+    file: Express.Multer.File,
+    folder: string = 'uploads',
+  ): Promise<string> {
     const uniqueFileName = `${folder}/${uuidv4()}-${file.originalname}`;
-    
+
     // Use multipart upload for large files
-    if (file.size > 5 * 1024 * 1024) { // 5MB threshold
+    if (file.size > 5 * 1024 * 1024) {
+      // 5MB threshold
       return this.uploadLargeFile(file, uniqueFileName);
     }
-    
+
     // Regular upload for smaller files
     const params = {
       Bucket: this.configService.get('DIGITAL_OCEAN_BUCKET'),
@@ -57,8 +65,11 @@ export class DigitalOceanService {
     await this.s3.upload(params).promise();
     return uniqueFileName;
   }
-  
-  private async uploadLargeFile(file: Express.Multer.File, key: string): Promise<string> {
+
+  private async uploadLargeFile(
+    file: Express.Multer.File,
+    key: string,
+  ): Promise<string> {
     // Initialize multipart upload
     const multipartParams = {
       Bucket: this.configService.get('DIGITAL_OCEAN_BUCKET'),
@@ -66,20 +77,22 @@ export class DigitalOceanService {
       ContentType: file.mimetype,
       ACL: 'public-read',
     };
-    
-    const multipartUpload = await this.s3.createMultipartUpload(multipartParams).promise();
-    
+
+    const multipartUpload = await this.s3
+      .createMultipartUpload(multipartParams)
+      .promise();
+
     try {
       // Optimal part size (5MB is the minimum)
       const partSize = 5 * 1024 * 1024;
       const numParts = Math.ceil(file.size / partSize);
       const uploadPromises = [];
-      
+
       // Upload each part
       for (let i = 0; i < numParts; i++) {
         const start = i * partSize;
         const end = Math.min(start + partSize, file.size);
-        
+
         const partParams = {
           Bucket: this.configService.get('DIGITAL_OCEAN_BUCKET'),
           Key: key,
@@ -87,7 +100,7 @@ export class DigitalOceanService {
           UploadId: multipartUpload.UploadId,
           Body: file.buffer.slice(start, end),
         };
-        
+
         // Upload part and get ETag
         const uploadPartResult = await this.s3.uploadPart(partParams).promise();
         uploadPromises.push({
@@ -95,7 +108,7 @@ export class DigitalOceanService {
           ETag: uploadPartResult.ETag,
         });
       }
-      
+
       // Complete multipart upload
       const completeParams = {
         Bucket: this.configService.get('DIGITAL_OCEAN_BUCKET'),
@@ -105,17 +118,19 @@ export class DigitalOceanService {
           Parts: uploadPromises,
         },
       };
-      
+
       await this.s3.completeMultipartUpload(completeParams).promise();
       return key;
     } catch (error) {
       // Abort multipart upload if it fails
-      await this.s3.abortMultipartUpload({
-        Bucket: this.configService.get('DIGITAL_OCEAN_BUCKET'),
-        Key: key,
-        UploadId: multipartUpload.UploadId,
-      }).promise();
-      
+      await this.s3
+        .abortMultipartUpload({
+          Bucket: this.configService.get('DIGITAL_OCEAN_BUCKET'),
+          Key: key,
+          UploadId: multipartUpload.UploadId,
+        })
+        .promise();
+
       throw error;
     }
   }
@@ -126,7 +141,7 @@ export class DigitalOceanService {
       Key: key,
       Expires: expiresIn,
     };
-    
+
     return this.s3.getSignedUrl('getObject', params);
   }
 
@@ -135,7 +150,7 @@ export class DigitalOceanService {
       Bucket: this.configService.get('DIGITAL_OCEAN_BUCKET'),
       Key: key,
     };
-    
+
     try {
       await this.s3.deleteObject(params).promise();
       this.logger.log(`Successfully deleted file ${key}`);

@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsUUID, IsBoolean, IsArray, IsEnum, IsOptional, IsDate } from 'class-validator';
+import {
+  IsString,
+  IsUUID,
+  IsBoolean,
+  IsArray,
+  IsEnum,
+  IsOptional,
+  IsDate,
+} from 'class-validator';
 import { ChatStatus } from '../../common/enum/chat.enum';
 
 export class TypingDto {
@@ -17,9 +25,9 @@ export class ReadMessagesDto {
   @IsUUID()
   chatId: string;
 
-  @ApiProperty({ 
-    description: 'Array of message IDs to mark as read', 
-    example: ['message-uuid-1', 'message-uuid-2'] 
+  @ApiProperty({
+    description: 'Array of message IDs to mark as read',
+    example: ['message-uuid-1', 'message-uuid-2'],
   })
   @IsArray()
   @IsUUID('4', { each: true })
@@ -37,13 +45,16 @@ export class AdminAssignedResponseDto {
 }
 
 export class MessagesReadResponseDto {
-  @ApiProperty({ description: 'The user ID who read the messages', example: 'user-uuid' })
+  @ApiProperty({
+    description: 'The user ID who read the messages',
+    example: 'user-uuid',
+  })
   @IsUUID()
   userId: string;
 
-  @ApiProperty({ 
-    description: 'Array of message IDs that were read', 
-    example: ['message-uuid-1', 'message-uuid-2'] 
+  @ApiProperty({
+    description: 'Array of message IDs that were read',
+    example: ['message-uuid-1', 'message-uuid-2'],
   })
   @IsArray()
   @IsUUID('4', { each: true })
@@ -55,17 +66,21 @@ export class ChatStatusChangedResponseDto {
   @IsUUID()
   chatId: string;
 
-  @ApiProperty({ 
-    description: 'The new chat status', 
+  @ApiProperty({
+    description: 'The new chat status',
     enum: ChatStatus,
-    example: ChatStatus.ACTIVE 
+    example: ChatStatus.ACTIVE,
   })
   @IsEnum(ChatStatus)
   status: ChatStatus;
 }
 
 export class ParticipantActionType {
-  @ApiProperty({ description: 'The action type', enum: ['joined', 'left'], example: 'joined' })
+  @ApiProperty({
+    description: 'The action type',
+    enum: ['joined', 'left'],
+    example: 'joined',
+  })
   @IsEnum(['joined', 'left'])
   action: 'joined' | 'left';
 }
@@ -79,11 +94,18 @@ export class ParticipantUpdateResponseDto {
   @IsUUID()
   userId: string;
 
-  @ApiProperty({ description: 'The action', enum: ['joined', 'left'], example: 'joined' })
+  @ApiProperty({
+    description: 'The action',
+    enum: ['joined', 'left'],
+    example: 'joined',
+  })
   @IsEnum(['joined', 'left'])
   action: 'joined' | 'left';
 
-  @ApiProperty({ description: 'The timestamp of the action', example: '2023-04-01T12:00:00.000Z' })
+  @ApiProperty({
+    description: 'The timestamp of the action',
+    example: '2023-04-01T12:00:00.000Z',
+  })
   @IsDate()
   timestamp: string;
 }
@@ -93,9 +115,9 @@ export class ActiveUsersResponseDto {
   @IsUUID()
   chatId: string;
 
-  @ApiProperty({ 
-    description: 'Array of user IDs active in the chat', 
-    example: ['user-uuid-1', 'user-uuid-2'] 
+  @ApiProperty({
+    description: 'Array of user IDs active in the chat',
+    example: ['user-uuid-1', 'user-uuid-2'],
   })
   @IsArray()
   @IsUUID('4', { each: true })
@@ -131,7 +153,11 @@ export class ChatMessageMetaDto {
 }
 
 export class ChatMessagesDto {
-  @ApiProperty({ description: 'Array of messages', type: 'array', items: { type: 'object' } })
+  @ApiProperty({
+    description: 'Array of messages',
+    type: 'array',
+    items: { type: 'object' },
+  })
   data: any[];
 
   @ApiProperty({ description: 'Pagination metadata', type: ChatMessageMetaDto })
@@ -141,7 +167,7 @@ export class ChatMessagesDto {
 export class JoinChatDataDto {
   @ApiProperty({ description: 'The chat ID', example: 'chat-uuid' })
   chatId: string;
-  
+
   @ApiProperty({ description: 'The chat messages', type: ChatMessagesDto })
   messages: ChatMessagesDto;
 }
@@ -159,4 +185,4 @@ export class WebSocketErrorDto {
   @ApiProperty({ description: 'The error message', example: 'Access denied' })
   @IsString()
   error: string;
-} 
+}

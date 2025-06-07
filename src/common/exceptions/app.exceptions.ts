@@ -9,17 +9,17 @@ export interface ErrorResponse {
 
 export class EntityNotFoundException extends HttpException {
   constructor(entityName: string, identifier?: string | number) {
-    const message = identifier 
+    const message = identifier
       ? `${entityName} with identifier ${identifier} not found`
       : `${entityName} not found`;
-    
+
     super(
       {
         statusCode: HttpStatus.NOT_FOUND,
         message,
         error: 'Not Found',
       } as ErrorResponse,
-      HttpStatus.NOT_FOUND
+      HttpStatus.NOT_FOUND,
     );
   }
 }
@@ -33,7 +33,7 @@ export class InvalidDataException extends HttpException {
         error: 'Bad Request',
         details,
       } as ErrorResponse,
-      HttpStatus.BAD_REQUEST
+      HttpStatus.BAD_REQUEST,
     );
   }
 }
@@ -46,7 +46,7 @@ export class UnauthorizedAccessException extends HttpException {
         message,
         error: 'Unauthorized',
       } as ErrorResponse,
-      HttpStatus.UNAUTHORIZED
+      HttpStatus.UNAUTHORIZED,
     );
   }
 }
@@ -59,7 +59,7 @@ export class ForbiddenActionException extends HttpException {
         message,
         error: 'Forbidden',
       } as ErrorResponse,
-      HttpStatus.FORBIDDEN
+      HttpStatus.FORBIDDEN,
     );
   }
 }
@@ -72,7 +72,7 @@ export class ConflictException extends HttpException {
         message,
         error: 'Conflict',
       } as ErrorResponse,
-      HttpStatus.CONFLICT
+      HttpStatus.CONFLICT,
     );
   }
 }
@@ -85,7 +85,7 @@ export class ServerErrorException extends HttpException {
         message,
         error: 'Internal Server Error',
       } as ErrorResponse,
-      HttpStatus.INTERNAL_SERVER_ERROR
+      HttpStatus.INTERNAL_SERVER_ERROR,
     );
   }
-} 
+}

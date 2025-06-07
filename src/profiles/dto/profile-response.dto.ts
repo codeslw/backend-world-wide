@@ -8,7 +8,7 @@ export class ProfileResponseDto {
 
   @ApiProperty({ description: 'User ID associated with this profile' })
   userId: string;
-  
+
   @ApiProperty({ description: 'First name of the user' })
   firstName: string;
 
@@ -21,7 +21,11 @@ export class ProfileResponseDto {
   @ApiProperty({ description: 'Date of birth', required: false })
   dateOfBirth?: Date;
 
-  @ApiProperty({ enum: Gender, description: 'Gender of the user', required: false })
+  @ApiProperty({
+    enum: Gender,
+    description: 'Gender of the user',
+    required: false,
+  })
   gender?: Gender;
 
   @ApiProperty({ description: 'Nationality of the user', required: false })
@@ -36,7 +40,10 @@ export class ProfileResponseDto {
   @ApiProperty({ description: 'Passport expiry date', required: false })
   passportExpiryDate?: Date;
 
-  @ApiProperty({ description: 'URL to the uploaded passport copy', required: false })
+  @ApiProperty({
+    description: 'URL to the uploaded passport copy',
+    required: false,
+  })
   passportCopyUrl?: string;
 
   @ApiProperty({ description: 'Year of birth', required: false })
@@ -54,28 +61,48 @@ export class ProfileResponseDto {
   @ApiProperty({ description: 'Current education level', required: false })
   currentEducationLevel?: string;
 
-  @ApiProperty({ description: 'Current educational institution name', required: false })
+  @ApiProperty({
+    description: 'Current educational institution name',
+    required: false,
+  })
   currentInstitutionName?: string;
 
   @ApiProperty({ description: 'Graduation year', required: false })
   graduationYear?: number;
 
-  @ApiProperty({ description: 'URL to uploaded transcript document', required: false })
+  @ApiProperty({
+    description: 'URL to uploaded transcript document',
+    required: false,
+  })
   transcriptUrl?: string;
 
-  @ApiProperty({ enum: LanguageTest, description: 'Language test type', required: false })
+  @ApiProperty({
+    enum: LanguageTest,
+    description: 'Language test type',
+    required: false,
+  })
   languageTest?: LanguageTest;
 
   @ApiProperty({ description: 'Language test score', required: false })
   languageScore?: string;
 
-  @ApiProperty({ description: 'URL to uploaded language certificate', required: false })
+  @ApiProperty({
+    description: 'URL to uploaded language certificate',
+    required: false,
+  })
   languageCertificateUrl?: string;
 
-  @ApiProperty({ description: 'URL to uploaded motivation letter', required: false })
+  @ApiProperty({
+    description: 'URL to uploaded motivation letter',
+    required: false,
+  })
   motivationLetterUrl?: string;
 
-  @ApiProperty({ description: 'URLs to uploaded recommendation letters', type: [String], required: false })
+  @ApiProperty({
+    description: 'URLs to uploaded recommendation letters',
+    type: [String],
+    required: false,
+  })
   recommendationLetterUrls?: string[];
 
   @ApiProperty({ description: 'URL to uploaded CV', required: false })
@@ -91,4 +118,4 @@ export class ProfileResponseDto {
 export class PaginatedProfileResponseDto extends PaginatedResponseDto<ProfileResponseDto> {
   @ApiProperty({ type: [ProfileResponseDto] })
   data: ProfileResponseDto[];
-} 
+}

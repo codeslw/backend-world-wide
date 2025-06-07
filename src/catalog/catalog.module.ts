@@ -6,12 +6,8 @@ import { CitiesModule } from '../cities/cities.module';
 import { ProgramsModule } from '../programs/programs.module';
 
 @Module({
-  imports: [
-    CountriesModule,
-    CitiesModule,
-    ProgramsModule
-  ],
+  imports: [CountriesModule, CitiesModule, ProgramsModule],
   controllers: [CatalogController],
   providers: [CatalogService],
 })
-export class CatalogModule {} 
+export class CatalogModule {}
