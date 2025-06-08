@@ -125,7 +125,27 @@ export class FilterService {
       searchFields.length > 0
     ) {
       const searchValue = query.search.trim();
-      const searchConditions = searchFields.map((field) => ({
+      
+      // Defensive check: ensure we only use valid field names for the query
+      console.log('🔍 FilterService - Applying search with fields:', searchFields);
+      console.log('🔍 FilterService - Search value:', searchValue);
+      
+      // Filter out any potentially invalid fields (basic validation)
+      const validSearchFields = searchFields.filter(field => 
+        typeof field === 'string' && 
+        field.length > 0 &&
+        !field.includes('.') && // No relation traversals for safety
+        /^[a-zA-Z][a-zA-Z0-9_]*$/.test(field) // Only valid identifier names
+      );
+      
+      console.log('🔍 FilterService - Valid search fields after filtering:', validSearchFields);
+      
+      if (validSearchFields.length === 0) {
+        console.warn('🚨 FilterService - No valid search fields found, skipping search');
+        return where;
+      }
+      
+      const searchConditions = validSearchFields.map((field) => ({
         [field]: {
           contains: searchValue,
           ...(caseSensitive ? {} : { mode: 'insensitive' }),
@@ -140,6 +160,8 @@ export class FilterService {
       } else {
         where.AND = searchConditions;
       }
+      
+      console.log('🔍 FilterService - Final search conditions:', JSON.stringify(searchConditions, null, 2));
     }
 
     return where;

@@ -188,9 +188,7 @@ export class UniversitiesService {
           },
         ],
         searchFields: [
-          'nameUz',
-          'nameRu',
-          'nameEn',
+          'name',
           'descriptionUz',
           'descriptionRu',
           'descriptionEn',

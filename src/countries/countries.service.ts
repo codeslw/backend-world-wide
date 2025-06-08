@@ -56,6 +56,18 @@ export class CountriesService {
 
   async findAll(lang: string = 'uz', paginationDto?: PaginationDto) {
     try {
+      console.log('🔍 Debug findAll - paginationDto:', paginationDto);
+      
+      // Define the ONLY valid search fields for Country model
+      const validCountryFields = ['nameUz', 'nameRu', 'nameEn'];
+      
+      // Defensive check - ensure no description fields are accidentally included
+      const safeSearchFields = validCountryFields.filter(field => 
+        !field.includes('description') && !field.includes('Description')
+      );
+      
+      console.log('🔍 Safe search fields for Country:', safeSearchFields);
+      
       // Define filter options
       const filterOptions = {
         filters: [
@@ -78,24 +90,46 @@ export class CountriesService {
             isArray: true,
           },
         ],
-        searchFields: [
-          'nameUz',
-          'nameRu',
-          'nameEn',
-          'descriptionUz',
-          'descriptionRu',
-          'descriptionEn',
-          'code',
-        ],
+        searchFields: safeSearchFields,
         searchMode: 'contains',
         caseSensitive: false,
       };
 
-      // Build filter query
-      const where = this.filterService.buildFilterQuery(
-        paginationDto || {},
-        filterOptions as FilterOptions,
-      );
+      console.log('🔍 Debug findAll - searchFields:', filterOptions.searchFields);
+      console.log('🔍 Debug findAll - filterOptions:', JSON.stringify(filterOptions, null, 2));
+
+      // Build filter query with extra safety
+      let where: any;
+      try {
+        where = this.filterService.buildFilterQuery(
+          paginationDto || {},
+          filterOptions as FilterOptions,
+        );
+        console.log('🔍 Debug findAll - where clause generated successfully');
+      } catch (filterError) {
+        console.error('🚨 Error building filter query:', filterError);
+        // Fallback to basic query without search
+        where = {};
+      }
+      
+      console.log('🔍 Debug findAll - where clause:', JSON.stringify(where, null, 2));
+
+      // Validate where clause doesn't contain description fields
+      const whereStr = JSON.stringify(where);
+      if (whereStr.includes('description')) {
+        console.error('🚨 CRITICAL: WHERE clause contains description fields!', where);
+        // Remove any OR clauses that might contain description fields
+        if (where.OR) {
+          where.OR = where.OR.filter((condition: any) => {
+            const conditionStr = JSON.stringify(condition);
+            return !conditionStr.includes('description');
+          });
+          if (where.OR.length === 0) {
+            delete where.OR;
+          }
+        }
+        console.log('🔧 Cleaned where clause:', JSON.stringify(where, null, 2));
+      }
 
       // Define pagination options
       const paginationOptions = {
@@ -105,15 +139,39 @@ export class CountriesService {
         defaultSortDirection: 'asc',
       };
 
-      // Apply pagination and get results
-      const result = await this.filterService.applyPagination(
-        this.prisma.country,
-        where,
-        paginationDto,
-        { cities: false },
-        undefined,
-        paginationOptions as PaginationOptions,
-      );
+      // Apply pagination and get results with extra error handling
+      let result: any;
+      try {
+        result = await this.filterService.applyPagination(
+          this.prisma.country,
+          where,
+          paginationDto,
+          { cities: false },
+          undefined,
+          paginationOptions as PaginationOptions,
+        );
+        console.log('🔍 Debug findAll - result count:', result.data.length);
+      } catch (paginationError) {
+        console.error('🚨 Error in applyPagination:', paginationError);
+        console.error('🚨 Where clause that caused error:', JSON.stringify(where, null, 2));
+        console.error('🚨 Pagination DTO:', JSON.stringify(paginationDto, null, 2));
+        
+        // Fallback to basic pagination without filters
+        try {
+          result = await this.filterService.applyPagination(
+            this.prisma.country,
+            {}, // Empty where clause
+            paginationDto,
+            { cities: false },
+            undefined,
+            paginationOptions as PaginationOptions,
+          );
+          console.log('🔧 Fallback query succeeded with result count:', result.data.length);
+        } catch (fallbackError) {
+          console.error('🚨 Even fallback query failed:', fallbackError);
+          throw fallbackError;
+        }
+      }
 
       // Localize results
       const localizedData = result.data.map((country) =>
@@ -125,6 +183,8 @@ export class CountriesService {
         meta: result.meta,
       };
     } catch (error) {
+      console.error('🚨 Error in CountriesService.findAll:', error);
+      console.error('🚨 Input parameters:', { lang, paginationDto });
       // Let the global exception filter handle database errors
       throw error;
     }
@@ -208,30 +268,28 @@ export class CountriesService {
   private localizeCountry(country: any, lang: string) {
     const result = { ...country };
 
-    // Set name based on language
+    // Set localized name based on language preference
     result.name =
       country[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
       country.nameUz ||
-      country.nameRu;
+      country.nameRu ||
+      country.nameEn;
 
-    // Set description based on language
-    result.description =
-      country[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
-      country.descriptionUz ||
-      country.descriptionRu;
-
-    // Localize cities if they exist
+    // Localize cities if they exist (cities have description fields)
     if (result.cities && result.cities.length > 0) {
       result.cities = result.cities.map((city) => {
         const localizedCity = { ...city };
         localizedCity.name =
           city[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
           city.nameUz ||
-          city.nameRu;
+          city.nameRu ||
+          city.nameEn;
+        // Cities do have description fields
         localizedCity.description =
           city[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
           city.descriptionUz ||
-          city.descriptionRu;
+          city.descriptionRu ||
+          city.descriptionEn;
         return localizedCity;
       });
     }

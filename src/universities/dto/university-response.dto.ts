@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { UniversityType } from 'src/common/enum/university-type.enum';
+import { UniversityType } from '../../common/enum/university-type.enum';
 import { PaginatedResponseDto } from '../../common/dto/pagination-response.dto';
-import { CountryResponseDto } from 'src/countries/dto/country-response.dto';
-import { CityResponseDto } from 'src/cities/dto/city-response.dto';
+import { CountryResponseDto } from '../../countries/dto/country-response.dto';
+import { CityResponseDto } from '../../cities/dto/city-response.dto';
 
 // DTO for representing program details within the university response
 class UniversityProgramResponseDto {
@@ -41,8 +41,8 @@ export class UniversityResponseDto {
   @ApiProperty({ enum: UniversityType, description: 'Type of university' })
   type: UniversityType;
 
-  @ApiProperty({ description: 'Average application fee' })
-  avgApplicationFee: number;
+  @ApiProperty({ description: 'Average application fee', required: false })
+  avgApplicationFee?: number;
 
   @ApiProperty({ description: 'Country Code' }) // Changed from countryId for clarity
   countryCode: number;
@@ -73,17 +73,17 @@ export class UniversityResponseDto {
   })
   autumnIntakeDeadline?: string | null; // Allow string or null
 
-  @ApiProperty({ description: 'University ranking' })
-  ranking: number;
+  @ApiProperty({ description: 'University ranking', required: false })
+  ranking?: number;
 
-  @ApiProperty({ description: 'Number of students' })
-  studentsCount: number;
+  @ApiProperty({ description: 'Number of students', required: false })
+  studentsCount?: number;
 
-  @ApiProperty({ description: 'Acceptance rate (percentage)' })
-  acceptanceRate: number;
+  @ApiProperty({ description: 'Acceptance rate (percentage)', required: false })
+  acceptanceRate?: number;
 
-  @ApiProperty({ description: 'University website URL' })
-  website: string;
+  @ApiProperty({ description: 'University website URL', required: false })
+  website?: string;
 
   @ApiProperty({ description: 'University email' })
   email: string;

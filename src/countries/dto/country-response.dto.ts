@@ -20,19 +20,11 @@ export class CountryResponseDto {
   })
   name: string;
 
-  @ApiProperty({ description: 'Country description in Uzbek' })
-  descriptionUz: string;
+  @ApiProperty({ description: 'Creation timestamp' })
+  createdAt: Date;
 
-  @ApiProperty({ description: 'Country description in Russian' })
-  descriptionRu: string;
-
-  @ApiProperty({ description: 'Country description in English' })
-  descriptionEn: string;
-
-  @ApiProperty({
-    description: 'Localized country description based on language preference',
-  })
-  description: string;
+  @ApiProperty({ description: 'Last update timestamp' })
+  updatedAt: Date;
 
   // @ApiProperty({
   //   description: 'Cities in this country',

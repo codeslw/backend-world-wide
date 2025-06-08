@@ -238,12 +238,7 @@ export class CitiesService {
       country.nameUz ||
       country.nameRu;
 
-    // Set description based on language
-    result.description =
-      country[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
-      country.descriptionUz ||
-      country.descriptionRu;
-
+    // Note: Country model doesn't have description fields, only Cities do
     return result;
   }
 }

@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsNumber,
-  IsOptional,
   IsString,
   Max,
   MaxLength,
@@ -33,28 +32,4 @@ export class CreateCountryDto {
   @MinLength(2)
   @MaxLength(100)
   nameEn: string;
-
-  @ApiProperty({ description: 'Country description in Uzbek', required: false })
-  @IsString()
-  @IsOptional()
-  @MaxLength(500)
-  descriptionUz?: string;
-
-  @ApiProperty({
-    description: 'Country description in Russian',
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  @MaxLength(500)
-  descriptionRu?: string;
-
-  @ApiProperty({
-    description: 'Country description in English',
-    required: false,
-  })
-  @IsString()
-  @IsOptional()
-  @MaxLength(500)
-  descriptionEn?: string;
 }

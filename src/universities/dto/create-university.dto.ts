@@ -51,10 +51,11 @@ export class CreateUniversityDto {
   @IsEnum(UniversityType)
   type: UniversityType;
 
-  @ApiProperty({ description: 'Average application fee', example: 50.0 })
+  @ApiProperty({ description: 'Average application fee', example: 50.0, required: false })
+  @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  avgApplicationFee: number;
+  avgApplicationFee?: number;
 
   @ApiProperty({ description: 'Country code', example: 860 })
   @IsInt() // Assuming country code is an integer ID from Country model
@@ -110,31 +111,37 @@ export class CreateUniversityDto {
   @IsDateString()
   autumnIntakeDeadline?: string;
 
-  @ApiProperty({ description: 'University ranking', example: 1500 })
+  @ApiProperty({ description: 'University ranking', example: 1500, required: false })
+  @IsOptional()
   @IsInt()
   @Min(1)
-  ranking: number;
+  ranking?: number;
 
-  @ApiProperty({ description: 'Number of students', example: 25000 })
+  @ApiProperty({ description: 'Number of students', example: 25000, required: false })
+  @IsOptional()
   @IsInt()
   @Min(0)
-  studentsCount: number;
+  studentsCount?: number;
 
   @ApiProperty({
     description: 'Acceptance rate (percentage, 0-100)',
     example: 35.5,
+    required: false,
   })
+  @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @Max(100)
-  acceptanceRate: number;
+  acceptanceRate?: number;
 
   @ApiProperty({
     description: 'University website URL',
     example: 'https://tuit.uz',
+    required: false,
   })
+  @IsOptional()
   @IsUrl()
-  website: string;
+  website?: string;
 
   @ApiProperty({ description: 'University email', example: 'info@tuit.uz' })
   @IsEmail()

@@ -74,16 +74,16 @@ model University {
   descriptionUz        String?
   descriptionRu        String?
   descriptionEn        String?
-  website              String
+  website              String?
   email                String?
   phone                String?
   address              String
   winterIntakeDeadline DateTime?
   autumnIntakeDeadline DateTime?
-  ranking              Int
-  studentsCount        Int
-  acceptanceRate       Float
-  avgApplicationFee    Float
+  ranking              Int?
+  studentsCount        Int?
+  acceptanceRate       Float?
+  avgApplicationFee    Float?
   photoUrl             String?
   cityId               String
   countryCode          Int
