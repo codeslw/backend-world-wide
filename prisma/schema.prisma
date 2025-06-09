@@ -174,7 +174,6 @@ model Profile {
   nationality              String?
   passportCopyUrl          String?
   passportExpiryDate       DateTime?
-  passportNumber           String?
   currentEducationLevel    String?
   currentInstitutionName   String?
   cvUrl                    String?

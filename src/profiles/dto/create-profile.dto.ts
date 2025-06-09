@@ -72,9 +72,9 @@ export class CreateProfileDto {
     example: 'X12345678',
     required: false,
   })
-  @IsOptional()
-  @IsString()
-  passportNumber?: string;
+  // @IsOptional()
+  // @IsString()
+  // passportNumber?: string;
 
   @ApiProperty({
     description: 'Passport expiry date in ISO format',

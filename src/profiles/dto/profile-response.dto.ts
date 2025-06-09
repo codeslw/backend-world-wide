@@ -34,8 +34,8 @@ export class ProfileResponseDto {
   @ApiProperty({ description: 'Full address of the user', required: false })
   address?: string;
 
-  @ApiProperty({ description: 'Passport number', required: false })
-  passportNumber?: string;
+  // @ApiProperty({ description: 'Passport number', required: false })
+  // passportNumber?: string;
 
   @ApiProperty({ description: 'Passport expiry date', required: false })
   passportExpiryDate?: Date;

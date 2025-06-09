@@ -172,7 +172,7 @@ export class ProfilesService {
       gender: profile.gender || undefined,
       nationality: profile.nationality || undefined,
       address: profile.address || undefined,
-      passportNumber: profile.passportNumber || undefined,
+      // passportNumber: profile.passportNumber || undefined,
       passportExpiryDate: profile.passportExpiryDate || undefined,
       passportCopyUrl: profile.passportCopyUrl || undefined,
       // Education and Language fields
