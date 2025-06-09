@@ -10,7 +10,7 @@ import {
   IsArray,
   IsUUID,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { UniversityType } from '../../common/enum/university-type.enum';
 
 export class UniversityFilterDto {
@@ -124,6 +124,12 @@ export class UniversityFilterDto {
     type: [String],
   })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.split(',').filter((id) => id);
+    }
+    return value;
+  })
   @IsArray()
   @IsUUID('4', { each: true })
   programs?: string[];
