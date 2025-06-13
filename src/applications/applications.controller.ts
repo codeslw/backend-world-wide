@@ -11,10 +11,12 @@ import {
   Req,
   HttpCode,
   HttpStatus,
+  Put,
 } from '@nestjs/common';
 import { ApplicationsService } from './applications.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
+import { UpdateApplicationStatusDto } from './dto/update-application-status.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -280,6 +282,44 @@ export class ApplicationsController {
   })
   remove(@Param('id') id: string, @Req() req: RequestWithUser) {
     return this.applicationsService.remove(id, req.user.userId, req.user.role);
+  }
+
+  @Put(':id/status')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Update application status (Admin only)' })
+  @ApiBearerAuth('access-token')
+  @ApiResponse({
+    status: 200,
+    description: 'The application status has been successfully updated.',
+    type: ApplicationResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Invalid status',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Application not found',
+    type: ErrorResponseDto,
+  })
+  updateStatus(
+    @Param('id') id: string,
+    @Body() updateStatusDto: UpdateApplicationStatusDto,
+  ) {
+    return this.applicationsService.updateStatus(id, updateStatusDto.status);
   }
 
   @Patch(':id/submit')

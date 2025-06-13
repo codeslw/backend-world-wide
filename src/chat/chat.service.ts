@@ -382,6 +382,42 @@ export class ChatService {
 
     let adminAssignedInThisRequest = false;
     let assignedAdminInfo: PartialAdminInfo | null = null;
+    let clientActivatedChat = false;
+
+    // --- Client Auto-Activation Logic for PENDING Chats ---
+    if (chat.status === ChatStatus.PENDING && chat.clientId === userId && userRole === PrismaRole.CLIENT) {
+      try {
+        console.log(
+          `Client ${userId} activating their PENDING chat ${chatId} by sending first message...`,
+        );
+        // Update DB to activate the chat
+        await this.prisma.chat.update({
+          where: { id: chatId },
+          data: {
+            status: ChatStatus.ACTIVE,
+          },
+        });
+
+        // Update local chat object state
+        chat.status = ChatStatus.ACTIVE;
+        clientActivatedChat = true;
+
+        console.log(
+          `Chat ${chatId} activated by client ${userId}. Status: ${chat.status}`,
+        );
+
+        // Notify via WebSocket
+        if (this.chatGateway) {
+          this.chatGateway.notifyChatStatusChange(chatId, chat.status);
+        }
+      } catch (error) {
+        console.error(
+          `CRITICAL: Failed to activate chat ${chatId} for client ${userId}:`,
+          error,
+        );
+        // Don't throw here, allow the message to be sent anyway
+      }
+    }
 
     // --- Admin Auto-Assignment Logic ---
     if (!chat.adminId && userRole === PrismaRole.ADMIN) {
@@ -439,7 +475,9 @@ export class ChatService {
 
     // Re-check status (could have been closed by another admin just now?)
     // Or rely on the assignment logic having set it to ACTIVE if applicable.
-    if (chat.status !== ChatStatus.ACTIVE) {
+    // Allow clients to send messages to their own PENDING chats
+    if (chat.status !== ChatStatus.ACTIVE && 
+        !(chat.status === ChatStatus.PENDING && chat.clientId === userId && userRole === PrismaRole.CLIENT)) {
       throw new ForbiddenException(
         `Cannot send messages to a chat with status: ${chat.status}`,
       );

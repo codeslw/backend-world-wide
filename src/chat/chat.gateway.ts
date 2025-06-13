@@ -70,22 +70,30 @@ export class ChatGateway
 
   async handleConnection(client: Socket) {
     try {
+      console.log(`[WebSocket] New connection attempt: ${client.id}`);
+      
       // Extract and verify JWT token
       const token =
         client.handshake.auth.token ||
         client.handshake.headers.authorization?.split(' ')[1];
 
       if (!token) {
+        console.error(`[WebSocket] No token provided for connection ${client.id}`);
         client.disconnect();
         return;
       }
 
+      console.log(`[WebSocket] Token found, verifying for connection ${client.id}`);
       const payload = this.jwtService.verify(token);
+      
+      console.log(`[WebSocket] Token verified, fetching user ${payload.sub}`);
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
+        select: { id: true, email: true, role: true },
       });
 
       if (!user) {
+        console.error(`[WebSocket] User ${payload.sub} not found in database`);
         client.disconnect();
         return;
       }
@@ -105,18 +113,23 @@ export class ChatGateway
       this.userSockets.get(user.id)!.add(client.id);
 
       console.log(
-        `Client connected: ${client.id}, User: ${user.id}, Role: ${user.role}`,
+        `[WebSocket] Client connected successfully: ${client.id}, User: ${user.id}, Role: ${user.role}`,
       );
 
       // Join admin room if applicable
       if (user.role === PrismaRole.ADMIN) {
         client.join(this.adminRoom);
-        console.log(`Admin ${user.id} joined room: ${this.adminRoom}`);
+        console.log(`[WebSocket] Admin ${user.id} joined room: ${this.adminRoom}`);
       }
 
       client.emit('connected', { userId: user.id }); // Confirm connection to client
     } catch (error) {
-      console.error('WebSocket connection error:', error.message);
+      console.error(`[WebSocket] Connection error for ${client.id}:`, {
+        error: error.message,
+        stack: error.stack,
+        headers: client.handshake.headers,
+        auth: client.handshake.auth,
+      });
       client.disconnect();
     }
   }
@@ -158,26 +171,46 @@ export class ChatGateway
       const userId = client.user.id;
       const userRole = client.user.role;
 
+      console.log(`[WebSocket] User ${userId} (${userRole}) attempting to join chat ${chatId}`);
+
+      // Validate chatId parameter
+      if (!chatId || typeof chatId !== 'string') {
+        console.error(`[WebSocket] Invalid chatId provided:`, chatId);
+        return { event: 'error', data: 'Invalid chat ID' };
+      }
+
       // Verify user has access to this chat
+      console.log(`[WebSocket] Fetching chat ${chatId} from database...`);
       const chat = await this.prisma.chat.findUnique({
         where: { id: chatId },
+        include: {
+          client: { select: { id: true, email: true, role: true } },
+          admin: { select: { id: true, email: true, role: true } },
+        },
       });
 
       if (!chat) {
+        console.error(`[WebSocket] Chat ${chatId} not found in database`);
         return { event: 'error', data: 'Chat not found' };
       }
 
+      console.log(`[WebSocket] Chat found: clientId=${chat.clientId}, adminId=${chat.adminId}, status=${chat.status}`);
+
       // Check if user has access to this chat
-      if (
-        chat.clientId !== userId &&
-        chat.adminId !== userId &&
-        userRole !== PrismaRole.ADMIN
-      ) {
-        return { event: 'error', data: 'Access denied' };
+      const hasAccess = chat.clientId === userId || 
+                       chat.adminId === userId || 
+                       userRole === PrismaRole.ADMIN;
+
+      if (!hasAccess) {
+        console.error(`[WebSocket] Access denied for user ${userId} to chat ${chatId}. ClientId: ${chat.clientId}, AdminId: ${chat.adminId}, UserRole: ${userRole}`);
+        return { event: 'error', data: 'Access denied to this chat' };
       }
+
+      console.log(`[WebSocket] Access granted for user ${userId} to chat ${chatId}`);
 
       // Join the socket room for this chat
       client.join(`chat:${chatId}`);
+      console.log(`[WebSocket] User ${userId} joined socket room: chat:${chatId}`);
 
       // Track user in chat room
       if (!this.chatRooms.has(chatId)) {
@@ -186,6 +219,7 @@ export class ChatGateway
       this.chatRooms.get(chatId).add(userId);
 
       // Get recent messages
+      console.log(`[WebSocket] Fetching recent messages for chat ${chatId}...`);
       const messagesPayload = await this.chatService.getChatMessages(
         chatId,
         userId,
@@ -194,14 +228,30 @@ export class ChatGateway
         20,
       );
 
-      console.log(`User ${userId} joined chat room: ${chatId}`);
+      console.log(`[WebSocket] Successfully joined chat ${chatId}. Messages count: ${messagesPayload.data?.length || 0}`);
       return {
         event: 'joinedChat',
         data: { chatId, messages: messagesPayload },
       };
     } catch (error) {
-      console.error('Join chat error:', error);
-      return { event: 'error', data: 'Failed to join chat' };
+      console.error(`[WebSocket] Join chat error for user ${client.user?.id} and chat ${chatId}:`, {
+        error: error.message,
+        stack: error.stack,
+        user: client.user,
+        chatId,
+      });
+
+      // Return more specific error message based on error type
+      let errorMessage = 'Failed to join chat';
+      if (error.message?.includes('jwt')) {
+        errorMessage = 'Authentication failed';
+      } else if (error.message?.includes('not found')) {
+        errorMessage = 'Chat not found';
+      } else if (error.message?.includes('access') || error.message?.includes('permission')) {
+        errorMessage = 'Access denied';
+      }
+
+      return { event: 'error', data: errorMessage };
     }
   }
 

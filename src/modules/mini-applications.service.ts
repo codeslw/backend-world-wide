@@ -59,7 +59,7 @@ export class MiniApplicationsService {
       this.prisma.miniApplication,
       where,
       paginationDto,
-      { university: true }, // Include related university data
+      {},
       undefined, // Let applyPagination handle sorting based on DTO
       paginationOptions,
     );

@@ -249,6 +249,49 @@ export class ApplicationsService {
     }
   }
 
+  async updateStatus(
+    id: string,
+    newStatus: ApplicationStatus,
+  ): Promise<ApplicationResponseDto> {
+    try {
+      // Fetch the application entity
+      const applicationEntity = await this.applicationsRepository.findById(id);
+      if (!applicationEntity) {
+        throw new EntityNotFoundException('Application', id);
+      }
+
+      // Prepare the status update DTO
+      const statusUpdateDto: UpdateApplicationDto = {
+        applicationStatus: newStatus,
+      };
+
+      // If status is changing to APPROVED or REJECTED, handle reviewDate
+      if (
+        newStatus === ApplicationStatus.APPROVED ||
+        newStatus === ApplicationStatus.REJECTED
+      ) {
+        // The repository will handle setting reviewedAt timestamp
+      }
+
+      // Perform the update using the repository
+      const updatedApplication = await this.applicationsRepository.update(
+        applicationEntity.id,
+        statusUpdateDto,
+      );
+
+      // Map the updated entity back to DTO
+      return this.mapToResponseDto(updatedApplication);
+    } catch (error) {
+      if (error instanceof EntityNotFoundException) {
+        throw error;
+      }
+      throw new InvalidDataException(
+        'Failed to update application status',
+        error.message,
+      );
+    }
+  }
+
   async remove(id: string, userId: string, role: Role): Promise<void> {
     try {
       // Fetch the entity first

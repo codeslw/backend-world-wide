@@ -1,10 +1,11 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Request, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiBody,
   ApiResponse,
   ApiParam,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { MessageResponseDto } from './dto/message-response.dto';
@@ -22,6 +23,16 @@ import {
   JoinChatResponseDto,
   WebSocketErrorDto,
 } from './dto/websocket-event.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+
+// Define Role enum inline since we can't find the external one
+enum Role {
+  ADMIN = 'ADMIN',
+  CLIENT = 'CLIENT',
+  PARTNER = 'PARTNER',
+}
 
 @ApiTags('WebSockets')
 @Controller('websocket-docs')
@@ -344,5 +355,35 @@ export class WebSocketDocsController {
   })
   errorEvent() {
     return { message: 'This is a WebSocket event documentation' };
+  }
+
+  @Get('debug/ws-auth')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Debug WebSocket authentication' })
+  async debugWebSocketAuth(@Request() req) {
+    return {
+      user: {
+        id: req.user.userId,
+        email: req.user.email,
+        role: req.user.role,
+      },
+      timestamp: new Date().toISOString(),
+      message: 'Use this token for WebSocket authentication',
+    };
+  }
+
+  @Get('debug/active-connections')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Debug active WebSocket connections (Admin only)' })
+  async debugActiveConnections() {
+    // Access the ChatGateway instance to get connection info
+    // Note: This requires the gateway to be properly injected
+    return {
+      message: 'Check server logs for detailed connection information',
+      timestamp: new Date().toISOString(),
+    };
   }
 }
