@@ -24,6 +24,13 @@ import {
   Role as PrismaRole,
   ChatStatus as PrismaChatStatus,
 } from '@prisma/client';
+import {
+  JoinChatAckResponse,
+  LeaveChatAckResponse,
+  SendMessageAckResponse,
+  ReadMessagesAckResponse,
+  GetActiveUsersAckResponse,
+} from './types/websocket-responses';
 
 interface AuthenticatedSocket extends Socket {
   user: {
@@ -166,7 +173,7 @@ export class ChatGateway
   async handleJoinChat(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() chatId: string,
-  ): Promise<WsResponse<any>> {
+  ): Promise<JoinChatAckResponse> {
     try {
       const userId = client.user.id;
       const userRole = client.user.role;
@@ -176,7 +183,7 @@ export class ChatGateway
       // Validate chatId parameter
       if (!chatId || typeof chatId !== 'string') {
         console.error(`[WebSocket] Invalid chatId provided:`, chatId);
-        return { event: 'error', data: 'Invalid chat ID' };
+        throw new Error('Invalid chat ID');
       }
 
       // Verify user has access to this chat
@@ -191,7 +198,7 @@ export class ChatGateway
 
       if (!chat) {
         console.error(`[WebSocket] Chat ${chatId} not found in database`);
-        return { event: 'error', data: 'Chat not found' };
+        throw new Error('Chat not found');
       }
 
       console.log(`[WebSocket] Chat found: clientId=${chat.clientId}, adminId=${chat.adminId}, status=${chat.status}`);
@@ -203,7 +210,7 @@ export class ChatGateway
 
       if (!hasAccess) {
         console.error(`[WebSocket] Access denied for user ${userId} to chat ${chatId}. ClientId: ${chat.clientId}, AdminId: ${chat.adminId}, UserRole: ${userRole}`);
-        return { event: 'error', data: 'Access denied to this chat' };
+        throw new Error('Access denied to this chat');
       }
 
       console.log(`[WebSocket] Access granted for user ${userId} to chat ${chatId}`);
@@ -230,8 +237,9 @@ export class ChatGateway
 
       console.log(`[WebSocket] Successfully joined chat ${chatId}. Messages count: ${messagesPayload.data?.length || 0}`);
       return {
-        event: 'joinedChat',
-        data: { chatId, messages: messagesPayload },
+        success: true,
+        chatId,
+        messages: messagesPayload,
       };
     } catch (error) {
       console.error(`[WebSocket] Join chat error for user ${client.user?.id} and chat ${chatId}:`, {
@@ -241,17 +249,8 @@ export class ChatGateway
         chatId,
       });
 
-      // Return more specific error message based on error type
-      let errorMessage = 'Failed to join chat';
-      if (error.message?.includes('jwt')) {
-        errorMessage = 'Authentication failed';
-      } else if (error.message?.includes('not found')) {
-        errorMessage = 'Chat not found';
-      } else if (error.message?.includes('access') || error.message?.includes('permission')) {
-        errorMessage = 'Access denied';
-      }
-
-      return { event: 'error', data: errorMessage };
+      // Throw error to be handled by NestJS WebSocket exception filter
+      throw error;
     }
   }
 
@@ -260,7 +259,7 @@ export class ChatGateway
   handleLeaveChat(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() chatId: string,
-  ): WsResponse<any> {
+  ): LeaveChatAckResponse {
     const userId = client.user.id;
     client.leave(`chat:${chatId}`);
 
@@ -274,7 +273,7 @@ export class ChatGateway
     }
 
     console.log(`User ${userId} left chat room: ${chatId}`);
-    return { event: 'leftChat', data: { chatId } };
+    return { success: true, chatId };
   }
 
   @UseGuards(WsJwtGuard)
@@ -288,7 +287,7 @@ export class ChatGateway
       fileId?: string;
       replyToId?: string;
     },
-  ): Promise<WsResponse<any>> {
+  ): Promise<SendMessageAckResponse> {
     try {
       const userId = client.user.id;
       const userRole = client.user.role;
@@ -299,7 +298,7 @@ export class ChatGateway
       });
 
       if (!chat) {
-        return { event: 'error', data: 'Chat not found' };
+        throw new Error('Chat not found');
       }
 
       // Check if user has access to this chat
@@ -308,7 +307,7 @@ export class ChatGateway
         chat.adminId !== userId &&
         userRole !== PrismaRole.ADMIN
       ) {
-        return { event: 'error', data: 'Access denied' };
+        throw new Error('Access denied');
       }
 
       // Create the message
@@ -326,18 +325,11 @@ export class ChatGateway
         createMessageDto,
       );
 
-      return { event: 'messageSent', data: messageResult };
+      return { success: true, message: messageResult };
     } catch (error) {
       console.error('Send message error:', error);
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to send message';
-      // It's often better to emit exceptions back to the calling client
-      client.emit('exception', {
-        status: 'error',
-        message: errorMessage,
-        event: 'sendMessage',
-      });
-      return { event: 'error', data: errorMessage };
+      // Throw error to be handled by NestJS WebSocket exception filter
+      throw error;
     }
   }
 
@@ -364,28 +356,23 @@ export class ChatGateway
   async handleReadMessages(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { chatId: string; messageIds: string[] },
-  ): Promise<WsResponse<any>> {
+  ): Promise<ReadMessagesAckResponse> {
     try {
       const userId = client.user.id;
       const { chatId, messageIds } = data;
 
       if (!chatId || !messageIds || messageIds.length === 0) {
-        return { event: 'error', data: 'Invalid payload for readMessages' };
+        throw new Error('Invalid payload for readMessages');
       }
 
       // Delegate to service
       await this.chatService.markMessagesAsRead(chatId, messageIds, userId);
 
       // Service handles broadcasting the 'messagesRead' event now
-      return { event: 'messagesMarkedRead', data: { chatId, messageIds } };
+      return { success: true, chatId, messageIds };
     } catch (error) {
       console.error('Read messages error:', error);
-      client.emit('exception', {
-        status: 'error',
-        message: 'Failed to mark messages as read',
-        event: 'readMessages',
-      });
-      return { event: 'error', data: 'Failed to mark messages as read' };
+      throw error;
     }
   }
 
@@ -409,9 +396,9 @@ export class ChatGateway
   handleGetActiveUsers(
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() chatId: string,
-  ) {
+  ): GetActiveUsersAckResponse {
     const activeUsers = Array.from(this.chatRooms.get(chatId) || []);
-    return { event: 'activeUsers', data: { chatId, userIds: activeUsers } };
+    return { success: true, chatId, userIds: activeUsers };
   }
 
   // Method to notify users about new messages (called from REST API)
