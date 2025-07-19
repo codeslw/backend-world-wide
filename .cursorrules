@@ -13,7 +13,7 @@ These guidelines establish a comprehensive framework for building robust, mainta
   - Create domain-specific types and interfaces to enhance code semantics.
   - Leverage TypeScript's discriminated unions and generics for complex type scenarios.
 - Document public APIs thoroughly with JSDoc:
-  - Include detailed descriptions, parameter explanations, return value documentation, and examples.
+  - Include detailed descriptions, parameter explanations, return value documentation, and examples.Pr
   - Document expected exceptions and edge cases.
 - Maintain clean code structure:
   - Eliminate unnecessary blank lines within functions.

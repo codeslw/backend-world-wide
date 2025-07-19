@@ -10,10 +10,11 @@ import {
   Request,
   OnModuleInit,
   UnauthorizedException,
+  Delete,
 } from '@nestjs/common';
 import { ChatService, PartialAdminInfo } from './chat.service';
 import { CreateChatDto } from './dto/create-chat.dto';
-import { CreateMessageDto } from './dto/create-message.dto';
+import { CreateMessageDto, DeleteMessageResponseDto, EditMessageDto, EditMessageResponseDto, ClearChatMessagesResponseDto } from './dto/create-message.dto';
 import { UpdateChatStatusDto } from './dto/update-chat-status.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -239,5 +240,66 @@ export class ChatController implements OnModuleInit {
       pageNum,
       limitNum,
     );
+  }
+
+  @Delete(':id/messages/:messageId')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Delete a message from a chat' })
+  @ApiParam({ name: 'id', description: 'Chat ID', type: String })
+  @ApiParam({ name: 'messageId', description: 'Message ID', type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Message deleted',
+    type: DeleteMessageResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Chat not found or Message not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  async deleteMessage(
+    @Request() req,
+    @Param('id') id: string,
+    @Param('messageId') messageId: string,
+  ) {
+    const userRolePrisma = mapToPrismaRole(req.user.role);
+    return this.chatService.deleteMessage(messageId, req.user.userId, userRolePrisma);
+  }
+
+  @Patch(':id/messages/:messageId')
+  @ApiOperation({ summary: 'Edit a message in a chat' })
+  @ApiParam({ name: 'id', description: 'Chat ID', type: String })
+  @ApiParam({ name: 'messageId', description: 'Message ID', type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Message edited',
+    type: EditMessageResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Chat not found or Message not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  async editMessage(
+    @Request() req,
+    @Param('id') id: string,
+    @Param('messageId') messageId: string,
+    @Body() editMessageDto: EditMessageDto,
+  ) {
+    const userRolePrisma = mapToPrismaRole(req.user.role);
+    return this.chatService.editMessage(messageId, req.user.userId, userRolePrisma, editMessageDto.text);
+  }
+
+  @Delete(':id/messages')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Clear all messages from a chat' })
+  @ApiParam({ name: 'id', description: 'Chat ID', type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'All messages cleared',
+    type: ClearChatMessagesResponseDto,
+  })
+  @ApiResponse({ status: 404, description: 'Chat not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  async clearChatMessages(
+    @Request() req,
+    @Param('id') id: string,
+  ) {
+    const userRolePrisma = mapToPrismaRole(req.user.role);
+    return this.chatService.clearChatMessages(id, req.user.userId, userRolePrisma);
   }
 }

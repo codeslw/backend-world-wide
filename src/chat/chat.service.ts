@@ -40,7 +40,7 @@ export interface MessageWithSender extends Message {
     profile?: Partial<Profile> | null; // Include profile, make it optional
   };
   replyTo?: MessageWithSender | null; // Allow replyTo to also have sender info
-  readBy?: { id: string }[]; // Ensure readBy is properly typed
+  
 }
 
 // Helper function to map Prisma Message to MessageResponseDto structure
@@ -66,6 +66,10 @@ const mapMessageToDto = (
     replyToId: message.replyToId,
     replyTo: replyToDto,
     isReadByCurrentUser,
+    readByClient: message.readByClient,
+    readByAdmin: message.readByAdmin,
+    isEdited: message.isEdited,
+    editedAt: message.editedAt,
   };
 };
 
@@ -89,15 +93,23 @@ export class ChatService {
     chatId: string,
     userId: string,
   ): Promise<number> {
+    // First determine the user's role
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true }
+    });
+
+    if (!user) return 0;
+
     return this.prisma.message.count({
       where: {
         chatId: chatId,
         senderId: { not: userId }, // Messages not sent by the user
-        NOT: {
-          readBy: {
-            some: { id: userId }, // Messages not read by the user
-          },
-        },
+        // Count based on user's role-specific read status
+        ...(user.role === PrismaRole.CLIENT 
+          ? { readByClient: false }
+          : { readByAdmin: false }
+        ),
       },
     });
   }
@@ -161,7 +173,7 @@ export class ChatService {
                 },
               },
             },
-            readBy: { select: { id: true } },
+         
           },
         },
       },
@@ -238,7 +250,7 @@ export class ChatService {
             sender: {
               select: { id: true, email: true, role: true, profile: true },
             },
-            readBy: { select: { id: true } },
+       
           },
         },
         _count: { select: { messages: true } },
@@ -253,7 +265,11 @@ export class ChatService {
       where: {
         chatId: { in: chatIds },
         senderId: { not: userId },
-        NOT: { readBy: { some: { id: userId } } },
+        // Count based on user's role-specific read status
+        ...(userRole === PrismaRole.CLIENT 
+          ? { readByClient: false }
+          : { readByAdmin: false }
+        ),
       },
       _count: { id: true },
     });
@@ -488,7 +504,8 @@ export class ChatService {
       chat: { connect: { id: chatId } },
       sender: { connect: { id: userId } },
       text: text || undefined,
-      readBy: { connect: { id: userId } }, // Auto-read by sender
+      readByClient: false,
+      readByAdmin: false,
     };
 
     // Handle file URL
@@ -523,7 +540,7 @@ export class ChatService {
             },
           },
         },
-        readBy: { select: { id: true } },
+       
       },
     });
 
@@ -568,11 +585,11 @@ export class ChatService {
 
     const [messagesPrisma, total] = await Promise.all([
       this.prisma.message.findMany({
-        where,
         orderBy: { createdAt: 'asc' }, // Fetch oldest first for pagination
         skip,
         take: limit,
         include: {
+          
           sender: {
             select: { id: true, email: true, role: true, profile: true },
           },
@@ -583,7 +600,7 @@ export class ChatService {
               },
             },
           },
-          readBy: { select: { id: true } },
+      
         },
       }),
       this.prisma.message.count({ where }),
@@ -591,14 +608,19 @@ export class ChatService {
 
     // Mark retrieved messages as read by the current user
     const messageIdsToMark = messagesPrisma
-      .filter(
-        (msg) =>
-          msg.senderId !== userId && !msg.readBy.some((r) => r.id === userId),
-      )
+      .filter((msg) => {
+        // Only mark messages not sent by current user
+        if (msg.senderId === userId) return false;
+        
+        // Check if message is already read by this user based on their role
+        return userRole === PrismaRole.CLIENT 
+          ? !msg.readByClient 
+          : !msg.readByAdmin;
+      })
       .map((msg) => msg.id);
 
     if (messageIdsToMark.length > 0) {
-      await this.markMessagesAsRead(chatId, messageIdsToMark, userId);
+      await this.markMessagesAsRead(chatId, messageIdsToMark, userRole);
     }
 
     const messagesDto = messagesPrisma.map((msg) =>
@@ -619,20 +641,20 @@ export class ChatService {
   async markMessagesAsRead(
     chatId: string,
     messageIds: string[],
-    userId: string,
+    userRole: PrismaRole,
   ) {
     // Optimization: Check which messages actually need updating for this user
     const messagesToUpdate = await this.prisma.message.findMany({
       where: {
         id: { in: messageIds },
         chatId: chatId, // Ensure messages belong to the chat
-        NOT: {
-          readBy: {
-            some: { id: userId },
-          },
-        },
+        // Only update messages that haven't been read by this user role yet
+        ...(userRole === PrismaRole.CLIENT 
+          ? { readByClient: false }
+          : { readByAdmin: false }
+        ),
       },
-      select: { id: true },
+      select: { id: true, readByClient: true, readByAdmin: true },
     });
 
     const idsToUpdate = messagesToUpdate.map((m) => m.id);
@@ -641,19 +663,274 @@ export class ChatService {
       return; // Nothing to update for this user
     }
 
-    // Use transaction for multiple updates
+    // Use transaction for multiple updates - preserve existing read status
     await this.prisma.$transaction(
-      idsToUpdate.map((messageId) =>
-        this.prisma.message.update({
+      idsToUpdate.map((messageId) => {
+        const currentMessage = messagesToUpdate.find(m => m.id === messageId);
+        return this.prisma.message.update({
           where: { id: messageId },
-          data: { readBy: { connect: { id: userId } } },
-        }),
-      ),
+          data: userRole === PrismaRole.CLIENT 
+            ? { readByClient: true } // Keep existing readByAdmin value
+            : { readByAdmin: true }, // Keep existing readByClient value
+        });
+      }),
     );
 
     // Notify other clients about read status
     if (this.chatGateway) {
-      this.chatGateway.notifyMessagesRead(chatId, userId, idsToUpdate);
+      this.chatGateway.notifyMessagesRead(chatId, userRole, idsToUpdate);
     }
+  }
+
+  async deleteMessage(
+    messageId: string,
+    userId: string,
+    userRole: PrismaRole,
+  ) {
+    // First, get the message with chat information
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      include: {
+        chat: {
+          select: { id: true, clientId: true, adminId: true },
+        },
+        sender: {
+          select: { id: true, role: true },
+        },
+      },
+    });
+
+    if (!message) {
+      throw new NotFoundException(`Message with ID ${messageId} not found`);
+    }
+
+    // Permission check: 
+    // - Users can delete their own messages
+    // - Admins can delete any message in chats they're assigned to
+    // - Super admins (ADMIN role) can delete any message
+    const canDelete = 
+      message.senderId === userId || // User's own message
+      (userRole === PrismaRole.ADMIN && message.chat.adminId === userId) || // Assigned admin
+      userRole === PrismaRole.ADMIN; // Any admin (adjust this if you want stricter permissions)
+
+    if (!canDelete) {
+      throw new ForbiddenException('You do not have permission to delete this message');
+    }
+
+    // Check if user has access to the chat
+    if (
+      message.chat.clientId !== userId &&
+      message.chat.adminId !== userId &&
+      userRole !== PrismaRole.ADMIN
+    ) {
+      throw new ForbiddenException('You do not have access to this chat');
+    }
+
+    // Delete the message (Prisma will handle cascading deletes for replies)
+    // Note: If this message has replies, you might want to handle them differently
+    // Current setup will delete replies due to the cascade in the schema
+    await this.prisma.message.delete({
+      where: { id: messageId },
+    });
+
+    // Update chat's updatedAt timestamp
+    await this.prisma.chat.update({
+      where: { id: message.chatId },
+      data: { updatedAt: new Date() },
+    });
+
+    // Notify via WebSocket about message deletion
+    if (this.chatGateway) {
+      this.chatGateway.server.to(`chat:${message.chatId}`).emit('messageDeleted', {
+        messageId,
+        chatId: message.chatId,
+        deletedBy: userId,
+      });
+    }
+
+    return { success: true, messageId };
+  }
+
+  async editMessage(
+    messageId: string,
+    userId: string,
+    userRole: PrismaRole,
+    newText: string,
+  ): Promise<{ success: boolean; messageId: string; message: MessageResponseDto }> {
+    // First, get the message with chat and replies information
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      include: {
+        chat: {
+          select: { id: true, clientId: true, adminId: true },
+        },
+        sender: {
+          select: { id: true, role: true },
+        },
+        replies: {
+          select: { id: true },
+        },
+      },
+    });
+
+    if (!message) {
+      throw new NotFoundException(`Message with ID ${messageId} not found`);
+    }
+
+    // Permission check: 
+    // - Users can edit their own messages
+    // - Admins can edit any message in chats they're assigned to
+    const canEdit = 
+      message.senderId === userId || // User's own message
+      (userRole === PrismaRole.ADMIN && message.chat.adminId === userId); // Assigned admin
+
+    if (!canEdit) {
+      throw new ForbiddenException('You do not have permission to edit this message');
+    }
+
+    // Check if user has access to the chat
+    if (
+      message.chat.clientId !== userId &&
+      message.chat.adminId !== userId &&
+      userRole !== PrismaRole.ADMIN
+    ) {
+      throw new ForbiddenException('You do not have access to this chat');
+    }
+
+    // Business rule: Cannot edit messages that have replies (to maintain context)
+    if (message.replies.length > 0) {
+      throw new ForbiddenException('Cannot edit messages that have replies');
+    }
+
+    // Business rule: Time limit for editing (15 minutes)
+    const editTimeLimit = 15 * 60 * 1000; // 15 minutes in milliseconds
+    const now = new Date();
+    const messageAge = now.getTime() - message.createdAt.getTime();
+    
+    if (messageAge > editTimeLimit && message.senderId === userId) {
+      throw new ForbiddenException('Cannot edit messages older than 15 minutes');
+    }
+
+    // Business rule: Cannot edit messages with file attachments
+    if (message.fileUrl) {
+      throw new ForbiddenException('Cannot edit messages with file attachments');
+    }
+
+    // Validate the new text
+    if (!newText || newText.trim().length === 0) {
+      throw new ForbiddenException('Message text cannot be empty');
+    }
+
+    if (newText.trim() === message.text?.trim()) {
+      throw new ForbiddenException('New text must be different from the current text');
+    }
+
+    // Update the message
+    const updatedMessage = await this.prisma.message.update({
+      where: { id: messageId },
+      data: {
+        text: newText.trim(),
+        isEdited: true,
+        editedAt: now,
+      },
+      include: {
+        sender: {
+          select: { id: true, email: true, role: true, profile: true },
+        },
+        replyTo: {
+          include: {
+            sender: {
+              select: { id: true, email: true, role: true, profile: true },
+            },
+          },
+        },
+      },
+    });
+
+    // Update chat's updatedAt timestamp
+    await this.prisma.chat.update({
+      where: { id: message.chat.id },
+      data: { updatedAt: new Date() },
+    });
+
+    // Notify via WebSocket about message edit
+    if (this.chatGateway) {
+      const messageDto = mapMessageToDto(updatedMessage, userId);
+      this.chatGateway.server.to(`chat:${message.chat.id}`).emit('messageEdited', {
+        messageId,
+        chatId: message.chat.id,
+        editedBy: userId,
+        message: messageDto,
+      });
+    }
+
+    const messageDto = mapMessageToDto(updatedMessage, userId);
+    return { success: true, messageId, message: messageDto };
+  }
+
+  async clearChatMessages(
+    chatId: string,
+    userId: string,
+    userRole: PrismaRole,
+  ) {
+    // Get the chat to verify permissions
+    const chat = await this.prisma.chat.findUnique({
+      where: { id: chatId },
+      select: { id: true, clientId: true, adminId: true },
+    });
+
+    if (!chat) {
+      throw new NotFoundException(`Chat with ID ${chatId} not found`);
+    }
+
+    // Permission check: Only admins can clear entire chats
+    // You can adjust this logic based on your requirements
+    const canClear = 
+      userRole === PrismaRole.ADMIN && 
+      (chat.adminId === userId || userRole === PrismaRole.ADMIN);
+
+    if (!canClear) {
+      throw new ForbiddenException('Only assigned admins can clear chat messages');
+    }
+
+    // Count messages before deletion for logging
+    const messageCount = await this.prisma.message.count({
+      where: { chatId },
+    });
+
+    if (messageCount === 0) {
+      return { success: true, deletedCount: 0, message: 'No messages to delete' };
+    }
+
+    // Delete all messages in the chat
+    const deleteResult = await this.prisma.message.deleteMany({
+      where: { chatId },
+    });
+
+    // Update chat's updatedAt timestamp
+    await this.prisma.chat.update({
+      where: { id: chatId },
+      data: { updatedAt: new Date() },
+    });
+
+    // Log the action
+    console.log(
+      `Admin ${userId} cleared ${deleteResult.count} messages from chat ${chatId}`,
+    );
+
+    // Notify via WebSocket about chat being cleared
+    if (this.chatGateway) {
+      this.chatGateway.server.to(`chat:${chatId}`).emit('chatCleared', {
+        chatId,
+        clearedBy: userId,
+        deletedCount: deleteResult.count,
+      });
+    }
+
+    return { 
+      success: true, 
+      deletedCount: deleteResult.count,
+      message: `Successfully deleted ${deleteResult.count} messages` 
+    };
   }
 }

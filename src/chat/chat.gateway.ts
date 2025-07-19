@@ -30,6 +30,9 @@ import {
   SendMessageAckResponse,
   ReadMessagesAckResponse,
   GetActiveUsersAckResponse,
+  DeleteMessageAckResponse,
+  EditMessageAckResponse,
+  ClearChatMessagesAckResponse,
 } from './types/websocket-responses';
 
 interface AuthenticatedSocket extends Socket {
@@ -355,10 +358,10 @@ export class ChatGateway
   @SubscribeMessage('readMessages')
   async handleReadMessages(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { chatId: string; messageIds: string[] },
+    @MessageBody() data: { chatId: string;  messageIds: string[] },
   ): Promise<ReadMessagesAckResponse> {
     try {
-      const userId = client.user.id;
+      const userRole = client.user.role;
       const { chatId, messageIds } = data;
 
       if (!chatId || !messageIds || messageIds.length === 0) {
@@ -366,12 +369,91 @@ export class ChatGateway
       }
 
       // Delegate to service
-      await this.chatService.markMessagesAsRead(chatId, messageIds, userId);
+      await this.chatService.markMessagesAsRead(chatId, messageIds, userRole);
 
       // Service handles broadcasting the 'messagesRead' event now
       return { success: true, chatId, messageIds };
     } catch (error) {
       console.error('Read messages error:', error);
+      throw error;
+    }
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('deleteMessage')
+  async handleDeleteMessage(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { messageId: string },
+  ): Promise<DeleteMessageAckResponse> {
+    try {
+      const userId = client.user.id;
+      const userRole = client.user.role;
+      const { messageId } = data;
+
+      if (!messageId) {
+        throw new Error('Message ID is required');
+      }
+
+      // Delegate to service
+      const result = await this.chatService.deleteMessage(messageId, userId, userRole);
+
+      return result;
+    } catch (error) {
+      console.error('Delete message error:', error);
+      throw error;
+    }
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('editMessage')
+  async handleEditMessage(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { messageId: string; text: string },
+  ): Promise<EditMessageAckResponse> {
+    try {
+      const userId = client.user.id;
+      const userRole = client.user.role;
+      const { messageId, text } = data;
+
+      if (!messageId) {
+        throw new Error('Message ID is required');
+      }
+
+      if (!text || text.trim().length === 0) {
+        throw new Error('Message text is required');
+      }
+
+      // Delegate to service
+      const result = await this.chatService.editMessage(messageId, userId, userRole, text);
+
+      return result;
+    } catch (error) {
+      console.error('Edit message error:', error);
+      throw error;
+    }
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('clearChatMessages')
+  async handleClearChatMessages(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { chatId: string },
+  ): Promise<ClearChatMessagesAckResponse> {
+    try {
+      const userId = client.user.id;
+      const userRole = client.user.role;
+      const { chatId } = data;
+
+      if (!chatId) {
+        throw new Error('Chat ID is required');
+      }
+
+      // Delegate to service
+      const result = await this.chatService.clearChatMessages(chatId, userId, userRole);
+
+      return result;
+    } catch (error) {
+      console.error('Clear chat messages error:', error);
       throw error;
     }
   }
@@ -457,11 +539,11 @@ export class ChatGateway
     this.server.to(this.adminRoom).emit('chatAssigned', { chatId, adminId });
   }
 
-  notifyMessagesRead(chatId: string, userId: string, messageIds: string[]) {
+  notifyMessagesRead(chatId: string, userRole: string, messageIds: string[]) {
     if (messageIds.length === 0) return;
     this.server.to(`chat:${chatId}`).emit('messagesRead', {
       chatId, // Include chatId for context
-      userId,
+      userRole,
       messageIds,
     });
   }

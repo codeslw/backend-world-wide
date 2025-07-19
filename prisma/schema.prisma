@@ -18,7 +18,7 @@ model User {
   clientChats  Chat[]    @relation("ClientChats")
   messages     Message[]
   profile      Profile?
-  readMessages Message[] @relation("MessageReads")
+  // readMessages Message[] @relation("MessageReads")
 
   @@map("users")
 }
@@ -37,6 +37,7 @@ model Program {
   parent             Program?            @relation("ProgramToProgram", fields: [parentId], references: [id])
   children           Program[]           @relation("ProgramToProgram")
   universityPrograms UniversityProgram[]
+  applications      Application[]
 
   @@map("programs")
 }
@@ -93,7 +94,7 @@ model University {
   city                 City                @relation(fields: [cityId], references: [id])
   country              Country             @relation(fields: [countryCode], references: [code])
   universityPrograms   UniversityProgram[]
-
+  applications         Application[]
   @@map("universities")
 }
 
@@ -144,12 +145,16 @@ model Message {
   text      String?
   fileUrl   String?
   replyToId String?
+  readByClient Boolean @default(false)
+  readByAdmin Boolean @default(false)
+  isEdited  Boolean   @default(false)
+  editedAt  DateTime?
   createdAt DateTime  @default(now())
   chat      Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
   replyTo   Message?  @relation("Replies", fields: [replyToId], references: [id])
   replies   Message[] @relation("Replies")
   sender    User      @relation(fields: [senderId], references: [id])
-  readBy    User[]    @relation("MessageReads")
+  // readBy    User[]    @relation("MessageReads")
 
   @@index([chatId])
   @@index([senderId])
@@ -203,7 +208,8 @@ model Application {
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
   profile             Profile           @relation(fields: [profileId], references: [id])
-
+  program             Program           @relation(fields: [preferredProgram], references: [id])
+  university          University        @relation(fields: [preferredUniversity], references: [id])
   @@index([profileId])
   @@index([applicationStatus])
   @@map("applications")

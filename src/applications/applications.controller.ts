@@ -199,6 +199,7 @@ export class ApplicationsController {
       req.user.role === Role.CLIENT &&
       application.profileId !== req.user.userId
     ) {
+
       // Check if profileId on the DTO matches the user ID.
       // The service layer might need adjustment if profile details aren't mapped directly.
       // Let's refine this check based on the actual ApplicationResponseDto structure.
@@ -206,7 +207,7 @@ export class ApplicationsController {
       // FOR NOW: Assuming `findOne` returns enough info or handles auth implicitly.
       // Revisit this check if `findOne` doesn't guarantee ownership check for clients.
       // A safer approach might be to pass userId to findOne for client role.
-      // throw new ForbiddenActionException('You do not have permission to access this application');
+       throw new ForbiddenActionException('You do not have permission to access this application');
     }
 
     return application;

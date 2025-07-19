@@ -219,6 +219,157 @@ export class WebSocketDocsController {
     return { message: 'This is a WebSocket endpoint documentation' };
   }
 
+  @Get('delete-message')
+  @WebSocketDoc({
+    summary: 'Delete a message from a chat',
+    description:
+      'Delete a specific message from a chat. Users can delete their own messages, admins can delete any message in their assigned chats.',
+  })
+  @ApiBody({
+    description: 'Message deletion payload',
+    schema: {
+      type: 'object',
+      properties: {
+        messageId: {
+          type: 'string',
+          description: 'ID of the message to delete',
+          example: 'message-uuid',
+        },
+      },
+      required: ['messageId'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Message deleted successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        messageId: { type: 'string', example: 'message-uuid' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Access denied',
+    type: WebSocketErrorDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Message not found',
+    type: WebSocketErrorDto,
+  })
+  deleteMessage() {
+    return { message: 'This is a WebSocket endpoint documentation' };
+  }
+
+  @Get('clear-chat-messages')
+  @WebSocketDoc({
+    summary: 'Clear all messages from a chat',
+    description:
+      'Delete all messages from a chat. Only assigned admins can perform this action.',
+  })
+  @ApiBody({
+    description: 'Chat clear payload',
+    schema: {
+      type: 'object',
+      properties: {
+        chatId: {
+          type: 'string',
+          description: 'ID of the chat to clear',
+          example: 'chat-uuid',
+        },
+      },
+      required: ['chatId'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Chat messages cleared successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        deletedCount: { type: 'number', example: 25 },
+        message: { type: 'string', example: 'Successfully deleted 25 messages' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Access denied - only assigned admins can clear chats',
+    type: WebSocketErrorDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Chat not found',
+    type: WebSocketErrorDto,
+  })
+  clearChatMessages() {
+    return { message: 'This is a WebSocket endpoint documentation' };
+  }
+
+  @Get('edit-message')
+  @WebSocketDoc({
+    summary: 'Edit a message in a chat',
+    description:
+      'Edit the text content of a message. Users can edit their own messages within 15 minutes of sending. Admins can edit any message in their assigned chats. Cannot edit messages with replies or file attachments.',
+  })
+  @ApiBody({
+    description: 'Message edit payload',
+    schema: {
+      type: 'object',
+      properties: {
+        messageId: {
+          type: 'string',
+          description: 'ID of the message to edit',
+          example: 'message-uuid',
+        },
+        text: {
+          type: 'string',
+          description: 'New text content for the message',
+          example: 'Updated message content',
+        },
+      },
+      required: ['messageId', 'text'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Message edited successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        messageId: { type: 'string', example: 'message-uuid' },
+        message: {
+          type: 'object',
+          description: 'Updated message data',
+          properties: {
+            id: { type: 'string' },
+            text: { type: 'string' },
+            isEdited: { type: 'boolean', example: true },
+            editedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Access denied or business rule violation (time limit, has replies, etc.)',
+    type: WebSocketErrorDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Message not found',
+    type: WebSocketErrorDto,
+  })
+  editMessage() {
+    return { message: 'This is a WebSocket endpoint documentation' };
+  }
+
   @Get('get-active-users')
   @WebSocketDoc({
     summary: 'Get active users in a chat',
@@ -354,6 +505,115 @@ export class WebSocketDocsController {
     type: WebSocketErrorDto,
   })
   errorEvent() {
+    return { message: 'This is a WebSocket event documentation' };
+  }
+
+  @Get('events/message-deleted')
+  @WebSocketDoc({
+    summary: '[Event] Message deleted',
+    description: 'Received when a message is deleted from a chat.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Message deleted event payload',
+    schema: {
+      type: 'object',
+      properties: {
+        messageId: {
+          type: 'string',
+          description: 'ID of the deleted message',
+          example: 'message-uuid',
+        },
+        chatId: {
+          type: 'string',
+          description: 'ID of the chat where message was deleted',
+          example: 'chat-uuid',
+        },
+        deletedBy: {
+          type: 'string',
+          description: 'ID of the user who deleted the message',
+          example: 'user-uuid',
+        },
+      },
+    },
+  })
+  messageDeletedEvent() {
+    return { message: 'This is a WebSocket event documentation' };
+  }
+
+  @Get('events/chat-cleared')
+  @WebSocketDoc({
+    summary: '[Event] Chat messages cleared',
+    description: 'Received when all messages in a chat are cleared by an admin.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Chat cleared event payload',
+    schema: {
+      type: 'object',
+      properties: {
+        chatId: {
+          type: 'string',
+          description: 'ID of the chat that was cleared',
+          example: 'chat-uuid',
+        },
+        clearedBy: {
+          type: 'string',
+          description: 'ID of the admin who cleared the chat',
+          example: 'admin-user-uuid',
+        },
+        deletedCount: {
+          type: 'number',
+          description: 'Number of messages that were deleted',
+          example: 25,
+        },
+      },
+    },
+  })
+  chatClearedEvent() {
+    return { message: 'This is a WebSocket event documentation' };
+  }
+
+  @Get('events/message-edited')
+  @WebSocketDoc({
+    summary: '[Event] Message edited',
+    description: 'Received when a message is edited in a chat.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Message edited event payload',
+    schema: {
+      type: 'object',
+      properties: {
+        messageId: {
+          type: 'string',
+          description: 'ID of the edited message',
+          example: 'message-uuid',
+        },
+        chatId: {
+          type: 'string',
+          description: 'ID of the chat where message was edited',
+          example: 'chat-uuid',
+        },
+        editedBy: {
+          type: 'string',
+          description: 'ID of the user who edited the message',
+          example: 'user-uuid',
+        },
+        message: {
+          type: 'object',
+          description: 'Updated message data with editing information',
+          properties: {
+            id: { type: 'string' },
+            text: { type: 'string' },
+            isEdited: { type: 'boolean', example: true },
+            editedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+      },
+    },
+  })
+  messageEditedEvent() {
     return { message: 'This is a WebSocket event documentation' };
   }
 

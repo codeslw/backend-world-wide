@@ -4,7 +4,7 @@ export interface BaseAckResponse {
 
 export interface JoinChatAckResponse extends BaseAckResponse {
   chatId: string;
-  messages: any; // This should match the type from chatService.getChatMessages
+  messages: any; // This will be the paginated messages response
 }
 
 export interface LeaveChatAckResponse extends BaseAckResponse {
@@ -12,7 +12,7 @@ export interface LeaveChatAckResponse extends BaseAckResponse {
 }
 
 export interface SendMessageAckResponse extends BaseAckResponse {
-  message: any; // This should match the type from chatService.createMessage
+  message: any; // This will be MessageResponseDto
 }
 
 export interface ReadMessagesAckResponse extends BaseAckResponse {
@@ -23,4 +23,18 @@ export interface ReadMessagesAckResponse extends BaseAckResponse {
 export interface GetActiveUsersAckResponse extends BaseAckResponse {
   chatId: string;
   userIds: string[];
+}
+
+export interface DeleteMessageAckResponse extends BaseAckResponse {
+  messageId: string;
+}
+
+export interface EditMessageAckResponse extends BaseAckResponse {
+  messageId: string;
+  message: any; // This will be MessageResponseDto
+}
+
+export interface ClearChatMessagesAckResponse extends BaseAckResponse {
+  deletedCount: number;
+  message: string;
 } 

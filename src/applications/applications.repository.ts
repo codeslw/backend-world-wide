@@ -10,16 +10,20 @@ export class ApplicationsRepository {
 
   async create(profileId: string, createApplicationDto: CreateApplicationDto) {
     // Only handle submittedAt date conversion, other date fields are now in Profile
-    const { submittedAt, ...restData } = createApplicationDto;
+    const { submittedAt, preferredUniversity, preferredProgram, ...restData } = createApplicationDto;
 
     return this.prisma.application.create({
       data: {
         ...restData,
         profile: { connect: { id: profileId } },
+        university : {connect : {id: preferredUniversity}},
+        program  : {connect : {id: preferredProgram}},
         ...(submittedAt && { submittedAt: new Date(submittedAt) }),
       },
       include: {
         profile: true,
+        university : true,
+        program : true
       },
     });
   }
@@ -58,7 +62,9 @@ export class ApplicationsRepository {
     return this.prisma.application.findUnique({
       where: { id },
       include: {
-        profile: includeProfile,
+        profile: true,
+        program : true,
+        university : true
       },
     });
   }

@@ -433,7 +433,7 @@ export class ApplicationsService {
       submittedAt: application.submittedAt,
       createdAt: application.createdAt,
       updatedAt: application.updatedAt,
-
+      
       // Optional fields from ApplicationResponseDto
       programId: (application as any).programId,
       programType: (application as any).programType,

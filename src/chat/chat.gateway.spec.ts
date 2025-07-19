@@ -244,6 +244,8 @@ describe('ChatGateway', () => {
         isReadByCurrentUser: false,
         replyToId: null,
         fileUrl: null,
+        readByClient: false,
+        readByAdmin: false,
       };
 
       jest.spyOn(prismaService.chat, 'findUnique').mockResolvedValue(mockChat);

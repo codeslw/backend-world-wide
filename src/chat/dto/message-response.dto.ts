@@ -52,4 +52,25 @@ export class MessageResponseDto {
     description: 'Indicates if the message has been read by the current user',
   })
   isReadByCurrentUser: boolean;
+
+  @ApiProperty({
+    description: 'Indicates if the message has been read by the client',
+  })
+  readByClient: boolean;
+
+  @ApiProperty({
+    description: 'Indicates if the message has been read by the admin',
+  })
+  readByAdmin: boolean;
+
+  @ApiProperty({
+    description: 'Indicates if the message has been edited',
+  })
+  isEdited: boolean;
+
+  @ApiProperty({
+    description: 'Date when the message was last edited',
+    required: false,
+  })
+  editedAt?: Date;
 }
