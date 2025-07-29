@@ -1,9 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { UniversityType } from '../../common/enum/university-type.enum';
 import { PaginatedResponseDto } from '../../common/dto/pagination-response.dto';
 import { CountryResponseDto } from '../../countries/dto/country-response.dto';
 import { CityResponseDto } from '../../cities/dto/city-response.dto';
+import { UniversityRequirementsDto } from './university-requirements.dto';
 
 // DTO for representing program details within the university response
 class UniversityProgramResponseDto {
@@ -29,19 +30,13 @@ export class UniversityResponseDto {
   @ApiProperty({ description: 'University name' })
   name: string;
 
-  // @ApiProperty({ description: 'University name in Russian' })
-  // nameRu: string;
-
-  // @ApiProperty({ description: 'University name in English' })
-  // nameEn: string;
-
   @ApiProperty({ description: 'Year of establishment' })
   established: number;
 
   @ApiProperty({ enum: UniversityType, description: 'Type of university' })
   type: UniversityType;
 
-  @ApiProperty({ description: 'Average application fee', required: false })
+  @ApiPropertyOptional({ description: 'Average application fee' })
   avgApplicationFee?: number;
 
   @ApiProperty({ description: 'Country Code' }) // Changed from countryId for clarity
@@ -59,30 +54,28 @@ export class UniversityResponseDto {
   @ApiProperty({ description: 'Description in English' })
   descriptionEn: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Winter intake deadline (YYYY-MM-DD)',
-    required: false,
     type: String,
   })
   winterIntakeDeadline?: string | null; // Allow string or null
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Autumn intake deadline (YYYY-MM-DD)',
-    required: false,
     type: String,
   })
   autumnIntakeDeadline?: string | null; // Allow string or null
 
-  @ApiProperty({ description: 'University ranking', required: false })
+  @ApiPropertyOptional({ description: 'University ranking' })
   ranking?: number;
 
-  @ApiProperty({ description: 'Number of students', required: false })
+  @ApiPropertyOptional({ description: 'Number of students' })
   studentsCount?: number;
 
-  @ApiProperty({ description: 'Acceptance rate (percentage)', required: false })
+  @ApiPropertyOptional({ description: 'Acceptance rate (percentage)' })
   acceptanceRate?: number;
 
-  @ApiProperty({ description: 'University website URL', required: false })
+  @ApiPropertyOptional({ description: 'University website URL' })
   website?: string;
 
   @ApiProperty({ description: 'University email' })
@@ -94,14 +87,14 @@ export class UniversityResponseDto {
   @ApiProperty({ description: 'University address' })
   address: string;
 
-  @ApiProperty({ description: 'University photo URL', required: false })
+  @ApiPropertyOptional({ description: 'University photo URL' })
   photoUrl?: string;
 
   @ApiProperty({ description: 'Timestamp of creation' })
-  createdAt: Date;
+  createdAt: string;
 
   @ApiProperty({ description: 'Timestamp of last update' })
-  updatedAt: Date;
+  updatedAt: string;
 
   @ApiProperty({ description: 'Country' })
   country: CountryResponseDto;
@@ -115,6 +108,11 @@ export class UniversityResponseDto {
   })
   @Type(() => UniversityProgramResponseDto)
   universityPrograms: UniversityProgramResponseDto[];
+
+  @ApiPropertyOptional({
+    description: 'Admission requirements for the university',
+  })
+  requirements?: UniversityRequirementsDto;
 }
 
 export class PaginatedUniversityResponseDto extends PaginatedResponseDto<UniversityResponseDto> {

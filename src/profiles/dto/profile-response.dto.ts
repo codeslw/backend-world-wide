@@ -1,6 +1,9 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Gender } from '@prisma/client';
 import { PaginatedResponseDto } from '../../common/dto/pagination-response.dto';
-import { Gender, LanguageTest } from '@prisma/client';
+import { EducationDto } from './education.dto';
+import { LanguageCertificateDto } from './language-certificate.dto';
+import { StandardizedTestDto } from './standardized-test.dto';
 
 export class ProfileResponseDto {
   @ApiProperty({ description: 'Profile ID' })
@@ -15,97 +18,56 @@ export class ProfileResponseDto {
   @ApiProperty({ description: 'Last name of the user' })
   lastName: string;
 
-  @ApiProperty({ description: 'Middle name of the user', required: false })
+  @ApiPropertyOptional({ description: 'Middle name of the user' })
   middleName?: string;
 
-  @ApiProperty({ description: 'Date of birth', required: false })
+  @ApiPropertyOptional({ description: 'Date of birth' })
   dateOfBirth?: Date;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     enum: Gender,
     description: 'Gender of the user',
-    required: false,
   })
   gender?: Gender;
 
-  @ApiProperty({ description: 'Nationality of the user', required: false })
+  @ApiPropertyOptional({ description: 'Nationality of the user' })
   nationality?: string;
 
-  @ApiProperty({ description: 'Full address of the user', required: false })
+  @ApiPropertyOptional({ description: 'Full address of the user' })
   address?: string;
 
-  // @ApiProperty({ description: 'Passport number', required: false })
-  // passportNumber?: string;
-
-  @ApiProperty({ description: 'Passport expiry date', required: false })
+  @ApiPropertyOptional({ description: 'Passport expiry date' })
   passportExpiryDate?: Date;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'URL to the uploaded passport copy',
-    required: false,
   })
   passportCopyUrl?: string;
 
-  @ApiProperty({ description: 'Year of birth', required: false })
+  @ApiPropertyOptional({ description: 'Year of birth' })
   yearOfBirth?: number;
 
-  @ApiProperty({ description: 'Passport series and number', required: false })
+  @ApiPropertyOptional({ description: 'Passport series and number' })
   passportSeriesAndNumber?: string;
 
-  @ApiProperty({ description: 'Alternative email address', required: false })
+  @ApiPropertyOptional({ description: 'Alternative email address' })
   email?: string;
 
-  @ApiProperty({ description: 'Phone number', required: false })
+  @ApiPropertyOptional({ description: 'Phone number' })
   phoneNumber?: string;
 
-  @ApiProperty({ description: 'Current education level', required: false })
-  currentEducationLevel?: string;
-
-  @ApiProperty({
-    description: 'Current educational institution name',
-    required: false,
-  })
-  currentInstitutionName?: string;
-
-  @ApiProperty({ description: 'Graduation year', required: false })
-  graduationYear?: number;
-
-  @ApiProperty({
-    description: 'URL to uploaded transcript document',
-    required: false,
-  })
-  transcriptUrl?: string;
-
-  @ApiProperty({
-    enum: LanguageTest,
-    description: 'Language test type',
-    required: false,
-  })
-  languageTest?: LanguageTest;
-
-  @ApiProperty({ description: 'Language test score', required: false })
-  languageScore?: string;
-
-  @ApiProperty({
-    description: 'URL to uploaded language certificate',
-    required: false,
-  })
-  languageCertificateUrl?: string;
-
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'URL to uploaded motivation letter',
-    required: false,
   })
   motivationLetterUrl?: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'URLs to uploaded recommendation letters',
     type: [String],
-    required: false,
   })
   recommendationLetterUrls?: string[];
 
-  @ApiProperty({ description: 'URL to uploaded CV', required: false })
+  @ApiPropertyOptional({ description: 'URL to uploaded CV' })
   cvUrl?: string;
 
   @ApiProperty({ description: 'Profile creation date' })
@@ -113,6 +75,24 @@ export class ProfileResponseDto {
 
   @ApiProperty({ description: 'Profile last update date' })
   updatedAt: Date;
+
+  @ApiPropertyOptional({
+    type: () => [EducationDto],
+    description: 'List of educational qualifications',
+  })
+  educationHistory?: EducationDto[];
+
+  @ApiPropertyOptional({
+    type: () => [LanguageCertificateDto],
+    description: 'List of language certificates',
+  })
+  languageCertificates?: LanguageCertificateDto[];
+
+  @ApiPropertyOptional({
+    type: () => [StandardizedTestDto],
+    description: 'List of standardized test scores',
+  })
+  standardizedTests?: StandardizedTestDto[];
 }
 
 export class PaginatedProfileResponseDto extends PaginatedResponseDto<ProfileResponseDto> {

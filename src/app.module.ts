@@ -10,14 +10,13 @@ import { CommonModule } from './common/common.module';
 import { UniversitiesModule } from './universities/universities.module';
 import { DigitalOceanService } from './digital-ocean/digital-ocean.service';
 import { DigitalOceanModule } from './digital-ocean/digital-ocean.module';
-import { FilesController } from './files/files.controller';
 import { FilesModule } from './files/files.module';
-import { FilesService } from './files/files.service';
 import { ChatModule } from './chat/chat.module';
 import { CatalogModule } from './catalog/catalog.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import { ApplicationsModule } from './applications/applications.module';
 import { MiniApplicationsModule } from './modules/mini-applications.module';
+import { ValidityModule } from './validity/validity.module';
 
 @Module({
   imports: [
@@ -36,6 +35,7 @@ import { MiniApplicationsModule } from './modules/mini-applications.module';
     CatalogModule,
     ApplicationsModule,
     MiniApplicationsModule,
+    ValidityModule,
   ],
   providers: [PrismaService, DigitalOceanService],
   controllers: [],

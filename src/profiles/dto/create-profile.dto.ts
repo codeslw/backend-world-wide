@@ -1,227 +1,170 @@
-import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsEmail,
-  IsInt,
-  IsOptional,
   IsString,
-  Min,
-  Max,
+  IsOptional,
   IsDateString,
   IsEnum,
-  IsUrl,
+  IsInt,
   IsArray,
+  IsUrl,
+  MinLength,
+  MaxLength,
+  IsEmail,
+  IsPhoneNumber,
+  ValidateNested,
 } from 'class-validator';
-import { Gender, LanguageTest } from '@prisma/client';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Gender } from '@prisma/client';
+import { Type } from 'class-transformer';
+import { EducationDto } from './education.dto';
+import { LanguageCertificateDto } from './language-certificate.dto';
+import { StandardizedTestDto } from './standardized-test.dto';
 
 export class CreateProfileDto {
-  @ApiProperty({ description: 'First name of the user', example: 'John' })
+  @ApiProperty({ example: 'John', description: 'First name' })
   @IsString()
+  @MinLength(2)
+  @MaxLength(50)
   firstName: string;
 
-  @ApiProperty({ description: 'Last name of the user', example: 'Doe' })
+  @ApiProperty({ example: 'Doe', description: 'Last name' })
   @IsString()
+  @MinLength(2)
+  @MaxLength(50)
   lastName: string;
 
-  @ApiProperty({
-    description: 'Middle name of the user',
-    example: 'Michael',
-    required: false,
-  })
+  @ApiPropertyOptional({ example: 'Michael', description: 'Middle name' })
   @IsOptional()
   @IsString()
+  @MaxLength(50)
   middleName?: string;
 
-  @ApiProperty({
-    description: 'Date of birth in ISO format',
+  @ApiPropertyOptional({
     example: '1990-01-01',
-    required: false,
+    description: 'Date of birth',
   })
   @IsOptional()
   @IsDateString()
-  dateOfBirth?: string;
+  dateOfBirth?: Date;
 
-  @ApiProperty({
-    enum: Gender,
-    description: 'Gender of the user',
-    required: false,
-  })
+  @ApiPropertyOptional({ enum: Gender, description: 'Gender' })
   @IsOptional()
   @IsEnum(Gender)
   gender?: Gender;
 
-  @ApiProperty({
-    description: 'Nationality of the user',
-    example: 'American',
-    required: false,
-  })
+  @ApiPropertyOptional({ example: 'American', description: 'Nationality' })
   @IsOptional()
   @IsString()
+  @MaxLength(50)
   nationality?: string;
 
-  @ApiProperty({
-    description: 'Full address of the user',
+  @ApiPropertyOptional({
     example: '123 Main St, Anytown, USA',
-    required: false,
+    description: 'Address',
   })
   @IsOptional()
   @IsString()
+  @MaxLength(255)
   address?: string;
 
-  @ApiProperty({
-    description: 'Passport number',
-    example: 'X12345678',
-    required: false,
+  @ApiPropertyOptional({
+    example: 'AB1234567',
+    description: 'Passport series and number',
   })
-  // @IsOptional()
-  // @IsString()
-  // passportNumber?: string;
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  passportSeriesAndNumber?: string;
 
-  @ApiProperty({
-    description: 'Passport expiry date in ISO format',
+  @ApiPropertyOptional({
     example: '2030-01-01',
-    required: false,
+    description: 'Passport expiry date',
   })
   @IsOptional()
   @IsDateString()
-  passportExpiryDate?: string;
+  passportExpiryDate?: Date;
 
-  @ApiProperty({
-    description: 'URL to the uploaded passport copy',
-    example: 'https://example.com/passport.jpg',
-    required: false,
+  @ApiPropertyOptional({
+    example: 'http://example.com/passport.jpg',
+    description: 'URL to passport copy',
   })
   @IsOptional()
-  @IsString()
   @IsUrl()
   passportCopyUrl?: string;
 
-  @ApiProperty({ description: 'Year of birth', example: 1990, required: false })
-  @IsOptional()
-  @IsInt()
-  @Min(1900)
-  @Max(new Date().getFullYear())
-  yearOfBirth?: number;
-
-  @ApiProperty({
-    description: 'Passport series and number',
-    example: 'AB1234567',
-    required: false,
+  @ApiPropertyOptional({
+    example: 'http://example.com/motivation.pdf',
+    description: 'URL to motivation letter',
   })
   @IsOptional()
-  @IsString()
-  passportSeriesAndNumber?: string;
+  @IsUrl()
+  motivationLetterUrl?: string;
 
-  @ApiProperty({
-    description: 'Alternative email address',
-    example: 'john.doe@example.com',
-    required: false,
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['http://example.com/rec1.pdf', 'http://example.com/rec2.pdf'],
+    description: 'URLs to recommendation letters',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsUrl({}, { each: true })
+  recommendationLetterUrls?: string[];
+
+  @ApiPropertyOptional({
+    example: 'http://example.com/cv.pdf',
+    description: 'URL to CV',
+  })
+  @IsOptional()
+  @IsUrl()
+  cvUrl?: string;
+
+  @ApiPropertyOptional({ example: 1990, description: 'Year of birth' })
+  @IsOptional()
+  @IsInt()
+  yearOfBirth?: number;
+
+  @ApiPropertyOptional({
+    example: 'user@example.com',
+    description: 'Contact email',
   })
   @IsOptional()
   @IsEmail()
   email?: string;
 
-  @ApiProperty({
-    description: 'Phone number',
+  @ApiPropertyOptional({
     example: '+1234567890',
-    required: false,
+    description: 'Phone number',
   })
   @IsOptional()
-  @IsString()
+  @IsPhoneNumber()
   phoneNumber?: string;
 
-  @ApiProperty({
-    description: 'Current education level',
-    example: 'Bachelor',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  currentEducationLevel?: string;
-
-  @ApiProperty({
-    description: 'Current educational institution name',
-    example: 'University of Example',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  currentInstitutionName?: string;
-
-  @ApiProperty({
-    description: 'Graduation year',
-    example: 2022,
-    required: false,
-  })
-  @IsOptional()
-  @IsInt()
-  @Min(1900)
-  @Max(new Date().getFullYear() + 10)
-  graduationYear?: number;
-
-  @ApiProperty({
-    description: 'URL to uploaded transcript document',
-    example: 'https://example.com/transcript.pdf',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  @IsUrl()
-  transcriptUrl?: string;
-
-  @ApiProperty({
-    enum: LanguageTest,
-    description: 'Language test type',
-    required: false,
-  })
-  @IsOptional()
-  @IsEnum(LanguageTest)
-  languageTest?: LanguageTest;
-
-  @ApiProperty({
-    description: 'Language test score',
-    example: '7.5',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  languageScore?: string;
-
-  @ApiProperty({
-    description: 'URL to uploaded language certificate',
-    example: 'https://example.com/certificate.pdf',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  @IsUrl()
-  languageCertificateUrl?: string;
-
-  @ApiProperty({
-    description: 'URL to uploaded motivation letter',
-    example: 'https://example.com/motivation.pdf',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  @IsUrl()
-  motivationLetterUrl?: string;
-
-  @ApiProperty({
-    description: 'URLs to uploaded recommendation letters',
-    type: [String],
-    required: false,
+  @ApiPropertyOptional({
+    type: () => [EducationDto],
+    description: 'List of educational qualifications',
   })
   @IsOptional()
   @IsArray()
-  recommendationLetterUrls?: string[];
+  @ValidateNested({ each: true })
+  @Type(() => EducationDto)
+  educationHistory?: EducationDto[];
 
-  @ApiProperty({
-    description: 'URL to uploaded CV',
-    example: 'https://example.com/cv.pdf',
-    required: false,
+  @ApiPropertyOptional({
+    type: () => [LanguageCertificateDto],
+    description: 'List of language certificates',
   })
   @IsOptional()
-  @IsString()
-  @IsUrl()
-  cvUrl?: string;
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => LanguageCertificateDto)
+  languageCertificates?: LanguageCertificateDto[];
+
+  @ApiPropertyOptional({
+    type: () => [StandardizedTestDto],
+    description: 'List of standardized test scores',
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => StandardizedTestDto)
+  standardizedTests?: StandardizedTestDto[];
 }

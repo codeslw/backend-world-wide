@@ -69,7 +69,7 @@ model City {
 }
 
 model University {
-  id                   String              @id @default(uuid())
+  id                   String                 @id @default(uuid())
   established          Int?
   type                 String
   descriptionUz        String?
@@ -88,14 +88,35 @@ model University {
   photoUrl             String?
   cityId               String
   countryCode          Int
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
   name                 String
-  city                 City                @relation(fields: [cityId], references: [id])
-  country              Country             @relation(fields: [countryCode], references: [code])
+  city                 City                   @relation(fields: [cityId], references: [id])
+  country              Country                @relation(fields: [countryCode], references: [code])
   universityPrograms   UniversityProgram[]
   applications         Application[]
+  requirements         UniversityRequirements?
+
   @@map("universities")
+}
+
+model UniversityRequirements {
+  id                            String     @id @default(uuid())
+  universityId                  String     @unique
+  university                    University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  minIeltsScore                 Float?
+  minToeflScore                 Int?
+  minDuolingoScore              Int?
+  requiredDegree                DegreeType?
+  minGpa                        Float?
+  minGmatScore                  Int?
+  minCatScore                   Int?
+  requiredRecommendationLetters Int?       @default(0)
+  otherRequirements             Json?
+  createdAt                     DateTime   @default(now())
+  updatedAt                     DateTime   @updatedAt
+
+  @@map("university_requirements")
 }
 
 model UniversityProgram {
@@ -162,16 +183,16 @@ model Message {
 }
 
 model Profile {
-  id                       String        @id @default(uuid())
+  id                       String              @id @default(uuid())
   firstName                String
   lastName                 String
   yearOfBirth              Int?
   passportSeriesAndNumber  String?
   email                    String?
   phoneNumber              String?
-  userId                   String        @unique
-  createdAt                DateTime      @default(now())
-  updatedAt                DateTime      @updatedAt
+  userId                   String              @unique
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
   address                  String?
   dateOfBirth              DateTime?
   gender                   Gender?
@@ -179,20 +200,63 @@ model Profile {
   nationality              String?
   passportCopyUrl          String?
   passportExpiryDate       DateTime?
-  currentEducationLevel    String?
-  currentInstitutionName   String?
   cvUrl                    String?
-  graduationYear           Int?
-  languageCertificateUrl   String?
-  languageScore            String?
-  languageTest             LanguageTest?
   motivationLetterUrl      String?
-  recommendationLetterUrls String[]      @default([])
-  transcriptUrl            String?
+  recommendationLetterUrls String[]            @default([])
   applications             Application[]
-  user                     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  educationHistory         Education[]
+  languageCertificates     LanguageCertificate[]
+  standardizedTests        StandardizedTest[]
 
   @@map("profiles")
+}
+
+model StandardizedTest {
+  id             String               @id @default(uuid())
+  profileId      String
+  profile        Profile              @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  testType       StandardizedTestType
+  score          Int
+  certificateUrl String?
+  dateOfIssue    DateTime
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@map("standardized_tests")
+  @@index([profileId])
+}
+
+model Education {
+  id             String     @id @default(uuid())
+  profileId      String
+  profile        Profile    @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  degree         DegreeType
+  institution    String
+  graduationYear Int
+  gpa            Float?
+  transcriptUrl  String?
+  diplomaUrl     String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@map("education_history")
+  @@index([profileId])
+}
+
+model LanguageCertificate {
+  id             String       @id @default(uuid())
+  profileId      String
+  profile        Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  testType       LanguageTest
+  score          Float
+  certificateUrl String
+  dateOfIssue    DateTime
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@map("language_certificates")
+  @@index([profileId])
 }
 
 model Application {
@@ -266,6 +330,19 @@ enum LanguageTest {
   TOEFL
   DUOLINGO
   NONE
+}
+
+enum DegreeType {
+  HIGH_SCHOOL
+  BACHELOR
+  MASTER
+  PHD
+}
+
+enum StandardizedTestType {
+  GMAT
+  CAT
+  GRE
 }
 
 enum Gender {

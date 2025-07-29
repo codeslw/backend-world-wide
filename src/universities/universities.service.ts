@@ -26,8 +26,13 @@ export class UniversitiesService {
   async create(
     createUniversityDto: CreateUniversityDto,
   ): Promise<UniversityResponseDto> {
-    const { programs, countryCode, cityId, ...universityData } =
-      createUniversityDto;
+    const {
+      programs,
+      countryCode,
+      cityId,
+      requirements,
+      ...universityData
+    } = createUniversityDto;
 
     // Validate that all provided programIds exist
     await this.validateProgramIds(programs.map((p) => p.programId));
@@ -45,6 +50,7 @@ export class UniversitiesService {
               tuitionFeeCurrency: program.tuitionFeeCurrency || 'USD',
             })),
           },
+          requirements: requirements ? { create: requirements } : undefined,
         },
         include: {
           country: true,
@@ -54,6 +60,7 @@ export class UniversitiesService {
               program: true, // Include program details
             },
           },
+          requirements: true,
         },
       });
       return this.mapToResponseDto(createdUniversity);
@@ -227,6 +234,7 @@ export class UniversitiesService {
               }, // Select specific program fields
             },
           },
+          requirements: true,
         },
         undefined,
         paginationOptions,
@@ -261,6 +269,7 @@ export class UniversitiesService {
               program: true, // Include full program details
             },
           },
+          requirements: true,
         },
       });
 
@@ -282,13 +291,13 @@ export class UniversitiesService {
     id: string,
     updateUniversityDto: UpdateUniversityDto,
   ): Promise<UniversityResponseDto> {
-    const { programs, countryCode, cityId, ...otherFields } =
+    const { programs, countryCode, cityId, requirements, ...otherFields } =
       updateUniversityDto;
 
     // 1. Check if university exists
     const existingUniversity = await this.prisma.university.findUnique({
       where: { id },
-      include: { universityPrograms: true }, // Include existing program relations
+      include: { universityPrograms: true, requirements: true }, // Include existing program relations
     });
     if (!existingUniversity) {
       throw new EntityNotFoundException('University', id);
@@ -357,6 +366,15 @@ export class UniversitiesService {
           }
         }
 
+        // 4. Handle requirements update
+        if (requirements) {
+          await tx.universityRequirements.upsert({
+            where: { universityId: id },
+            create: { ...requirements, universityId: id },
+            update: requirements,
+          });
+        }
+
         // Fetch the final state after all updates in the transaction
         return tx.university.findUnique({
           where: { id },
@@ -368,6 +386,7 @@ export class UniversitiesService {
                 program: true,
               },
             },
+            requirements: true,
           },
         });
       });
@@ -501,7 +520,7 @@ export class UniversitiesService {
   }
 
   private mapToResponseDto(university: any): UniversityResponseDto {
-    // Explicitly map fields to ensure correct structure and types
+      // Explicitly map fields to ensure correct structure and types
     return {
       id: university.id,
       name: university.name,
@@ -542,6 +561,7 @@ export class UniversitiesService {
         })) || [],
       country: university.country,
       city: university.city,
+      requirements: university.requirements,
     };
   }
 
@@ -571,6 +591,7 @@ export class UniversitiesService {
       country: localizedCountry,
       city: localizedCity,
       universityPrograms: localizedPrograms,
+      requirements: university.requirements,
       // No direct name/description on university to localize here
     };
   }

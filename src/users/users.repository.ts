@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../db/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcryptjs';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class UsersRepository {
@@ -12,17 +13,36 @@ export class UsersRepository {
     // Extract profile data to handle it separately
     const { profile, ...userData } = createUserDto;
 
-    return this.prisma.user.create({
-      data: {
-        ...userData,
-        password: hashedPassword,
-        // Only create profile if it exists
-        ...(profile && {
-          profile: {
-            create: profile,
+    const data: Prisma.UserCreateInput = {
+      ...userData,
+      password: hashedPassword,
+    };
+
+    if (profile) {
+      const {
+        educationHistory,
+        languageCertificates,
+        standardizedTests,
+        ...profileData
+      } = profile;
+      data.profile = {
+        create: {
+          ...profileData,
+          educationHistory: {
+            create: educationHistory,
           },
-        }),
-      },
+          languageCertificates: {
+            create: languageCertificates,
+          },
+          standardizedTests: {
+            create: standardizedTests,
+          },
+        },
+      };
+    }
+
+    return this.prisma.user.create({
+      data,
     });
   }
 

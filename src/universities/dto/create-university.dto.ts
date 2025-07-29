@@ -1,198 +1,190 @@
-import { ApiProperty } from '@nestjs/swagger';
 import {
   IsString,
+  IsOptional,
   IsInt,
+  IsUrl,
+  IsEmail,
+  IsPhoneNumber,
+  IsDateString,
+  IsArray,
+  ArrayNotEmpty,
+  ValidateNested,
+  IsNotEmpty,
   IsEnum,
   IsNumber,
-  IsUrl,
-  IsOptional,
-  IsDate,
   Min,
   Max,
-  IsEmail,
-  IsArray,
-  ValidateNested,
-  IsDateString,
-  IsNotEmpty,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UniversityType } from '../../common/enum/university-type.enum';
 import { UniversityProgramDto } from './university-program.dto';
+import { Type } from 'class-transformer';
+import { UniversityRequirementsDto } from './university-requirements.dto';
 
 export class CreateUniversityDto {
   @ApiProperty({
-    description: 'University name',
+    description: 'Name of the univsersity',
     example: 'Toshkent Axborot Texnologiyalari Universiteti',
   })
   @IsString()
   @IsNotEmpty()
   name: string;
 
-  // @ApiProperty({ description: 'University name in Russian', example: 'Ташкентский Университет Информационных Технологий' })
-  // @IsString()
-  // @IsNotEmpty()
-  // nameRu: string;
-
-  // @ApiProperty({ description: 'University name in English', example: 'Tashkent University of Information Technologies' })
-  // @IsString()
-  // @IsNotEmpty()
-  // nameEn: string;
-
-  @ApiProperty({ description: 'Year of establishment', example: 1955 })
+  @ApiPropertyOptional({
+    description: 'Year the university was established',
+    example: 1955,
+  })
   @IsOptional()
   @IsInt()
-  established: number;
+  established?: number;
 
   @ApiProperty({
     enum: UniversityType,
-    description: 'Type of university',
+    description: 'Type of the university (PUBLIC or PRIVATE)',
     example: UniversityType.PUBLIC,
   })
   @IsEnum(UniversityType)
   type: UniversityType;
 
-  @ApiProperty({ description: 'Average application fee', example: 50.0, required: false })
+  @ApiPropertyOptional({
+    description: 'Description of the university in Uzbek',
+  })
   @IsOptional()
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  avgApplicationFee?: number;
-
-  @ApiProperty({ description: 'Country code', example: 860 })
-  @IsInt() // Assuming country code is an integer ID from Country model
-  countryCode: number;
-
-  @ApiProperty({
-    description: 'City ID',
-    example: 'b7a3f4e0-8e1f-4f8f-b8f4-9a7b1c2d3e4f',
-  })
-  @IsString() // Assuming city ID is a string UUID from City model
-  @IsNotEmpty()
-  cityId: string;
-
-  @ApiProperty({
-    description: 'Description in Uzbek',
-    example: "O'zbekistondagi yetakchi IT universiteti.",
-  })
   @IsString()
-  @IsOptional()
-  descriptionUz: string;
+  descriptionUz?: string;
 
-  @ApiProperty({
-    description: 'Description in Russian',
-    example: 'Ведущий ИТ-университет Узбекистана.',
+  @ApiPropertyOptional({
+    description: 'Description of the university in Russian',
   })
+  @IsOptional()
   @IsString()
-  @IsOptional()
-  descriptionRu: string;
+  descriptionRu?: string;
 
-  @ApiProperty({
-    description: 'Description in English',
-    example: 'Leading IT university in Uzbekistan.',
+  @ApiPropertyOptional({
+    description: 'Description of the university in English',
   })
+  @IsOptional()
   @IsString()
-  @IsOptional()
-  descriptionEn: string;
+  descriptionEn?: string;
 
-  @ApiProperty({
-    description: 'Winter intake deadline (YYYY-MM-DD)',
-    required: false,
-    example: '2025-11-30',
-  })
-  @IsOptional()
-  @IsDateString()
-  winterIntakeDeadline?: string;
-
-  @ApiProperty({
-    description: 'Autumn intake deadline (YYYY-MM-DD)',
-    required: false,
-    example: '2025-07-31',
-  })
-  @IsOptional()
-  @IsDateString()
-  autumnIntakeDeadline?: string;
-
-  @ApiProperty({ description: 'University ranking', example: 1500, required: false })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  ranking?: number;
-
-  @ApiProperty({ description: 'Number of students', example: 25000, required: false })
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  studentsCount?: number;
-
-  @ApiProperty({
-    description: 'Acceptance rate (percentage, 0-100)',
-    example: 35.5,
-    required: false,
-  })
-  @IsOptional()
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  @Max(100)
-  acceptanceRate?: number;
-
-  @ApiProperty({
-    description: 'University website URL',
+  @ApiPropertyOptional({
+    description: 'Official website of the university',
     example: 'https://tuit.uz',
-    required: false,
   })
   @IsOptional()
   @IsUrl()
   website?: string;
 
-  @ApiProperty({ description: 'University email', example: 'info@tuit.uz' })
-  @IsEmail()
+  @ApiPropertyOptional({
+    description: 'Contact email of the university',
+    example: 'info@tuit.uz',
+  })
   @IsOptional()
-  email: string;
+  @IsEmail()
+  email?: string;
 
-  @ApiProperty({
-    description: 'University phone number',
+  @ApiPropertyOptional({
+    description: 'Contact phone number of the university',
     example: '+998712386415',
   })
-  // @IsPhoneNumber() // Commented out: Requires specific country code or use IsString
-  @IsString()
   @IsOptional()
-  phone: string;
+  @IsPhoneNumber()
+  phone?: string;
 
   @ApiProperty({
-    description: 'University address',
-    example: 'Amir Temur Avenue 108, Tashkent, Uzbekistan',
+    description: 'Full address of the university',
+    example: '108 Amir Temur Avenue, Tashkent, Uzbekistan',
   })
   @IsString()
-  @IsNotEmpty()
   address: string;
 
-  @ApiProperty({
-    description: 'University photo URL',
-    required: false,
-    example: 'https://example.com/photo.jpg',
+  @ApiPropertyOptional({
+    description: 'Deadline for winter intake applications',
+    example: '2024-12-15',
   })
-  @IsUrl()
   @IsOptional()
+  @IsDateString()
+  winterIntakeDeadline?: string;
+
+  @ApiPropertyOptional({
+    description: 'Deadline for autumn intake applications',
+    example: '2024-08-31',
+  })
+  @IsOptional()
+  @IsDateString()
+  autumnIntakeDeadline?: string;
+
+  @ApiPropertyOptional({
+    description: 'Global or national ranking of the university',
+    example: 1500,
+  })
+  @IsOptional()
+  @IsInt()
+  ranking?: number;
+
+  @ApiPropertyOptional({
+    description: 'Total number of students',
+    example: 25000,
+  })
+  @IsOptional()
+  @IsInt()
+  studentsCount?: number;
+
+  @ApiPropertyOptional({
+    description: 'Acceptance rate percentage',
+    example: 45.5,
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  acceptanceRate?: number;
+
+  @ApiPropertyOptional({
+    description: 'Average application fee',
+    example: 50.0,
+  })
+  @IsOptional()
+  @IsNumber()
+  avgApplicationFee?: number;
+
+  @ApiPropertyOptional({
+    description: 'URL to a photo of the university',
+    example: 'https://example.com/university.jpg',
+  })
+  @IsOptional()
+  @IsUrl()
   photoUrl?: string;
 
   @ApiProperty({
-    description:
-      'List of programs offered by the university with their specific tuition fees.',
+    description: 'ID of the city where the university is located',
+    example: 'a8f6b6e4-9b1a-4b0e-8b0a-7b0c9b0a7b0c',
+  })
+  @IsString()
+  cityId: string;
+
+  @ApiProperty({
+    description: 'Code of the country where the university is located',
+    example: 860,
+  })
+  @IsInt()
+  countryCode: number;
+
+  @ApiProperty({
     type: [UniversityProgramDto],
+    description: 'List of programs offered by the university with tuition fees',
   })
   @IsArray()
+  @ArrayNotEmpty()
   @ValidateNested({ each: true })
   @Type(() => UniversityProgramDto)
-  @IsNotEmpty()
   programs: UniversityProgramDto[];
-}
 
-export class CreateManyUniversitiesDto {
-  @ApiProperty({
-    type: [CreateUniversityDto],
-    description: 'An array of university data objects to create.',
+  @ApiPropertyOptional({
+    description: 'Admission requirements for the university',
   })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateUniversityDto)
-  universities: CreateUniversityDto[];
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => UniversityRequirementsDto)
+  requirements?: UniversityRequirementsDto;
 }
