@@ -50,7 +50,39 @@ export class UniversitiesService {
               tuitionFeeCurrency: program.tuitionFeeCurrency || 'USD',
             })),
           },
-          requirements: requirements ? { create: requirements } : undefined,
+          requirements: requirements
+            ? {
+                create: (() => {
+                  const {
+                    minIeltsScore,
+                    minToeflScore,
+                    minDuolingoScore,
+                    requiredDegree,
+                    minGpa,
+                    minGmatScore,
+                    minCatScore,
+                    requiredRecommendationLetters,
+                    otherRequirements,
+                    ...rest
+                  } = requirements;
+
+                  return {
+                    minIeltsScore,
+                    minToeflScore,
+                    minDuolingoScore,
+                    requiredDegree,
+                    minGpa,
+                    minGmatScore,
+                    minCatScore,
+                    requiredRecommendationLetters,
+                    otherRequirements: {
+                      ...(otherRequirements || {}),
+                      ...rest,
+                    },
+                  };
+                })(),
+              }
+            : undefined,
         },
         include: {
           country: true,
@@ -334,33 +366,38 @@ export class UniversitiesService {
           );
 
           // Deletions: Find programs in existing set but not in incoming map
+          const incomingProgramIds = new Set(programs.map((p) => p.programId));
           const programsToDelete = existingUniversity.universityPrograms
-            .filter((up) => !incomingProgramsMap.has(up.programId))
-            .map((up) => up.id);
+            .filter((up) => !incomingProgramIds.has(up.programId))
+            .map((up) => up.programId);
 
           if (programsToDelete.length > 0) {
             await tx.universityProgram.deleteMany({
-              where: { id: { in: programsToDelete } },
+              where: {
+                universityId: id,
+                programId: { in: programsToDelete },
+              },
             });
           }
 
           // Upserts: Iterate through incoming programs
-          for (const [programId, programData] of incomingProgramsMap) {
-            const existingEntry = existingUniversity.universityPrograms.find(
-              (up) => up.programId === programId,
-            );
-
+          for (const programData of programs) {
             await tx.universityProgram.upsert({
-              where: { id: existingEntry?.id ?? '' }, // Use existing ID if available, otherwise dummy ID for create
+              where: {
+                universityId_programId: {
+                  universityId: id,
+                  programId: programData.programId,
+                },
+              },
               create: {
-                universityId: id,
-                programId: programId,
+                university: { connect: { id } },
+                program: { connect: { id: programData.programId } },
                 tuitionFee: programData.tuitionFee,
-                tuitionFeeCurrency: programData.tuitionFeeCurrency || 'USD',
+                tuitionFeeCurrency: programData.tuitionFeeCurrency,
               },
               update: {
                 tuitionFee: programData.tuitionFee,
-                tuitionFeeCurrency: programData.tuitionFeeCurrency || 'USD',
+                tuitionFeeCurrency: programData.tuitionFeeCurrency,
               },
             });
           }
@@ -368,10 +405,38 @@ export class UniversitiesService {
 
         // 4. Handle requirements update
         if (requirements) {
+          const {
+            minIeltsScore,
+            minToeflScore,
+            minDuolingoScore,
+            requiredDegree,
+            minGpa,
+            minGmatScore,
+            minCatScore,
+            requiredRecommendationLetters,
+            otherRequirements,
+            ...rest
+          } = requirements;
+
+          const requirementsData = {
+            minIeltsScore,
+            minToeflScore,
+            minDuolingoScore,
+            requiredDegree,
+            minGpa,
+            minGmatScore,
+            minCatScore,
+            requiredRecommendationLetters,
+            otherRequirements: {
+              ...(otherRequirements || {}),
+              ...rest,
+            },
+          };
+
           await tx.universityRequirements.upsert({
             where: { universityId: id },
-            create: { ...requirements, universityId: id },
-            update: requirements,
+            create: { ...requirementsData, universityId: id },
+            update: requirementsData,
           });
         }
 
