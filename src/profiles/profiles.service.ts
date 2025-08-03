@@ -135,6 +135,10 @@ export class ProfilesService {
       ...profileData
     } = updateProfileDto;
 
+    if ('hasRequirements' in profileData) {
+      delete (profileData as any).hasRequirements;
+    }
+
     await this.findOne(id); // Check if profile exists
 
     const updatedProfile = await this.prisma.$transaction(async (tx) => {

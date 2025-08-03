@@ -21,9 +21,13 @@ export class ApplicationsRepository {
         ...(submittedAt && { submittedAt: new Date(submittedAt) }),
       },
       include: {
-        profile: true,
-        university : true,
-        program : true
+        profile: false,
+        university: {
+          include: {
+            country: true,
+          },
+        },
+        program: true,
       },
     });
   }
@@ -63,8 +67,12 @@ export class ApplicationsRepository {
       where: { id },
       include: {
         profile: true,
-        program : true,
-        university : true
+        program: true,
+        university: {
+          include: {
+            country: true,
+          },
+        },
       },
     });
   }
@@ -74,6 +82,12 @@ export class ApplicationsRepository {
       where: { profileId },
       include: {
         profile: true,
+        university: {
+          include: {
+            country: true,
+          },
+        },
+        program: true,
       },
     });
   }
@@ -101,6 +115,12 @@ export class ApplicationsRepository {
       data,
       include: {
         profile: true,
+        university: {
+          include: {
+            country: true,
+          },
+        },
+        program: true,
       },
     });
   }

@@ -10,8 +10,8 @@ export class ApplicationResponseDto {
   @ApiProperty({ description: 'Profile ID associated with this application' })
   profileId: string;
 
-  @ApiProperty({ description: 'Profile details', type: ProfileResponseDto })
-  profile: ProfileResponseDto;
+  @ApiProperty({ description: 'Profile details', type: ProfileResponseDto, required: false })
+  profile?: ProfileResponseDto;
 
   // Fields have been moved to Profile entity and are accessible via the profile property
 
@@ -19,11 +19,23 @@ export class ApplicationResponseDto {
   @ApiProperty({ description: 'Preferred country for study' })
   preferredCountry: string;
 
-  @ApiProperty({ description: 'Preferred university for study' })
-  preferredUniversity: string;
+  @ApiProperty({ description: 'Preferred university ID' })
+  preferredUniversityId: string;
 
-  @ApiProperty({ description: 'Preferred program of study' })
-  preferredProgram: string;
+  @ApiProperty({ description: 'Preferred university name' })
+  preferredUniversityName: string;
+
+  @ApiProperty({ description: 'Preferred country ID' })
+  preferredCountryId: number;
+
+  @ApiProperty({ description: 'Preferred country name' })
+  preferredCountryName: string;
+
+  @ApiProperty({ description: 'Preferred program ID' })
+  preferredProgrammId: string;
+
+  @ApiProperty({ description: 'Preferred program name' })
+  preferredProgrammName: string;
 
   @ApiProperty({ enum: IntakeSeason, description: 'Preferred intake season' })
   intakeSeason: IntakeSeason;
@@ -46,11 +58,6 @@ export class ApplicationResponseDto {
   @ApiProperty({ description: 'Application last update date' })
   updatedAt: Date;
 
-  @ApiProperty({
-    description: 'ID of the specific program applied for',
-    required: false,
-  })
-  programId?: string;
 
   @ApiProperty({
     description: 'Type of program (e.g., Bachelor, Master)',

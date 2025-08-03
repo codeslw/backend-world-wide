@@ -406,25 +406,29 @@ export class ApplicationsService {
 
   // Use Prisma's Application type, relax Profile type slightly for mapping
   private mapToResponseDto(
-    application: Application & { profile?: any },
+    application: Application & { 
+      profile?: any; 
+      university?: any; 
+      program?: any;
+    },
   ): ApplicationResponseDto {
-    // Ensure profile is handled, especially if not always included by repository
-    const profileDto = application.profile
-      ? this.profilesService.mapToResponseDto(application.profile) // ProfilesService handles mapping of profile data
-      : undefined;
-
     return {
       id: application.id,
       profileId: application.profileId,
-      profile: profileDto, // This correctly includes the moved fields via ProfileResponseDto
 
-      // Fields that were moved to Profile are no longer mapped directly from the Application object.
-      // They are part of the profileDto.
-
-      // Only university preferences remain in Application
+      // University preferences
       preferredCountry: application.preferredCountry,
-      preferredUniversity: application.preferredUniversity,
-      preferredProgram: application.preferredProgram,
+      
+      // University information
+      preferredUniversityId: application.university?.id || application.preferredUniversity,
+      preferredUniversityName: application.university?.name || 'Unknown University',
+      preferredCountryId: application.university?.country?.code || application.university?.countryCode || 0,
+      preferredCountryName: application.university?.country?.nameEn || 'Unknown Country',
+      
+      // Program information
+      preferredProgrammId: application.program?.id || application.preferredProgram,
+      preferredProgrammName: application.program?.titleEn || application.program?.titleRu || 'Unknown Program',
+      
       intakeSeason: application.intakeSeason,
       intakeYear: application.intakeYear,
 
@@ -435,7 +439,6 @@ export class ApplicationsService {
       updatedAt: application.updatedAt,
       
       // Optional fields from ApplicationResponseDto
-      programId: (application as any).programId,
       programType: (application as any).programType,
       academicYear: (application as any).academicYear,
       notes: (application as any).notes,

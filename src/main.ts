@@ -13,13 +13,21 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
-      whitelist: false,
+      whitelist: true,
       transformOptions: { enableImplicitConversion: true },
       exceptionFactory: (errors) => {
-        const formattedErrors = errors.reduce((acc, error) => {
-          acc[error.property] = Object.values(error.constraints || {});
-          return acc;
-        }, {});
+        const formatErrors = (errors) => {
+          return errors.reduce((acc, err) => {
+            if (err.children && err.children.length > 0) {
+              acc[err.property] = formatErrors(err.children);
+            } else {
+              acc[err.property] = Object.values(err.constraints || {});
+            }
+            return acc;
+          }, {});
+        };
+
+        const formattedErrors = formatErrors(errors);
 
         return new Error(
           JSON.stringify({

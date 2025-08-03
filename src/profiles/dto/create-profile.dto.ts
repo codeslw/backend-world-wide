@@ -135,7 +135,9 @@ export class CreateProfileDto {
     description: 'Phone number',
   })
   @IsOptional()
-  @IsPhoneNumber()
+  @IsString()
+  @MinLength(5)
+  @MaxLength(20)
   phoneNumber?: string;
 
   @ApiPropertyOptional({
