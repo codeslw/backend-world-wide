@@ -8,16 +8,17 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
+  id           String         @id @default(uuid())
+  email        String         @unique
   password     String
-  role         Role      @default(CLIENT)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  adminChats   Chat[]    @relation("AdminChats")
-  clientChats  Chat[]    @relation("ClientChats")
+  role         Role           @default(CLIENT)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  adminChats   Chat[]         @relation("AdminChats")
+  clientChats  Chat[]         @relation("ClientChats")
   messages     Message[]
   profile      Profile?
+  refreshTokens RefreshToken[]
   // readMessages Message[] @relation("MessageReads")
 
   @@map("users")
@@ -292,6 +293,21 @@ model MiniApplication {
   @@index([email])
   @@index([status])
   @@map("mini_applications")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
 }
 
 enum Role {
