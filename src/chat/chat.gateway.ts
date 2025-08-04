@@ -23,6 +23,7 @@ import {
 import {
   Role as PrismaRole,
   ChatStatus as PrismaChatStatus,
+  MessageStatus,
 } from '@prisma/client';
 import {
   JoinChatAckResponse,
@@ -454,6 +455,61 @@ export class ChatGateway
       return result;
     } catch (error) {
       console.error('Clear chat messages error:', error);
+      throw error;
+    }
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('updateMessageStatus')
+  async handleUpdateMessageStatus(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { messageId: string; status: MessageStatus },
+  ) {
+    try {
+      const userId = client.user.id;
+      const userRole = client.user.role;
+      const { messageId, status } = data;
+
+      if (!messageId || !status) {
+        throw new Error('Message ID and status are required');
+      }
+
+      // Validate status
+      if (!Object.values(MessageStatus).includes(status)) {
+        throw new Error('Invalid message status');
+      }
+
+      // Delegate to service
+      const result = await this.chatService.updateMessageStatus(messageId, status, userId, userRole);
+
+      return { success: true, message: result };
+    } catch (error) {
+      console.error('Update message status error:', error);
+      throw error;
+    }
+  }
+
+  @UseGuards(WsJwtGuard)
+  @SubscribeMessage('deleteChat')
+  async handleDeleteChat(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { chatId: string },
+  ) {
+    try {
+      const userId = client.user.id;
+      const userRole = client.user.role;
+      const { chatId } = data;
+
+      if (!chatId) {
+        throw new Error('Chat ID is required');
+      }
+
+      // Delegate to service
+      const result = await this.chatService.deleteChat(chatId, userId, userRole);
+
+      return result;
+    } catch (error) {
+      console.error('Delete chat error:', error);
       throw error;
     }
   }

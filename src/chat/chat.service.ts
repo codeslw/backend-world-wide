@@ -19,6 +19,7 @@ import {
   Profile,
   Role as PrismaRole,
   ChatStatus,
+  MessageStatus,
 } from '@prisma/client';
 import { MessageResponseDto } from './dto/message-response.dto'; // Import DTO
 
@@ -70,6 +71,7 @@ const mapMessageToDto = (
     readByAdmin: message.readByAdmin,
     isEdited: message.isEdited,
     editedAt: message.editedAt,
+    status: message.status,
   };
 };
 
@@ -506,6 +508,7 @@ export class ChatService {
       text: text || undefined,
       readByClient: false,
       readByAdmin: false,
+      status: MessageStatus.SENT,
     };
 
     // Handle file URL
@@ -680,6 +683,67 @@ export class ChatService {
     if (this.chatGateway) {
       this.chatGateway.notifyMessagesRead(chatId, userRole, idsToUpdate);
     }
+  }
+
+  async updateMessageStatus(
+    messageId: string,
+    status: MessageStatus,
+    userId: string,
+    userRole: PrismaRole,
+  ) {
+    // Get the message to verify permissions
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      include: {
+        chat: {
+          select: { id: true, clientId: true, adminId: true },
+        },
+      },
+    });
+
+    if (!message) {
+      throw new NotFoundException(`Message with ID ${messageId} not found`);
+    }
+
+    // Check if user has access to this chat
+    if (
+      message.chat.clientId !== userId &&
+      message.chat.adminId !== userId &&
+      userRole !== PrismaRole.ADMIN
+    ) {
+      throw new ForbiddenException('You do not have access to this chat');
+    }
+
+    // Update the message status
+    const updatedMessage = await this.prisma.message.update({
+      where: { id: messageId },
+      data: { status },
+      include: {
+        sender: {
+          select: { id: true, email: true, role: true, profile: true },
+        },
+        replyTo: {
+          include: {
+            sender: {
+              select: { id: true, email: true, role: true, profile: true },
+            },
+          },
+        },
+      },
+    });
+
+    // Notify via WebSocket about status change
+    if (this.chatGateway) {
+      const messageDto = mapMessageToDto(updatedMessage, userId);
+      this.chatGateway.server.to(`chat:${message.chatId}`).emit('messageStatusUpdated', {
+        messageId,
+        chatId: message.chatId,
+        status,
+        message: messageDto,
+      });
+    }
+
+    return mapMessageToDto(updatedMessage, userId);
   }
 
   async deleteMessage(
@@ -931,6 +995,54 @@ export class ChatService {
       success: true, 
       deletedCount: deleteResult.count,
       message: `Successfully deleted ${deleteResult.count} messages` 
+    };
+  }
+
+  async deleteChat(
+    chatId: string,
+    userId: string,
+    userRole: PrismaRole,
+  ) {
+    // Get the chat to verify permissions
+    const chat = await this.prisma.chat.findUnique({
+      where: { id: chatId },
+      select: { id: true, clientId: true, adminId: true, status: true },
+    });
+
+    if (!chat) {
+      throw new NotFoundException(`Chat with ID ${chatId} not found`);
+    }
+
+    // Permission check: Only chat owner (client) or assigned admin can delete
+    const canDelete = 
+      chat.clientId === userId || 
+      (userRole === PrismaRole.ADMIN && (chat.adminId === userId || userRole === PrismaRole.ADMIN));
+
+    if (!canDelete) {
+      throw new ForbiddenException('You do not have permission to delete this chat');
+    }
+
+    // Delete the chat (Prisma will cascade delete all messages)
+    await this.prisma.chat.delete({
+      where: { id: chatId },
+    });
+
+    // Notify via WebSocket about chat deletion
+    if (this.chatGateway) {
+      this.chatGateway.server.to(`chat:${chatId}`).emit('chatDeleted', {
+        chatId,
+        deletedBy: userId,
+      });
+    }
+
+    // Log the action
+    console.log(
+      `Chat ${chatId} deleted by user ${userId} (role: ${userRole})`,
+    );
+
+    return { 
+      success: true, 
+      message: 'Chat deleted successfully' 
     };
   }
 }

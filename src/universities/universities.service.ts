@@ -482,33 +482,26 @@ export class UniversitiesService {
       // Check if university exists before attempting delete
       const university = await this.prisma.university.findUnique({
         where: { id },
-        include: {
-          universityPrograms: true,
-        },
       });
 
       if (!university) {
         throw new EntityNotFoundException('University', id);
       }
 
-      // Check if there are related records that would prevent deletion
-      if (university.universityPrograms.length > 0) {
-        throw new InvalidDataException(
-          'Cannot delete university with associated programs. Please remove university-program associations first.',
-          {
-            reason: 'RELATED_PROGRAMS_EXIST',
-            count: university.universityPrograms.length,
-          },
-        );
-      }
+      // Use a transaction to ensure atomicity
+      await this.prisma.$transaction(async (tx) => {
+        // First, delete all related UniversityProgram records
+        await tx.universityProgram.deleteMany({
+          where: { universityId: id },
+        });
 
-      // Now safe to delete
-      await this.prisma.university.delete({ where: { id } });
+        // Then, delete the university itself
+        await tx.university.delete({
+          where: { id },
+        });
+      });
     } catch (error) {
-      if (
-        error instanceof EntityNotFoundException ||
-        error instanceof InvalidDataException
-      ) {
+      if (error instanceof EntityNotFoundException) {
         throw error;
       }
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -516,10 +509,11 @@ export class UniversitiesService {
           // Handles case where it might have been deleted between check and delete call
           throw new EntityNotFoundException('University', id);
         }
+        // P2003 is less likely now, but kept for robustness
         if (error.code === 'P2003') {
           // Foreign key constraint failed
           throw new InvalidDataException(
-            'Cannot delete university because it has related records.',
+            'Cannot delete university because it has other related records (e.g., applications).',
             { reason: 'FOREIGN_KEY_CONSTRAINT', errorCode: error.code },
           );
         }

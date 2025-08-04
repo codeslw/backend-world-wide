@@ -221,6 +221,7 @@ Sends a new message to a chat.
   "text": "This is a response to your inquiry.",
   "fileUrl": "https://presigned-url.com/file.pdf",
   "replyToId": "message-uuid",
+  "status": "SENT",
   "createdAt": "2023-06-15T10:35:00Z",
   "replyTo": {
     "id": "message-uuid",
@@ -229,6 +230,7 @@ Sends a new message to a chat.
     "text": "Hello, I need assistance with my application.",
     "fileUrl": null,
     "replyToId": null,
+    "status": "DELIVERED",
     "createdAt": "2023-06-15T10:30:00Z"
   },
   "sender": {
@@ -286,6 +288,117 @@ Retrieves messages for a specific chat with pagination.
     "page": 1,
     "limit": 20,
     "totalPages": 1
+  }
+}
+```
+
+### Delete Message
+
+Deletes a specific message from a chat.
+
+**Endpoint:** `DELETE /chat/:id/messages/:messageId`
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "messageId": "message-uuid"
+}
+```
+
+### Edit Message
+
+Edits the text content of a message.
+
+**Endpoint:** `PATCH /chat/:id/messages/:messageId`
+
+**Request Body:**
+```json
+{
+  "text": "Updated message content"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "messageId": "message-uuid",
+  "message": {
+    "id": "message-uuid",
+    "chatId": "chat-uuid",
+    "text": "Updated message content",
+    "isEdited": true,
+    "editedAt": "2023-06-15T10:40:00Z",
+    "status": "SENT",
+    "sender": {
+      "id": "user-uuid",
+      "email": "user@example.com",
+      "role": "CLIENT"
+    }
+  }
+}
+```
+
+### Clear Chat Messages
+
+Clears all messages from a chat (Admin only).
+
+**Endpoint:** `DELETE /chat/:id/messages`
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "deletedCount": 25,
+  "message": "Successfully deleted 25 messages"
+}
+```
+
+### Delete Chat
+
+Deletes an entire chat and all its messages.
+
+**Endpoint:** `DELETE /chat/:id`
+
+**Response:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Chat deleted successfully"
+}
+```
+
+## Message Status Management
+
+Messages now support status tracking with the following states:
+
+- **SENDING**: Message is being sent to the server
+- **SENT**: Message has been successfully sent to the server
+- **DELIVERED**: Message has been delivered to all recipients
+- **READ**: Message has been read by recipients
+
+### Update Message Status
+
+**Note:** This is typically handled automatically by the system, but can be manually updated via WebSocket for specific use cases.
+
+**WebSocket Event:** `updateMessageStatus`
+
+**Payload:**
+```json
+{
+  "messageId": "message-uuid",
+  "status": "DELIVERED"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": {
+    "id": "message-uuid",
+    "status": "DELIVERED"
   }
 }
 ```
@@ -353,6 +466,9 @@ interface Message {
   fileUrl?: string;
   replyToId?: string;
   replyTo?: Message;
+  status: 'SENDING' | 'SENT' | 'DELIVERED' | 'READ';
+  isEdited: boolean;
+  editedAt?: string;
   createdAt: string;
   sender?: {
     id: number;

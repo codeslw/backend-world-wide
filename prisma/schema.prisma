@@ -129,7 +129,7 @@ model UniversityProgram {
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
   program            Program    @relation(fields: [programId], references: [id])
-  university         University @relation(fields: [universityId], references: [id])
+  university         University @relation(fields: [universityId], references: [id], onDelete: Cascade)
 
   @@unique([universityId, programId])
   @@index([universityId])
@@ -161,7 +161,7 @@ model Chat {
 }
 
 model Message {
-  id        String    @id @default(uuid())
+  id        String        @id @default(uuid())
   chatId    String
   senderId  String
   text      String?
@@ -169,13 +169,14 @@ model Message {
   replyToId String?
   readByClient Boolean @default(false)
   readByAdmin Boolean @default(false)
-  isEdited  Boolean   @default(false)
+  isEdited  Boolean       @default(false)
   editedAt  DateTime?
-  createdAt DateTime  @default(now())
-  chat      Chat      @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  replyTo   Message?  @relation("Replies", fields: [replyToId], references: [id])
-  replies   Message[] @relation("Replies")
-  sender    User      @relation(fields: [senderId], references: [id])
+  status    MessageStatus @default(SENT)
+  createdAt DateTime      @default(now())
+  chat      Chat          @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  replyTo   Message?      @relation("Replies", fields: [replyToId], references: [id])
+  replies   Message[]     @relation("Replies")
+  sender    User          @relation(fields: [senderId], references: [id])
   // readBy    User[]    @relation("MessageReads")
 
   @@index([chatId])
@@ -370,4 +371,11 @@ enum MiniApplicationStatus {
   NEW
   CONTACTED
   CLOSED
+}
+
+enum MessageStatus {
+  SENDING
+  SENT
+  DELIVERED
+  READ
 }

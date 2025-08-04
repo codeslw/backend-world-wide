@@ -73,4 +73,10 @@ export class MessageResponseDto {
     required: false,
   })
   editedAt?: Date;
+
+  @ApiProperty({
+    description: 'Message status',
+    enum: ['SENDING', 'SENT', 'DELIVERED', 'READ'],
+  })
+  status: 'SENDING' | 'SENT' | 'DELIVERED' | 'READ';
 }

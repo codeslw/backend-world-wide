@@ -302,4 +302,22 @@ export class ChatController implements OnModuleInit {
     const userRolePrisma = mapToPrismaRole(req.user.role);
     return this.chatService.clearChatMessages(id, req.user.userId, userRolePrisma);
   }
+
+  @Delete(':id')
+  @Roles(Role.ADMIN, Role.CLIENT)
+  @ApiOperation({ summary: 'Delete a chat (Admin or chat owner only)' })
+  @ApiParam({ name: 'id', description: 'Chat ID', type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'Chat deleted successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Chat not found' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  async deleteChat(
+    @Request() req,
+    @Param('id') id: string,
+  ) {
+    const userRolePrisma = mapToPrismaRole(req.user.role);
+    return this.chatService.deleteChat(id, req.user.userId, userRolePrisma);
+  }
 }

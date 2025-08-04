@@ -415,7 +415,7 @@ export class ApplicationsService {
     return {
       id: application.id,
       profileId: application.profileId,
-
+      profile : application.profile,
       // University preferences
       preferredCountry: application.preferredCountry,
       

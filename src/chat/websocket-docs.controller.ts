@@ -392,6 +392,109 @@ export class WebSocketDocsController {
     return { message: 'This is a WebSocket endpoint documentation' };
   }
 
+  @Get('update-message-status')
+  @WebSocketDoc({
+    summary: 'Update message status',
+    description:
+      'Update the status of a message (SENDING | SENT | DELIVERED | READ). Used to track message delivery and read receipts.',
+  })
+  @ApiBody({
+    description: 'Message status update payload',
+    schema: {
+      type: 'object',
+      properties: {
+        messageId: {
+          type: 'string',
+          description: 'ID of the message to update',
+          example: 'message-uuid',
+        },
+        status: {
+          type: 'string',
+          enum: ['SENDING', 'SENT', 'DELIVERED', 'READ'],
+          description: 'New status for the message',
+          example: 'DELIVERED',
+        },
+      },
+      required: ['messageId', 'status'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Message status updated successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: {
+          type: 'object',
+          description: 'Updated message data',
+          properties: {
+            id: { type: 'string' },
+            status: { type: 'string', example: 'DELIVERED' },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Access denied',
+    type: WebSocketErrorDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Message not found',
+    type: WebSocketErrorDto,
+  })
+  updateMessageStatus() {
+    return { message: 'This is a WebSocket endpoint documentation' };
+  }
+
+  @Get('delete-chat')
+  @WebSocketDoc({
+    summary: 'Delete a chat',
+    description:
+      'Delete an entire chat and all its messages. Only chat owners (clients) or assigned admins can delete chats.',
+  })
+  @ApiBody({
+    description: 'Chat deletion payload',
+    schema: {
+      type: 'object',
+      properties: {
+        chatId: {
+          type: 'string',
+          description: 'ID of the chat to delete',
+          example: 'chat-uuid',
+        },
+      },
+      required: ['chatId'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Chat deleted successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Chat deleted successfully' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Access denied - only chat owner or assigned admin can delete',
+    type: WebSocketErrorDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Chat not found',
+    type: WebSocketErrorDto,
+  })
+  deleteChat() {
+    return { message: 'This is a WebSocket endpoint documentation' };
+  }
+
   // Server-to-Client Event Documentation
 
   @Get('events/new-message')
@@ -614,6 +717,76 @@ export class WebSocketDocsController {
     },
   })
   messageEditedEvent() {
+    return { message: 'This is a WebSocket event documentation' };
+  }
+
+  @Get('events/message-status-updated')
+  @WebSocketDoc({
+    summary: '[Event] Message status updated',
+    description: 'Received when a message status is updated (SENDING | SENT | DELIVERED | READ).',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Message status updated event payload',
+    schema: {
+      type: 'object',
+      properties: {
+        messageId: {
+          type: 'string',
+          description: 'ID of the message with updated status',
+          example: 'message-uuid',
+        },
+        chatId: {
+          type: 'string',
+          description: 'ID of the chat containing the message',
+          example: 'chat-uuid',
+        },
+        status: {
+          type: 'string',
+          enum: ['SENDING', 'SENT', 'DELIVERED', 'READ'],
+          description: 'New status of the message',
+          example: 'DELIVERED',
+        },
+        message: {
+          type: 'object',
+          description: 'Updated message data with new status',
+          properties: {
+            id: { type: 'string' },
+            status: { type: 'string' },
+          },
+        },
+      },
+    },
+  })
+  messageStatusUpdatedEvent() {
+    return { message: 'This is a WebSocket event documentation' };
+  }
+
+  @Get('events/chat-deleted')
+  @WebSocketDoc({
+    summary: '[Event] Chat deleted',
+    description: 'Received when an entire chat is deleted by its owner or assigned admin.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Chat deleted event payload',
+    schema: {
+      type: 'object',
+      properties: {
+        chatId: {
+          type: 'string',
+          description: 'ID of the deleted chat',
+          example: 'chat-uuid',
+        },
+        deletedBy: {
+          type: 'string',
+          description: 'ID of the user who deleted the chat',
+          example: 'user-uuid',
+        },
+      },
+    },
+  })
+  chatDeletedEvent() {
     return { message: 'This is a WebSocket event documentation' };
   }
 
