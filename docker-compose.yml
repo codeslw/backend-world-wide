@@ -21,8 +21,10 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/world-wide-db?schema=public
-      - SHADOW_DATABASE_URL=postgresql://postgres:password@postgres:5432/world-wide-shadow?schema=public
+      # - DATABASE_URL=postgresql://postgres:password@postgres:5432/world-wide-db?schema=public
+      - DATABASE_URL=postgresql://postgres:password@world-wide-postgres:5432/world-wide-db?schema=public
+      # - SHADOW_DATABASE_URL=postgresql://postgres:password@postgres:5432/world-wide-shadow?schema=public
+      - SHADOW_DATABASE_URL=postgresql://postgres:password@world-wide-postgres:5432/world-wide-shadow?schema=public
       - JWT_SECRET=${JWT_SECRET:-ww2024secretjz}
       - DIGITAL_OCEAN_ACCESS_KEY=${DIGITAL_OCEAN_ACCESS_KEY}
       - DIGITAL_OCEAN_SECRET_KEY=${DIGITAL_OCEAN_SECRET_KEY}
