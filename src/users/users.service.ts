@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
+import { CreateAdminUserDto } from './dto/create-admin-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../db/prisma.service';
 import * as bcrypt from 'bcryptjs';
@@ -148,6 +149,142 @@ export class UsersService {
         };
 
         if (user) {
+          await this.profilesService.create(user.id, profileData);
+        }
+      }
+
+      return { count: users.count, users: createdUsers };
+    } catch (error) {
+      // If it's already our custom exception, just rethrow it
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+      // Otherwise let the global exception filter handle it
+      throw error;
+    }
+  }
+
+  async createAsAdmin(createAdminUserDto: CreateAdminUserDto) {
+    try {
+      console.log('Starting admin user creation for:', createAdminUserDto.email);
+      
+      // Check if user already exists
+      console.log('Checking for existing user...');
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: createAdminUserDto.email },
+      });
+      console.log('Existing user check completed:', existingUser ? 'Found' : 'Not found');
+
+      if (existingUser) {
+        throw new ConflictException(
+          `Email ${createAdminUserDto.email} is already in use`,
+        );
+      }
+
+      // Hash password
+      console.log('Hashing password...');
+      const hashedPassword = await bcrypt.hash(createAdminUserDto.password, 10);
+
+      // Extract profile data if present
+      const { profile, ...userData } = createAdminUserDto;
+
+      // Create user with hashed password
+      console.log('Creating user...');
+      const user = await this.prisma.user.create({
+        data: {
+          ...userData,
+          password: hashedPassword,
+        },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+      console.log('User created successfully:', user.id);
+
+      // Create profile only if provided
+      if (profile) {
+        console.log('Creating profile...');
+        await this.profilesService.create(user.id, profile);
+        console.log('Profile created successfully');
+      } else {
+        console.log('No profile data provided, skipping profile creation');
+      }
+
+      return user;
+    } catch (error) {
+      console.error('Error in admin user creation:', error);
+      // If it's already our custom exception, just rethrow it
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+      // Otherwise let the global exception filter handle it
+      throw error;
+    }
+  }
+
+  async createManyAsAdmin(createAdminUserDto: CreateAdminUserDto[]) {
+    try {
+      // Check if any users already exist
+      const existingUsers = await this.prisma.user.findMany({
+        where: { email: { in: createAdminUserDto.map((user) => user.email) } },
+      });
+
+      if (existingUsers.length > 0) {
+        const duplicateEmails = existingUsers
+          .map((user) => user.email)
+          .join(', ');
+        throw new ConflictException(
+          `Some emails are already in use: ${duplicateEmails}`,
+        );
+      }
+
+      // Hash passwords
+      const hashedPasswords = await Promise.all(
+        createAdminUserDto.map(async (user) => {
+          return await bcrypt.hash(user.password, 10);
+        }),
+      );
+
+      // Separate profile data from user data
+      const userData = createAdminUserDto.map((user, index) => {
+        // Extract profile data for later use but don't store it in a variable
+        const { profile: _, ...userOnly } = user;
+        
+        return {
+          ...userOnly,
+          password: hashedPasswords[index],
+        };
+      });
+
+      // Create users without profiles
+      const users = await this.prisma.user.createMany({
+        data: userData,
+      });
+
+      // Get created users to get their IDs
+      const createdUsers = await this.prisma.user.findMany({
+        where: { email: { in: createAdminUserDto.map((user) => user.email) } },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      // Create profiles for each user only if profile data is provided
+      for (let i = 0; i < createAdminUserDto.length; i++) {
+        const user = createdUsers.find(
+          (u) => u.email === createAdminUserDto[i].email,
+        );
+        const profileData = createAdminUserDto[i].profile;
+
+        if (user && profileData) {
           await this.profilesService.create(user.id, profileData);
         }
       }

@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { CreateAdminUserDto } from './dto/create-admin-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import {
   ApiTags,
@@ -82,6 +83,78 @@ export class UsersController {
   })
   createMany(@Body() createUserDto: CreateUserDto[]) {
     return this.usersService.createMany(createUserDto);
+  }
+
+  @Post('admin/create')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Create a user as admin (profile optional)' })
+  @ApiResponse({
+    status: 201,
+    description: 'User successfully created',
+    type: UserResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Invalid data provided',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Authentication required',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Email already in use',
+    type: ErrorResponseDto,
+  })
+  createAsAdmin(@Body() createAdminUserDto: CreateAdminUserDto) {
+    return this.usersService.createAsAdmin(createAdminUserDto);
+  }
+
+  @Post('admin/create/many')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Create multiple users as admin (profile optional)' })
+  @ApiBody({
+    type: [CreateAdminUserDto],
+    description: 'Array of user data to create as admin',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Users successfully created',
+    type: CreateManyUsersResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Invalid data provided',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Authentication required',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Insufficient permissions',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Email already in use',
+    type: ErrorResponseDto,
+  })
+  createManyAsAdmin(@Body() createAdminUserDto: CreateAdminUserDto[]) {
+    return this.usersService.createManyAsAdmin(createAdminUserDto);
   }
 
   @Get()

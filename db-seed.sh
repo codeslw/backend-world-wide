@@ -19,7 +19,7 @@ run_curl() {
 
 # 1. Create users
 run_curl -X 'POST' \
-  'http://165.232.183.161:3000/api/v1/users/create/many' \
+  'https://165.232.183.161:3000/api/v1/users/create/many' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '[
@@ -92,7 +92,7 @@ run_curl -X 'POST' \
 '
 
 run_curl -X 'POST' \
-  'http://165.232.183.161:3000/api/v1/countries/create/many' \
+  'https://165.232.183.161:3000/api/v1/countries/create/many' \
   -H 'accept: */*' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -295,7 +295,7 @@ run_curl -X 'POST' \
 }'
 
 run_curl -X 'POST' \
-  'http://165.232.183.161:3000/api/v1/cities/create/many' \
+  'https://165.232.183.161:3000/api/v1/cities/create/many' \
   -H 'accept: */*' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -325,7 +325,7 @@ run_curl -X 'POST' \
 }'
 
 run_curl -X 'POST' \
-  'http://165.232.183.161:3000/api/v1/programs/create/many' \
+  'https://165.232.183.161:3000/api/v1/programs/create/many' \
   -H 'accept: */*' \
   -H 'Content-Type: application/json' \
   -d '{
