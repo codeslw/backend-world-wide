@@ -88,79 +88,113 @@ export class UsersService {
   }
 
   async createMany(createUserDto: CreateUserDto[]) {
-    try {
-      // Check if any users already exist
-      const existingUsers = await this.prisma.user.findMany({
-        where: { email: { in: createUserDto.map((user) => user.email) } },
-      });
+    const maxRetries = 3;
+    let attempt = 0;
+    
+    while (attempt < maxRetries) {
+      try {
+        // Check if any users already exist
+        console.log('Checking for existing users...');
+        const existingUsers = await this.prisma.user.findMany({
+          where: { email: { in: createUserDto.map((user) => user.email) } },
+        });
 
-      if (existingUsers.length > 0) {
-        const duplicateEmails = existingUsers
-          .map((user) => user.email)
-          .join(', ');
-        throw new ConflictException(
-          `Some emails are already in use: ${duplicateEmails}`,
-        );
-      }
-
-      // Hash passwords
-      const hashedPasswords = await Promise.all(
-        createUserDto.map(async (user) => {
-          return await bcrypt.hash(user.password, 10);
-        }),
-      );
-
-      // Separate profile data from user data
-      const userData = createUserDto.map((user, index) => {
-        // Extract profile data for later use but don't store it in a variable
-        const { profile: _, ...userOnly } = user;
-        
-        return {
-          ...userOnly,
-          password: hashedPasswords[index],
-        };
-      });
-
-      // Create users without profiles
-      const users = await this.prisma.user.createMany({
-        data: userData,
-      });
-
-      // Get created users to get their IDs
-      const createdUsers = await this.prisma.user.findMany({
-        where: { email: { in: createUserDto.map((user) => user.email) } },
-        select: {
-          id: true,
-          email: true,
-          role: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
-
-      // Create profiles for each user
-      for (let i = 0; i < createUserDto.length; i++) {
-        const user = createdUsers.find(
-          (u) => u.email === createUserDto[i].email,
-        );
-        const profileData = createUserDto[i].profile || {
-          firstName: 'User',
-          lastName: 'Profile',
-        };
-
-        if (user) {
-          await this.profilesService.create(user.id, profileData);
+        if (existingUsers.length > 0) {
+          const duplicateEmails = existingUsers
+            .map((user) => user.email)
+            .join(', ');
+          throw new ConflictException(
+            `Some emails are already in use: ${duplicateEmails}`,
+          );
         }
-      }
 
-      return { count: users.count, users: createdUsers };
-    } catch (error) {
-      // If it's already our custom exception, just rethrow it
-      if (error instanceof ConflictException) {
+        // Hash passwords
+        console.log('Hashing passwords...');
+        const hashedPasswords = await Promise.all(
+          createUserDto.map(async (user) => {
+            return await bcrypt.hash(user.password, 10);
+          }),
+        );
+
+        // Separate profile data from user data
+        const userData = createUserDto.map((user, index) => {
+          // Extract profile data for later use but don't store it in a variable
+          const { profile: _, ...userOnly } = user;
+          
+          return {
+            ...userOnly,
+            password: hashedPasswords[index],
+          };
+        });
+
+        // Create users without profiles
+        console.log('Creating users...');
+        const users = await this.prisma.user.createMany({
+          data: userData,
+        });
+
+        // Get created users to get their IDs
+        console.log('Retrieving created users...');
+        const createdUsers = await this.prisma.user.findMany({
+          where: { email: { in: createUserDto.map((user) => user.email) } },
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        });
+
+        // Create profiles for each user
+        console.log('Creating profiles...');
+        for (let i = 0; i < createUserDto.length; i++) {
+          const user = createdUsers.find(
+            (u) => u.email === createUserDto[i].email,
+          );
+          const profileData = createUserDto[i].profile || {
+            firstName: 'User',
+            lastName: 'Profile',
+          };
+
+          if (user) {
+            await this.profilesService.create(user.id, profileData);
+          }
+        }
+
+        console.log('Users created successfully');
+        return { count: users.count, users: createdUsers };
+      } catch (error) {
+        attempt++;
+        console.error(`Attempt ${attempt} failed:`, error.message);
+        
+        // If it's already our custom exception, just rethrow it
+        if (error instanceof ConflictException) {
+          throw error;
+        }
+        
+        // Check if it's a connection error
+        if (error.message?.includes('Server has closed the connection') && attempt < maxRetries) {
+          console.log(`Retrying after connection error (attempt ${attempt}/${maxRetries})...`);
+          
+          // Wait before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+          
+          // Try to reconnect
+          try {
+            await this.prisma.$disconnect();
+            await this.prisma.$connect();
+            console.log('Reconnected to database');
+          } catch (reconnectError) {
+            console.error('Failed to reconnect:', reconnectError.message);
+          }
+          
+          continue; // Retry the operation
+        }
+        
+        // Otherwise let the global exception filter handle it
         throw error;
       }
-      // Otherwise let the global exception filter handle it
-      throw error;
     }
   }
 
