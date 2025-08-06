@@ -30,9 +30,9 @@ export class StandardizedTestDto {
   certificateUrl?: string;
 
   @ApiProperty({
-    description: 'The date the test was taken',
-    example: '2023-09-25',
+    description: 'The date the test was taken (ISO-8601 format)',
+    example: '2023-09-25T00:00:00.000Z',
   })
   @IsDateString()
-  dateOfIssue: Date;
+  dateOfIssue: string;
 }

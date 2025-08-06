@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsDate,
+  IsDateString,
   IsEnum,
   IsNotEmpty,
   IsNumber,
@@ -9,7 +9,6 @@ import {
   Min,
 } from 'class-validator';
 import { LanguageTest } from '@prisma/client';
-import { Type } from 'class-transformer';
 
 export class LanguageCertificateDto {
   @ApiProperty({ enum: LanguageTest, description: 'Type of language test' })
@@ -28,10 +27,9 @@ export class LanguageCertificateDto {
   certificateUrl: string;
 
   @ApiProperty({
-    description: 'The date the certificate was issued',
-    example: '2023-09-25',
+    description: 'The date the certificate was issued (ISO-8601 format)',
+    example: '2023-09-25T00:00:00.000Z',
   })
-  @Type(() => Date)
-  @IsDate()
-  dateOfIssue: Date;
+  @IsDateString()
+  dateOfIssue: string;
 }

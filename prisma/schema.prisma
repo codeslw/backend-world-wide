@@ -186,8 +186,8 @@ model Message {
 
 model Profile {
   id                       String              @id @default(uuid())
-  firstName                String
-  lastName                 String
+  firstName                String?
+  lastName                 String?
   yearOfBirth              Int?
   passportSeriesAndNumber  String?
   email                    String?

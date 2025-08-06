@@ -12,11 +12,11 @@ export class ProfileResponseDto {
   @ApiProperty({ description: 'User ID associated with this profile' })
   userId: string;
 
-  @ApiProperty({ description: 'First name of the user' })
-  firstName: string;
+  @ApiPropertyOptional({ description: 'First name of the user' })
+  firstName?: string;
 
-  @ApiProperty({ description: 'Last name of the user' })
-  lastName: string;
+  @ApiPropertyOptional({ description: 'Last name of the user' })
+  lastName?: string;
 
   @ApiPropertyOptional({ description: 'Middle name of the user' })
   middleName?: string;

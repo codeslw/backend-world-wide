@@ -20,17 +20,19 @@ import { LanguageCertificateDto } from './language-certificate.dto';
 import { StandardizedTestDto } from './standardized-test.dto';
 
 export class CreateProfileDto {
-  @ApiProperty({ example: 'John', description: 'First name' })
+  @ApiPropertyOptional({ example: 'John', description: 'First name' })
+  @IsOptional()
   @IsString()
   @MinLength(2)
   @MaxLength(50)
-  firstName: string;
+  firstName?: string;
 
-  @ApiProperty({ example: 'Doe', description: 'Last name' })
+  @ApiPropertyOptional({ example: 'Doe', description: 'Last name' })
+  @IsOptional()
   @IsString()
   @MinLength(2)
   @MaxLength(50)
-  lastName: string;
+  lastName?: string;
 
   @ApiPropertyOptional({ example: 'Michael', description: 'Middle name' })
   @IsOptional()
@@ -39,12 +41,12 @@ export class CreateProfileDto {
   middleName?: string;
 
   @ApiPropertyOptional({
-    example: '1990-01-01',
-    description: 'Date of birth',
+    example: '1990-01-01T00:00:00.000Z',
+    description: 'Date of birth (ISO-8601 format)',
   })
   @IsOptional()
   @IsDateString()
-  dateOfBirth?: Date;
+  dateOfBirth?: string;
 
   @ApiPropertyOptional({ enum: Gender, description: 'Gender' })
   @IsOptional()
@@ -76,12 +78,12 @@ export class CreateProfileDto {
   passportSeriesAndNumber?: string;
 
   @ApiPropertyOptional({
-    example: '2030-01-01',
-    description: 'Passport expiry date',
+    example: '2030-01-01T00:00:00.000Z',
+    description: 'Passport expiry date (ISO-8601 format)',
   })
   @IsOptional()
   @IsDateString()
-  passportExpiryDate?: Date;
+  passportExpiryDate?: string;
 
   @ApiPropertyOptional({
     example: 'http://example.com/passport.jpg',

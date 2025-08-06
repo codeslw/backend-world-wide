@@ -65,15 +65,23 @@ export class UsersService {
       });
       console.log('User created successfully:', user.id);
 
-      // Always create a profile for the user
-      const profileData = profile || {
-        firstName: 'User',
-        lastName: 'Profile',
-      };
-
-      console.log('Creating profile...');
-      await this.profilesService.create(user.id, profileData);
-      console.log('Profile created successfully');
+      // Create profile only if provided for ADMIN users, otherwise use defaults
+      if (profile) {
+        console.log('Creating profile...');
+        await this.profilesService.create(user.id, profile);
+        console.log('Profile created successfully');
+      } else if (userData.role !== 'ADMIN') {
+        // For non-admin users, create default profile if none provided
+        const defaultProfileData = {
+          firstName: 'User',
+          lastName: 'Profile',
+        };
+        console.log('Creating default profile...');
+        await this.profilesService.create(user.id, defaultProfileData);
+        console.log('Default profile created successfully');
+      } else {
+        console.log('No profile data provided for ADMIN user, skipping profile creation');
+      }
 
       return user;
     } catch (error) {
@@ -152,13 +160,19 @@ export class UsersService {
           const user = createdUsers.find(
             (u) => u.email === createUserDto[i].email,
           );
-          const profileData = createUserDto[i].profile || {
-            firstName: 'User',
-            lastName: 'Profile',
-          };
+          const profile = createUserDto[i].profile;
 
           if (user) {
-            await this.profilesService.create(user.id, profileData);
+            if (profile) {
+              await this.profilesService.create(user.id, profile);
+            } else if (createUserDto[i].role !== 'ADMIN') {
+              // For non-admin users, create default profile if none provided
+              const defaultProfileData = {
+                firstName: 'User',
+                lastName: 'Profile',
+              };
+              await this.profilesService.create(user.id, defaultProfileData);
+            }
           }
         }
 
