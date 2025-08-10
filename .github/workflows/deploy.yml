@@ -34,11 +34,16 @@ jobs:
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            set -e  # Exit on error
+            
             echo "Deploying latest changes..."
             cd /home/${{ secrets.DROPLET_USER }}/backend-world-wide
             
             # Ensure git is properly configured
             git config --global --add safe.directory /home/${{ secrets.DROPLET_USER }}/backend-world-wide
+            
+            # Store current commit for rollback if needed
+            PREVIOUS_COMMIT=$(git rev-parse HEAD)
             
             # Fetch all changes and force reset to latest master
             git fetch --all
@@ -53,51 +58,74 @@ jobs:
             cat > .env << EOF
             DATABASE_URL=${{ secrets.DATABASE_URL }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
             DIGITAL_OCEAN_ACCESS_KEY=${{ secrets.DIGITAL_OCEAN_ACCESS_KEY }}
             DIGITAL_OCEAN_SECRET_KEY=${{ secrets.DIGITAL_OCEAN_SECRET_KEY }}
             DIGITAL_OCEAN_BUCKET=${{ secrets.DIGITAL_OCEAN_BUCKET }}
             DIGITAL_OCEAN_ENDPOINT=${{ secrets.DIGITAL_OCEAN_ENDPOINT }}
             EOF
             
-            # Verify JWT_SECRET is set
-            if [ -z "$(grep -E '^JWT_SECRET=' .env | cut -d '=' -f2)" ]; then
-                echo "ERROR: JWT_SECRET is not set in the environment variables."
-                echo "Please add JWT_SECRET to your GitHub repository secrets."
-                exit 1
-            fi
+            # Verify critical environment variables
+            for var in JWT_SECRET POSTGRES_PASSWORD; do
+                if [ -z "$(grep -E "^${var}=" .env | cut -d '=' -f2)" ]; then
+                    echo "ERROR: ${var} is not set in the environment variables."
+                    echo "Please add ${var} to your GitHub repository secrets."
+                    exit 1
+                fi
+            done
             
-            # Stop existing containers
-            echo "Stopping existing containers..."
-            # Only restart the API container, keep postgres running
-            #docker-compose up -d --no-deps api
-            docker-compose down
-
-             # SAFE cleanup - only remove unused containers and images, NOT volumes
-            echo "Cleaning up Docker resources (preserving volumes)..."
-            docker container prune -f
+            # Backup database before deployment (optional but recommended)
+            echo "Creating database backup..."
+            BACKUP_FILE="backup-$(date +%Y%m%d-%H%M%S).sql"
+            docker-compose exec -T postgres pg_dump -U ${POSTGRES_USER:-postgres} ${POSTGRES_DB:-world-wide-db} > /tmp/$BACKUP_FILE || true
+            
+            # Build new image first (without stopping old container)
+            echo "Building new Docker image..."
+            docker-compose build api
+            
+            # Run migrations on the running database
+            echo "Running database migrations..."
+            docker-compose run --rm api npx prisma migrate deploy || {
+                echo "Migration failed! Rolling back..."
+                git reset --hard $PREVIOUS_COMMIT
+                exit 1
+            }
+            
+            # Stop only the API container (keep database running)
+            echo "Updating API container..."
+            docker-compose stop api
+            docker-compose rm -f api
+            
+            # Start new API container
+            docker-compose up -d api
+            
+            # Wait for API to be ready
+            echo "Waiting for API to be ready..."
+            for i in {1..30}; do
+                if docker-compose exec -T api curl -f http://localhost:3000/api/v1/health 2>/dev/null; then
+                    echo "API is ready!"
+                    break
+                fi
+                if [ $i -eq 30 ]; then
+                    echo "API failed to start! Check logs with: docker-compose logs api"
+                    exit 1
+                fi
+                sleep 2
+            done
+            
+            # Clean up old images (but keep volumes)
+            echo "Cleaning up old Docker images..."
             docker image prune -af
             
-            # Pull latest images and rebuild
-            echo "Building and starting containers..."
-            docker-compose build 
-            docker-compose up -d
-            
-            # Wait for containers to be ready
-            echo "Waiting for containers to be ready..."
-            sleep 25
-            
-            # Verify database connection
-            echo "Verifying database connection..."
-            docker-compose exec -T postgres pg_isready -U postgres || (echo "Database not ready!" && exit 1)
-            
-            # Run migrations
-            echo "Running database migrations..."
-            docker-compose exec -T api npx prisma migrate deploy
-            
-           
-            # Verify containers are running
-            echo "Deployed containers:"
+            # Verify deployment
+            echo "Deployment status:"
             docker-compose ps
+            
+            # Show recent logs
+            echo "Recent API logs:"
+            docker-compose logs --tail=20 api
             
             echo "Deployment completed successfully!"
 
@@ -109,8 +137,17 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/${{ secrets.DROPLET_USER }}/backend-world-wide
+            
+            # Check deployment status
+            echo "=== Deployment Verification ==="
             echo "Current git commit:"
             git log -1 --pretty=format:"%h - %an, %ar : %s"
             
-            echo "Container status:"
+            echo -e "\nContainer status:"
             docker-compose ps
+            
+            echo -e "\nAPI Health check:"
+            docker-compose exec -T api curl -sf http://localhost:3000/api/v1/health && echo "API is healthy" || echo "API health check failed"
+            
+            echo -e "\nDatabase connection:"
+            docker-compose exec -T postgres pg_isready -U ${POSTGRES_USER:-postgres} && echo "Database is ready" || echo "Database connection failed"

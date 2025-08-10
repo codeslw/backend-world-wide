@@ -10,7 +10,6 @@ volumes:
     labels:
       keep: "true"
 
-
 services:
   api:
     container_name: world-wide-api
@@ -21,11 +20,9 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      # - DATABASE_URL=postgresql://postgres:password@postgres:5432/world-wide-db?schema=public
-      - DATABASE_URL=postgresql://postgres:password@world-wide-postgres:5432/world-wide-db?schema=public
-      # - SHADOW_DATABASE_URL=postgresql://postgres:password@postgres:5432/world-wide-shadow?schema=public
-      - SHADOW_DATABASE_URL=postgresql://postgres:password@world-wide-postgres:5432/world-wide-shadow?schema=public
-      - JWT_SECRET=${JWT_SECRET:-ww2024secretjz}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@world-wide-postgres:5432/${POSTGRES_DB:-world-wide-db}?schema=public
+      - SHADOW_DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@world-wide-postgres:5432/world-wide-shadow?schema=public
+      - JWT_SECRET=${JWT_SECRET}
       - DIGITAL_OCEAN_ACCESS_KEY=${DIGITAL_OCEAN_ACCESS_KEY}
       - DIGITAL_OCEAN_SECRET_KEY=${DIGITAL_OCEAN_SECRET_KEY}
       - DIGITAL_OCEAN_BUCKET=${DIGITAL_OCEAN_BUCKET}
@@ -35,32 +32,48 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    restart: always
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
   postgres:
     container_name: world-wide-postgres
     image: postgres:15-alpine
-    ports:
-      - "5432:5432"
+    # Remove external port exposure for security
+    # If needed for debugging, use: ports: ["127.0.0.1:5432:5432"]
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=world-wide-db
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-world-wide-db}
       - POSTGRES_INITDB_ARGS=--locale=C --encoding=UTF8
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
-    restart: always
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
