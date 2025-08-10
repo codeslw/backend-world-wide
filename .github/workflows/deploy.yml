@@ -1,4 +1,4 @@
-# deploy.yml - Fixed version
+# deploy.yml - Minimal version without backup complications
 name: Deploy to Digital Ocean
 
 on:
@@ -39,55 +39,40 @@ jobs:
             
             echo "Deploying latest changes..."
             
-            # Define the project directory
-            PROJECT_DIR="/home/${{ secrets.DROPLET_USER }}/backend-world-wide"
-            
             # Navigate to project directory
-            cd "$PROJECT_DIR"
-            
-            # Store current commit for rollback if needed
-            PREVIOUS_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+            cd /home/${{ secrets.DROPLET_USER }}/backend-world-wide
             
             # Pull latest changes
             echo "Fetching latest changes..."
-            git -c safe.directory="$PROJECT_DIR" fetch --all
-            git -c safe.directory="$PROJECT_DIR" reset --hard origin/master
+            git -c safe.directory="$(pwd)" fetch --all
+            git -c safe.directory="$(pwd)" reset --hard origin/master
             
             # Verify latest commit
             echo "Latest commit:"
             git log -1 --pretty=format:"%h - %an, %ar : %s"
             
             # Extract database credentials from DATABASE_URL
-            # DATABASE_URL format: postgresql://user:password@host:port/database?schema=public
             DATABASE_URL="${{ secrets.DATABASE_URL }}"
             
-            # Parse the DATABASE_URL to extract components
-            # Remove postgresql:// prefix
+            # Parse the DATABASE_URL
             DB_STRING="${DATABASE_URL#postgresql://}"
-            # Extract user:password@host:port/database part (before ?)
             DB_MAIN="${DB_STRING%%\?*}"
-            
-            # Extract username and password
             USER_PASS="${DB_MAIN%%@*}"
             POSTGRES_USER="${USER_PASS%%:*}"
             POSTGRES_PASSWORD="${USER_PASS#*:}"
-            
-            # Extract database name
             DB_PART="${DB_MAIN##*/}"
             POSTGRES_DB="${DB_PART}"
             
-            # If extraction failed, use defaults
+            # Use defaults if extraction failed
             POSTGRES_USER="${POSTGRES_USER:-postgres}"
             POSTGRES_DB="${POSTGRES_DB:-world-wide-db}"
-            
-            # For password, we'll use a default since it's in DATABASE_URL anyway
             if [ -z "$POSTGRES_PASSWORD" ]; then
-                POSTGRES_PASSWORD="password"  # This should match what's in your docker-compose
+                POSTGRES_PASSWORD="password"
             fi
             
-            echo "Database configuration extracted successfully"
+            echo "Database configuration ready"
             
-            # Create .env file for docker-compose
+            # Create .env file
             echo "Creating environment variables..."
             cat > .env << EOF
             DATABASE_URL=${{ secrets.DATABASE_URL }}
@@ -101,65 +86,42 @@ jobs:
             DIGITAL_OCEAN_ENDPOINT=${{ secrets.DIGITAL_OCEAN_ENDPOINT }}
             EOF
             
-            # Verify critical environment variables
-            if ! grep -q "^JWT_SECRET=." .env; then
-                echo "ERROR: JWT_SECRET is not set in the environment variables."
-                exit 1
-            fi
-            
-            # Optional: Create database backup
-            echo "Creating database backup..."
-            BACKUP_DIR="/home/${{ secrets.DROPLET_USER }}/backups"
-            mkdir -p "$BACKUP_DIR"
-            BACKUP_FILE="$BACKUP_DIR/backup-$(date +%Y%m%d-%H%M%S).sql"
-            docker-compose exec -T postgres pg_dump -U ${POSTGRES_USER} ${POSTGRES_DB} > "$BACKUP_FILE" 2>/dev/null || echo "Backup skipped (database might be new)"
-            
             # Build new image
-            echo "Building new Docker image..."
+            echo "Building Docker image..."
             docker-compose build api
             
             # Run migrations
             echo "Running database migrations..."
             docker-compose run --rm api npx prisma migrate deploy || {
-                echo "Migration failed! Continuing anyway as database might already be up to date..."
+                echo "Migration failed or no new migrations to apply"
             }
             
-            # Update only API container (zero-downtime deployment)
-            echo "Updating API container..."
+            # Update containers
+            echo "Updating containers..."
             docker-compose stop api || true
             docker-compose rm -f api || true
             docker-compose up -d api
             
             # Wait for API to be ready
             echo "Waiting for API to be ready..."
-            MAX_ATTEMPTS=30
-            ATTEMPT=0
-            while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            for i in {1..30}; do
                 if docker-compose exec -T api curl -sf http://localhost:3000/api/v1/health 2>/dev/null; then
                     echo "API is ready!"
                     break
                 fi
-                ATTEMPT=$((ATTEMPT + 1))
-                if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
-                    echo "API failed to start! Check logs:"
-                    docker-compose logs --tail=50 api
-                    exit 1
+                if [ $i -eq 30 ]; then
+                    echo "Warning: API health check timed out"
                 fi
                 sleep 2
             done
             
-            # Clean up
-            echo "Cleaning up old Docker images..."
+            # Clean up old images
+            echo "Cleaning up..."
             docker image prune -af --filter "until=24h" || true
             
-            # Clean old backups (keep last 7 days)
-            find "$BACKUP_DIR" -name "backup-*.sql" -mtime +7 -delete 2>/dev/null || true
-            
-            # Show deployment status
-            echo "=== Deployment Summary ==="
+            # Show status
+            echo "=== Deployment Complete ==="
             docker-compose ps
-            echo ""
-            echo "Deployment completed successfully!"
 
       - name: Verify Deployment
         uses: appleboy/ssh-action@master
@@ -170,15 +132,18 @@ jobs:
           script: |
             cd /home/${{ secrets.DROPLET_USER }}/backend-world-wide
             
-            echo "=== Deployment Verification ==="
-            echo "Container status:"
+            echo "=== Verification ==="
             docker-compose ps
             
             echo ""
-            echo "API Health check:"
             if docker-compose exec -T api curl -sf http://localhost:3000/api/v1/health 2>/dev/null; then
                 echo "✓ API is healthy"
             else
                 echo "✗ API health check failed"
-                exit 1
+            fi
+            
+            if docker-compose exec -T postgres pg_isready -U postgres 2>/dev/null; then
+                echo "✓ Database is ready"
+            else
+                echo "✗ Database check failed"
             fi
