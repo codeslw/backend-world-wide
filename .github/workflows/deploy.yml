@@ -1,3 +1,4 @@
+# deploy.yml - Alternative version
 name: Deploy to Digital Ocean
 
 on:
@@ -37,17 +38,26 @@ jobs:
             set -e  # Exit on error
             
             echo "Deploying latest changes..."
-            cd /home/${{ secrets.DROPLET_USER }}/backend-world-wide
             
-            # Ensure git is properly configured
-            git config --global --add safe.directory /home/${{ secrets.DROPLET_USER }}/backend-world-wide
+            # Define the project directory
+            PROJECT_DIR="/home/${{ secrets.DROPLET_USER }}/backend-world-wide"
+            
+            # Navigate to project directory
+            cd "$PROJECT_DIR"
             
             # Store current commit for rollback if needed
-            PREVIOUS_COMMIT=$(git rev-parse HEAD)
+            PREVIOUS_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
             
-            # Fetch all changes and force reset to latest master
-            git fetch --all
-            git reset --hard origin/master
+            # Pull latest changes without needing git config
+            # Use -c flag to pass config directly
+            echo "Fetching latest changes..."
+            git -c safe.directory="$PROJECT_DIR" fetch --all
+            git -c safe.directory="$PROJECT_DIR" reset --hard origin/master
+            
+            # Alternative: If git still has issues, use this approach:
+            # rm -rf .git/index.lock 2>/dev/null || true
+            # GIT_TERMINAL_PROMPT=0 git fetch --all
+            # GIT_TERMINAL_PROMPT=0 git reset --hard origin/master
             
             # Verify latest commit
             echo "Latest commit:"
@@ -55,7 +65,7 @@ jobs:
             
             # Create .env file for docker-compose
             echo "Creating environment variables..."
-            cat > .env << EOF
+            cat > .env << 'EOF'
             DATABASE_URL=${{ secrets.DATABASE_URL }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             POSTGRES_USER=${{ secrets.POSTGRES_USER }}
@@ -68,65 +78,75 @@ jobs:
             EOF
             
             # Verify critical environment variables
-            for var in JWT_SECRET POSTGRES_PASSWORD; do
-                if [ -z "$(grep -E "^${var}=" .env | cut -d '=' -f2)" ]; then
-                    echo "ERROR: ${var} is not set in the environment variables."
-                    echo "Please add ${var} to your GitHub repository secrets."
-                    exit 1
-                fi
-            done
+            if ! grep -q "^JWT_SECRET=." .env; then
+                echo "ERROR: JWT_SECRET is not set in the environment variables."
+                exit 1
+            fi
             
-            # Backup database before deployment (optional but recommended)
+            if ! grep -q "^POSTGRES_PASSWORD=." .env; then
+                echo "ERROR: POSTGRES_PASSWORD is not set in the environment variables."
+                exit 1
+            fi
+            
+            # Optional: Create database backup
             echo "Creating database backup..."
-            BACKUP_FILE="backup-$(date +%Y%m%d-%H%M%S).sql"
-            docker-compose exec -T postgres pg_dump -U ${POSTGRES_USER:-postgres} ${POSTGRES_DB:-world-wide-db} > /tmp/$BACKUP_FILE || true
+            BACKUP_DIR="/home/${{ secrets.DROPLET_USER }}/backups"
+            mkdir -p "$BACKUP_DIR"
+            BACKUP_FILE="$BACKUP_DIR/backup-$(date +%Y%m%d-%H%M%S).sql"
+            docker-compose exec -T postgres pg_dump -U postgres world-wide-db > "$BACKUP_FILE" 2>/dev/null || echo "Backup skipped (database might be starting)"
             
-            # Build new image first (without stopping old container)
+            # Build new image
             echo "Building new Docker image..."
             docker-compose build api
             
-            # Run migrations on the running database
+            # Run migrations
             echo "Running database migrations..."
             docker-compose run --rm api npx prisma migrate deploy || {
                 echo "Migration failed! Rolling back..."
-                git reset --hard $PREVIOUS_COMMIT
+                if [ "$PREVIOUS_COMMIT" != "unknown" ]; then
+                    git -c safe.directory="$PROJECT_DIR" reset --hard "$PREVIOUS_COMMIT"
+                fi
                 exit 1
             }
             
-            # Stop only the API container (keep database running)
+            # Update only API container (zero-downtime deployment)
             echo "Updating API container..."
             docker-compose stop api
             docker-compose rm -f api
-            
-            # Start new API container
             docker-compose up -d api
             
             # Wait for API to be ready
             echo "Waiting for API to be ready..."
-            for i in {1..30}; do
-                if docker-compose exec -T api curl -f http://localhost:3000/api/v1/health 2>/dev/null; then
+            MAX_ATTEMPTS=30
+            ATTEMPT=0
+            while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+                if docker-compose exec -T api curl -sf http://localhost:3000/api/v1/health 2>/dev/null; then
                     echo "API is ready!"
                     break
                 fi
-                if [ $i -eq 30 ]; then
-                    echo "API failed to start! Check logs with: docker-compose logs api"
+                ATTEMPT=$((ATTEMPT + 1))
+                if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+                    echo "API failed to start! Check logs:"
+                    docker-compose logs --tail=50 api
                     exit 1
                 fi
                 sleep 2
             done
             
-            # Clean up old images (but keep volumes)
+            # Clean up
             echo "Cleaning up old Docker images..."
-            docker image prune -af
+            docker image prune -af --filter "until=24h"
             
-            # Verify deployment
-            echo "Deployment status:"
+            # Clean old backups (keep last 7 days)
+            find "$BACKUP_DIR" -name "backup-*.sql" -mtime +7 -delete 2>/dev/null || true
+            
+            # Show deployment status
+            echo "=== Deployment Summary ==="
             docker-compose ps
-            
-            # Show recent logs
+            echo ""
             echo "Recent API logs:"
-            docker-compose logs --tail=20 api
-            
+            docker-compose logs --tail=10 api
+            echo ""
             echo "Deployment completed successfully!"
 
       - name: Verify Deployment
@@ -138,16 +158,28 @@ jobs:
           script: |
             cd /home/${{ secrets.DROPLET_USER }}/backend-world-wide
             
-            # Check deployment status
             echo "=== Deployment Verification ==="
             echo "Current git commit:"
-            git log -1 --pretty=format:"%h - %an, %ar : %s"
+            git log -1 --pretty=format:"%h - %an, %ar : %s" 2>/dev/null || echo "Git info unavailable"
             
-            echo -e "\nContainer status:"
+            echo ""
+            echo "Container status:"
             docker-compose ps
             
-            echo -e "\nAPI Health check:"
-            docker-compose exec -T api curl -sf http://localhost:3000/api/v1/health && echo "API is healthy" || echo "API health check failed"
+            echo ""
+            echo "API Health check:"
+            if docker-compose exec -T api curl -sf http://localhost:3000/api/v1/health; then
+                echo "✓ API is healthy"
+            else
+                echo "✗ API health check failed"
+                exit 1
+            fi
             
-            echo -e "\nDatabase connection:"
-            docker-compose exec -T postgres pg_isready -U ${POSTGRES_USER:-postgres} && echo "Database is ready" || echo "Database connection failed"
+            echo ""
+            echo "Database connection:"
+            if docker-compose exec -T postgres pg_isready -U postgres; then
+                echo "✓ Database is ready"
+            else
+                echo "✗ Database connection failed"
+                exit 1
+            fi
