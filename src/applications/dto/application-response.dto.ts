@@ -10,7 +10,11 @@ export class ApplicationResponseDto {
   @ApiProperty({ description: 'Profile ID associated with this application' })
   profileId: string;
 
-  @ApiProperty({ description: 'Profile details', type: ProfileResponseDto, required: false })
+  @ApiProperty({
+    description: 'Profile details',
+    type: ProfileResponseDto,
+    required: false,
+  })
   profile?: ProfileResponseDto;
 
   // Fields have been moved to Profile entity and are accessible via the profile property
@@ -57,7 +61,6 @@ export class ApplicationResponseDto {
 
   @ApiProperty({ description: 'Application last update date' })
   updatedAt: Date;
-
 
   @ApiProperty({
     description: 'Type of program (e.g., Bachelor, Master)',

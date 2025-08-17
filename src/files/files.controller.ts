@@ -29,8 +29,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { FileResponseDto } from './dto/file-response.dto';
-import { DownloadFileByUrlDto } from './dto/download-file-by-url.dto';
-import { Response } from 'express';
+import { Response, urlencoded } from 'express';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../common/enum/roles.enum';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard.mock';
@@ -144,6 +143,35 @@ export class FilesController {
     return this.filesService.getAllFiles(pageNum, limitNum);
   }
 
+
+   // ADD THIS NEW ENDPOINT
+   @Get(':id/download')
+   @ApiOperation({ summary: 'Download a file by its ID' })
+   @ApiParam({ name: 'id', description: 'File ID' })
+   @ApiResponse({ status: 200, description: 'File stream for download' })
+   @ApiResponse({ status: 404, description: 'File not found' })
+   async downloadFileById(@Param('id') id: string, @Res() res: Response) {
+     return this.filesService.downloadFileById(id, res);
+   }
+
+
+
+  @Get('download-by-url')
+  @ApiOperation({ summary: 'Download file by URL' })
+  @ApiQuery({
+    name: 'url',
+    type: 'string',
+    description: 'The URL of the file to download',
+    required: true,
+  })
+  @ApiResponse({ status: 200, description: 'File stream' })
+  @ApiResponse({ status: 400, description: 'Bad Request (e.g., invalid URL)' })
+  @ApiResponse({ status: 404, description: 'File not found at URL' })
+  async downloadFileByUrl(@Query('url') url: string, @Res() res: Response) {
+    // const decodedUrl = decodeURIComponent(url);
+    return this.filesService.downloadFileByUrl(url, res);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get file metadata by ID' })
   @ApiParam({ name: 'id', description: 'File ID' })
@@ -155,19 +183,6 @@ export class FilesController {
   @ApiResponse({ status: 404, description: 'File not found' })
   async getFile(@Param('id') id: string) {
     return this.filesService.getFile(id);
-  }
-
-  @Get('download-by-url')
-  @ApiOperation({ summary: 'Download file by URL' })
-  @ApiQuery({ type: DownloadFileByUrlDto })
-  @ApiResponse({ status: 200, description: 'File stream' })
-  @ApiResponse({ status: 400, description: 'Bad Request (e.g., invalid URL)' })
-  @ApiResponse({ status: 404, description: 'File not found at URL' })
-  async downloadFileByUrl(
-    @Query() query: DownloadFileByUrlDto,
-    @Res() res: Response,
-  ) {
-    return this.filesService.downloadFileByUrl(query.url, res);
   }
 
   @Delete('url')

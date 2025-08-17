@@ -123,7 +123,9 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Create multiple users as admin (profile optional)' })
+  @ApiOperation({
+    summary: 'Create multiple users as admin (profile optional)',
+  })
   @ApiBody({
     type: [CreateAdminUserDto],
     description: 'Array of user data to create as admin',

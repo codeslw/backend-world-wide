@@ -200,11 +200,11 @@ model Profile {
   gender                   Gender?
   middleName               String?
   nationality              String?
-  passportCopyUrl          String?
+  passportCopyGuid         String?
   passportExpiryDate       DateTime?
-  cvUrl                    String?
-  motivationLetterUrl      String?
-  recommendationLetterUrls String[]            @default([])
+  cvGuid                   String?
+  motivationLetterGuid     String?
+  recommendationLetterGuids String[]           @default([])
   applications             Application[]
   user                     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   educationHistory         Education[]
@@ -220,7 +220,7 @@ model StandardizedTest {
   profile        Profile              @relation(fields: [profileId], references: [id], onDelete: Cascade)
   testType       StandardizedTestType
   score          Int
-  certificateUrl String?
+  certificateGuid String?
   dateOfIssue    DateTime
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
@@ -237,8 +237,8 @@ model Education {
   institution    String
   graduationYear Int
   gpa            Float?
-  transcriptUrl  String?
-  diplomaUrl     String?
+  transcriptGuid String?
+  diplomaGuid    String?
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 
@@ -252,7 +252,7 @@ model LanguageCertificate {
   profile        Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
   testType       LanguageTest
   score          Float
-  certificateUrl String
+  certificateGuid String
   dateOfIssue    DateTime
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt

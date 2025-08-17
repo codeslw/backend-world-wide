@@ -106,14 +106,20 @@ export class FilesService {
         }
       }
       // Surface an error
-      throw new InternalServerErrorException(`Batch upload failed: ${err.message}`);
+      throw new InternalServerErrorException(
+        `Batch upload failed: ${err.message}`,
+      );
     }
   }
 
   async getAllFiles(page = 1, limit = 10) {
     const skip = (page - 1) * limit;
     const [files, total] = await Promise.all([
-      this.prisma.file.findMany({ skip, take: limit, orderBy: { createdAt: 'desc' } }),
+      this.prisma.file.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
       this.prisma.file.count(),
     ]);
 
@@ -147,10 +153,15 @@ export class FilesService {
     const file = await this.prisma.file.findUnique({ where: { id } });
     if (!file) throw new NotFoundException(`File with ID ${id} not found`);
 
-    const presignedUrl = await this.digitalOceanService.getPresignedUrl(file.url);
+    const presignedUrl = await this.digitalOceanService.getPresignedUrl(
+      file.url,
+    );
 
     const response = await axios.get(presignedUrl, { responseType: 'stream' });
-    res.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${file.filename}"`,
+    );
     res.setHeader('Content-Type', response.headers['content-type']);
     response.data.pipe(res);
   }
@@ -177,7 +188,7 @@ export class FilesService {
 
     try {
       const parsedUrl = new URL(url);
-      let path = parsedUrl.pathname.replace(/^\/+/, ''); // trim starting slashes
+      const path = parsedUrl.pathname.replace(/^\/+/, ''); // trim starting slashes
 
       // If DO uses path-style and bucket is the first segment, remove it.
       const bucketName = this.digitalOceanService['bucket'];
@@ -192,7 +203,9 @@ export class FilesService {
       objectKey = url;
     }
 
-    const file = await this.prisma.file.findFirst({ where: { url: objectKey } });
+    const file = await this.prisma.file.findFirst({
+      where: { url: objectKey },
+    });
     if (!file) {
       throw new NotFoundException(`File with key '${objectKey}' not found`);
     }
@@ -204,22 +217,72 @@ export class FilesService {
 
   async downloadFileByUrl(url: string, res: Response): Promise<void> {
     try {
-      const response = await lastValueFrom(
-        this.httpService.get(url, { responseType: 'stream' }),
-      );
+      // Use axios directly. This prevents any potential wrappers from
+      // re-encoding the URL and invalidating the signature.
+      const response = await axios.get(url, {
+        responseType: 'stream',
+      });
 
       const filename = basename(parse(url).pathname || 'downloaded-file');
-      const contentType = response.headers['content-type'] || 'application/octet-stream';
+      const contentType =
+        response.headers['content-type'] || 'application/octet-stream';
 
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${filename}"`,
+      );
       res.setHeader('Content-Type', contentType);
 
       response.data.pipe(res);
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        throw new NotFoundException(`File not found at URL: ${url}`);
+      if (axios.isAxiosError(error) && error.response) {
+        this.logger.error(`Failed to download from URL. Status: ${error.response.status}. URL: ${url}`);
+        if (error.response.status === 403) {
+           throw new BadRequestException('Access to the file was denied. The temporary link may have expired or been altered.');
+        }
+        if (error.response.status === 404) {
+          throw new NotFoundException(`File not found at URL: ${url}`);
+        }
       }
-      throw new BadRequestException(`Error downloading file from URL: ${error.message}`);
+      this.logger.error(`Generic error downloading file: ${error.message}`, error.stack);
+      throw new BadRequestException(
+        `Error downloading file from URL: ${error.message}`,
+      );
+    }
+  }
+
+
+  async downloadFileById(id: string, res: Response): Promise<void> {
+    // 1. Find the file record in the database
+    const file = await this.prisma.file.findUnique({ where: { id } });
+    if (!file) {
+      throw new NotFoundException(`File with ID ${id} not found`);
+    }
+
+    try {
+      // 2. Generate a FRESH, short-lived presigned URL right now
+      // Note: file.url here actually stores the object key, which is correct
+      const presignedUrl = await this.digitalOceanService.getPresignedUrl(
+        file.url,
+        60, // URL is only needed for a few seconds, so 60 is plenty.
+      );
+
+      // 3. Use axios to fetch the file from the new URL and stream it
+      const response = await axios.get(presignedUrl, {
+        responseType: 'stream',
+      });
+
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${file.filename}"`,
+      );
+      res.setHeader('Content-Type', response.headers['content-type']);
+      response.data.pipe(res);
+    } catch (error) {
+      this.logger.error(`Failed to stream file for ID ${id}: ${error.message}`);
+      throw new InternalServerErrorException('Could not process file download.');
     }
   }
 }
+  
+

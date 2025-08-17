@@ -175,7 +175,9 @@ describe('ChatGateway', () => {
       };
 
       jest.spyOn(prismaService.chat, 'findUnique').mockResolvedValue(mockChat);
-      jest.spyOn(chatService, 'getChatMessages').mockResolvedValue(mockMessages);
+      jest
+        .spyOn(chatService, 'getChatMessages')
+        .mockResolvedValue(mockMessages);
 
       const result = await gateway.handleJoinChat(mockClient, 'chat-id');
 
@@ -192,7 +194,9 @@ describe('ChatGateway', () => {
         user: { id: '1', email: 'test@example.com', role: PrismaRole.CLIENT },
       } as unknown as AuthenticatedSocket;
 
-      await expect(gateway.handleJoinChat(mockClient, '')).rejects.toThrow('Invalid chat ID');
+      await expect(gateway.handleJoinChat(mockClient, '')).rejects.toThrow(
+        'Invalid chat ID',
+      );
     });
 
     it('should throw error for non-existent chat', async () => {
@@ -202,7 +206,9 @@ describe('ChatGateway', () => {
 
       jest.spyOn(prismaService.chat, 'findUnique').mockResolvedValue(null);
 
-      await expect(gateway.handleJoinChat(mockClient, 'chat-id')).rejects.toThrow('Chat not found');
+      await expect(
+        gateway.handleJoinChat(mockClient, 'chat-id'),
+      ).rejects.toThrow('Chat not found');
     });
   });
 
@@ -269,10 +275,12 @@ describe('ChatGateway', () => {
 
       jest.spyOn(prismaService.chat, 'findUnique').mockResolvedValue(null);
 
-      await expect(gateway.handleSendMessage(mockClient, {
-        chatId: 'chat-id',
-        text: 'Hello',
-      })).rejects.toThrow('Chat not found');
+      await expect(
+        gateway.handleSendMessage(mockClient, {
+          chatId: 'chat-id',
+          text: 'Hello',
+        }),
+      ).rejects.toThrow('Chat not found');
     });
   });
 
@@ -282,7 +290,9 @@ describe('ChatGateway', () => {
         user: { id: '1', email: 'test@example.com', role: PrismaRole.CLIENT },
       } as unknown as AuthenticatedSocket;
 
-      jest.spyOn(chatService, 'markMessagesAsRead').mockResolvedValue(undefined);
+      jest
+        .spyOn(chatService, 'markMessagesAsRead')
+        .mockResolvedValue(undefined);
 
       const result = await gateway.handleReadMessages(mockClient, {
         chatId: 'chat-id',
@@ -301,10 +311,12 @@ describe('ChatGateway', () => {
         user: { id: '1', email: 'test@example.com', role: PrismaRole.CLIENT },
       } as unknown as AuthenticatedSocket;
 
-      await expect(gateway.handleReadMessages(mockClient, {
-        chatId: '',
-        messageIds: [],
-      })).rejects.toThrow('Invalid payload for readMessages');
+      await expect(
+        gateway.handleReadMessages(mockClient, {
+          chatId: '',
+          messageIds: [],
+        }),
+      ).rejects.toThrow('Invalid payload for readMessages');
     });
   });
 
@@ -333,7 +345,10 @@ describe('ChatGateway', () => {
         user: { id: '1', email: 'test@example.com', role: PrismaRole.CLIENT },
       } as unknown as AuthenticatedSocket;
 
-      const result = gateway.handleGetActiveUsers(mockClient, 'non-existent-chat');
+      const result = gateway.handleGetActiveUsers(
+        mockClient,
+        'non-existent-chat',
+      );
 
       expect(result).toEqual({
         success: true,

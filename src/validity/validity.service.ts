@@ -1,11 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ProfilesService } from '../profiles/profiles.service';
 import { UniversitiesService } from '../universities/universities.service';
-import {
-  DegreeType,
-  LanguageTest,
-  StandardizedTestType,
-} from '@prisma/client';
+import { DegreeType, LanguageTest, StandardizedTestType } from '@prisma/client';
 import { ValidityCheckResponseDto } from './dto/validity-check-response.dto';
 import { EducationDto } from '../profiles/dto/education.dto';
 import { LanguageCertificateDto } from '../profiles/dto/language-certificate.dto';
@@ -97,13 +93,13 @@ export class ValidityService {
     // Check recommendation letters
     if (requirements.requiredRecommendationLetters) {
       const hasEnoughLetters =
-        (profile.recommendationLetterUrls?.length || 0) >=
+        (profile.recommendationLetterGuids?.length || 0) >=
         requirements.requiredRecommendationLetters;
       if (!hasEnoughLetters) {
         isValid = false;
         details.recommendationLetters = `Required recommendation letters: ${
           requirements.requiredRecommendationLetters
-        }, but the user has ${profile.recommendationLetterUrls?.length || 0}.`;
+        }, but the user has ${profile.recommendationLetterGuids?.length || 0}.`;
       }
     }
 
@@ -147,11 +143,10 @@ export class ValidityService {
 
     const certificate = certificates.find((cert) => cert.testType === testType);
     if (!certificate || certificate.score < requiredScore) {
-      details[
-        testType.toLowerCase()
-      ] = `Required ${testType} score: ${requiredScore}, but the user's score is ${
-        certificate?.score || 'not available'
-      }.`;
+      details[testType.toLowerCase()] =
+        `Required ${testType} score: ${requiredScore}, but the user's score is ${
+          certificate?.score || 'not available'
+        }.`;
     }
   }
 
@@ -167,11 +162,10 @@ export class ValidityService {
 
     const test = tests.find((t) => t.testType === testType);
     if (!test || test.score < requiredScore) {
-      details[
-        testType.toLowerCase()
-      ] = `Required ${testType} score: ${requiredScore}, but the user's score is ${
-        test?.score || 'not available'
-      }.`;
+      details[testType.toLowerCase()] =
+        `Required ${testType} score: ${requiredScore}, but the user's score is ${
+          test?.score || 'not available'
+        }.`;
     }
   }
 }

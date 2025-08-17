@@ -40,7 +40,12 @@ export class ProfilesService {
           ? { create: educationHistory }
           : undefined,
         languageCertificates: languageCertificates
-          ? { create: languageCertificates }
+          ? {
+              create: languageCertificates.map((cert) => ({
+                ...cert,
+                certificateUrl: cert.certificateUrl || '',
+              })),
+            }
           : undefined,
         standardizedTests: standardizedTests
           ? { create: standardizedTests }
@@ -56,7 +61,7 @@ export class ProfilesService {
           ...profileData,
           user: { connect: { id: userId } },
         };
-        
+
         const createdProfile = await this.profilesRepository.create(basicData);
         return this.findOneBasic(createdProfile.id);
       }
@@ -127,12 +132,14 @@ export class ProfilesService {
 
         return {
           ...result,
-          data: result.data.map((profile: any) => this.mapToResponseDto({
-            ...profile,
-            educationHistory: [],
-            languageCertificates: [],
-            standardizedTests: [],
-          })),
+          data: result.data.map((profile: any) =>
+            this.mapToResponseDto({
+              ...profile,
+              educationHistory: [],
+              languageCertificates: [],
+              standardizedTests: [],
+            }),
+          ),
         };
       }
       throw error;
@@ -236,6 +243,7 @@ export class ProfilesService {
           data: languageCertificates.map((cert) => ({
             ...cert,
             profileId: id,
+            certificateUrl: cert.certificateUrl || '',
           })),
         });
       }
@@ -285,10 +293,11 @@ export class ProfilesService {
       nationality: profile.nationality || undefined,
       address: profile.address || undefined,
       passportExpiryDate: profile.passportExpiryDate || undefined,
-      passportCopyUrl: profile.passportCopyUrl || undefined,
-      motivationLetterUrl: profile.motivationLetterUrl || undefined,
-      recommendationLetterUrls: profile.recommendationLetterUrls || undefined,
-      cvUrl: profile.cvUrl || undefined,
+      passportCopyGuid: (profile as any).passportCopyUrl || undefined,
+      motivationLetterGuid: (profile as any).motivationLetterUrl || undefined,
+      recommendationLetterGuids:
+        (profile as any).recommendationLetterUrls || undefined,
+      cvGuid: (profile as any).cvUrl || undefined,
       yearOfBirth: profile.yearOfBirth || undefined,
       passportSeriesAndNumber: profile.passportSeriesAndNumber || undefined,
       email: profile.email || undefined,

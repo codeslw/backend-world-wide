@@ -90,7 +90,7 @@ export class UniversityRequirementsDto {
 
   @ApiPropertyOptional({
     description: 'Other miscellaneous requirements in JSON format',
-    example: { 'essay_required': true, 'interview': 'recommended' },
+    example: { essay_required: true, interview: 'recommended' },
   })
   @IsOptional()
   @IsObject()

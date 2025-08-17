@@ -27,7 +27,8 @@ export class CreateAdminUserDto {
 
   @ApiPropertyOptional({
     type: CreateAdminProfileDto,
-    description: 'User profile information (optional for admins, only firstName, lastName, and dateOfBirth required if provided)',
+    description:
+      'User profile information (optional for admins, only firstName, lastName, and dateOfBirth required if provided)',
   })
   @ValidateNested()
   @Type(() => CreateAdminProfileDto)

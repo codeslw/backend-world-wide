@@ -37,4 +37,4 @@ export interface EditMessageAckResponse extends BaseAckResponse {
 export interface ClearChatMessagesAckResponse extends BaseAckResponse {
   deletedCount: number;
   message: string;
-} 
+}

@@ -5,7 +5,7 @@ import {
   IsNotEmpty,
   IsNumber,
   IsString,
-  IsUrl,
+  IsUUID,
   Min,
 } from 'class-validator';
 import { LanguageTest } from '@prisma/client';
@@ -21,10 +21,14 @@ export class LanguageCertificateDto {
   @Min(0)
   score: number;
 
-  @ApiProperty({ description: 'URL to the language certificate' })
+  @ApiProperty({ description: 'File GUID for the language certificate' })
   @IsString()
-  @IsUrl()
-  certificateUrl: string;
+  @IsUUID()
+  certificateGuid: string;
+
+  @ApiPropertyOptional({ description: 'URL of the certificate file' })
+  @IsString()
+  certificateUrl?: string;
 
   @ApiProperty({
     description: 'The date the certificate was issued (ISO-8601 format)',

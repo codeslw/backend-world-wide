@@ -34,7 +34,10 @@ export class DigitalOceanService {
     });
   }
 
-  async uploadFile(file: Express.Multer.File, folder: string = 'uploads'): Promise<string> {
+  async uploadFile(
+    file: Express.Multer.File,
+    folder: string = 'uploads',
+  ): Promise<string> {
     const key = `${folder}/${uuidv4()}-${file.originalname}`;
 
     if (file.size > 5 * 1024 * 1024) {
@@ -53,7 +56,10 @@ export class DigitalOceanService {
     return key;
   }
 
-  private async uploadLargeFile(file: Express.Multer.File, key: string): Promise<string> {
+  private async uploadLargeFile(
+    file: Express.Multer.File,
+    key: string,
+  ): Promise<string> {
     const multipartParams = {
       Bucket: this.bucket,
       Key: key,
@@ -61,7 +67,9 @@ export class DigitalOceanService {
       ACL: 'private',
     };
 
-    const multipartUpload = await this.s3.createMultipartUpload(multipartParams).promise();
+    const multipartUpload = await this.s3
+      .createMultipartUpload(multipartParams)
+      .promise();
     const partSize = 5 * 1024 * 1024;
     const numParts = Math.ceil(file.size / partSize);
     const parts = [];
@@ -83,24 +91,30 @@ export class DigitalOceanService {
         parts.push({ PartNumber: i + 1, ETag: uploadPartResult.ETag });
       }
 
-      await this.s3.completeMultipartUpload({
-        Bucket: this.bucket,
-        Key: key,
-        UploadId: multipartUpload.UploadId,
-        MultipartUpload: { Parts: parts },
-      }).promise();
+      await this.s3
+        .completeMultipartUpload({
+          Bucket: this.bucket,
+          Key: key,
+          UploadId: multipartUpload.UploadId,
+          MultipartUpload: { Parts: parts },
+        })
+        .promise();
 
       return key;
     } catch (error) {
       // ensure abort on failure
       try {
-        await this.s3.abortMultipartUpload({
-          Bucket: this.bucket,
-          Key: key,
-          UploadId: multipartUpload.UploadId,
-        }).promise();
+        await this.s3
+          .abortMultipartUpload({
+            Bucket: this.bucket,
+            Key: key,
+            UploadId: multipartUpload.UploadId,
+          })
+          .promise();
       } catch (abortErr) {
-        this.logger.error(`Failed to abort multipart upload for ${key}: ${abortErr.message}`);
+        this.logger.error(
+          `Failed to abort multipart upload for ${key}: ${abortErr.message}`,
+        );
       }
       throw error;
     }

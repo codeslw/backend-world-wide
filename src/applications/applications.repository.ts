@@ -10,14 +10,15 @@ export class ApplicationsRepository {
 
   async create(profileId: string, createApplicationDto: CreateApplicationDto) {
     // Only handle submittedAt date conversion, other date fields are now in Profile
-    const { submittedAt, preferredUniversity, preferredProgram, ...restData } = createApplicationDto;
+    const { submittedAt, preferredUniversity, preferredProgram, ...restData } =
+      createApplicationDto;
 
     return this.prisma.application.create({
       data: {
         ...restData,
         profile: { connect: { id: profileId } },
-        university : {connect : {id: preferredUniversity}},
-        program  : {connect : {id: preferredProgram}},
+        university: { connect: { id: preferredUniversity } },
+        program: { connect: { id: preferredProgram } },
         ...(submittedAt && { submittedAt: new Date(submittedAt) }),
       },
       include: {

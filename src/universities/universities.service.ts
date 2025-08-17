@@ -26,13 +26,8 @@ export class UniversitiesService {
   async create(
     createUniversityDto: CreateUniversityDto,
   ): Promise<UniversityResponseDto> {
-    const {
-      programs,
-      countryCode,
-      cityId,
-      requirements,
-      ...universityData
-    } = createUniversityDto;
+    const { programs, countryCode, cityId, requirements, ...universityData } =
+      createUniversityDto;
 
     // Validate that all provided programIds exist
     await this.validateProgramIds(programs.map((p) => p.programId));
@@ -579,7 +574,7 @@ export class UniversitiesService {
   }
 
   private mapToResponseDto(university: any): UniversityResponseDto {
-      // Explicitly map fields to ensure correct structure and types
+    // Explicitly map fields to ensure correct structure and types
     return {
       id: university.id,
       name: university.name,

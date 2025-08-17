@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
@@ -30,7 +34,7 @@ export class AuthService {
     const accessToken = this.jwtService.sign(payload, {
       expiresIn: this.configService.get('JWT_ACCESS_EXPIRATION', '15m'),
     });
-    
+
     const refreshToken = await this.generateRefreshToken(user.id);
 
     return {
@@ -60,7 +64,9 @@ export class AuthService {
   async validateRefreshToken(token: string) {
     try {
       const payload = this.jwtService.verify(token, {
-        secret: this.configService.get('JWT_REFRESH_SECRET') || this.configService.get('JWT_SECRET'),
+        secret:
+          this.configService.get('JWT_REFRESH_SECRET') ||
+          this.configService.get('JWT_SECRET'),
       });
 
       if (payload.type !== 'refresh') {
@@ -88,7 +94,9 @@ export class AuthService {
 
     // Sign JWT refresh token with longer expiration
     const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.get('JWT_REFRESH_SECRET') || this.configService.get('JWT_SECRET'),
+      secret:
+        this.configService.get('JWT_REFRESH_SECRET') ||
+        this.configService.get('JWT_SECRET'),
       expiresIn: this.configService.get('JWT_REFRESH_EXPIRATION', '7d'),
     });
 
@@ -113,7 +121,9 @@ export class AuthService {
     try {
       // Verify JWT refresh token signature and expiration
       const refreshPayload = this.jwtService.verify(refreshToken, {
-        secret: this.configService.get('JWT_REFRESH_SECRET') || this.configService.get('JWT_SECRET'),
+        secret:
+          this.configService.get('JWT_REFRESH_SECRET') ||
+          this.configService.get('JWT_SECRET'),
       });
 
       // Verify token type and extract user ID
@@ -125,7 +135,7 @@ export class AuthService {
 
       // Check if refresh token exists in database (for revocation support)
       const tokenRecord = await this.prisma.refreshToken.findFirst({
-        where: { 
+        where: {
           token: refreshToken,
           userId: userId,
         },
@@ -148,19 +158,20 @@ export class AuthService {
       });
 
       // Generate new refresh token (token rotation)
-      const newRefreshToken = await this.generateRefreshToken(tokenRecord.user.id);
+      const newRefreshToken = await this.generateRefreshToken(
+        tokenRecord.user.id,
+      );
 
       return {
         access_token: accessToken,
         refresh_token: newRefreshToken,
       };
-
     } catch (error) {
       // Clean up any invalid tokens
       await this.prisma.refreshToken.deleteMany({
         where: { token: refreshToken },
       });
-      
+
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
   }

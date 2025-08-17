@@ -57,17 +57,18 @@ export class CountriesService {
   async findAll(lang: string = 'uz', paginationDto?: PaginationDto) {
     try {
       console.log('🔍 Debug findAll - paginationDto:', paginationDto);
-      
+
       // Define the ONLY valid search fields for Country model
       const validCountryFields = ['nameUz', 'nameRu', 'nameEn'];
-      
+
       // Defensive check - ensure no description fields are accidentally included
-      const safeSearchFields = validCountryFields.filter(field => 
-        !field.includes('description') && !field.includes('Description')
+      const safeSearchFields = validCountryFields.filter(
+        (field) =>
+          !field.includes('description') && !field.includes('Description'),
       );
-      
+
       console.log('🔍 Safe search fields for Country:', safeSearchFields);
-      
+
       // Define filter options
       const filterOptions = {
         filters: [
@@ -95,8 +96,14 @@ export class CountriesService {
         caseSensitive: false,
       };
 
-      console.log('🔍 Debug findAll - searchFields:', filterOptions.searchFields);
-      console.log('🔍 Debug findAll - filterOptions:', JSON.stringify(filterOptions, null, 2));
+      console.log(
+        '🔍 Debug findAll - searchFields:',
+        filterOptions.searchFields,
+      );
+      console.log(
+        '🔍 Debug findAll - filterOptions:',
+        JSON.stringify(filterOptions, null, 2),
+      );
 
       // Build filter query with extra safety
       let where: any;
@@ -111,13 +118,19 @@ export class CountriesService {
         // Fallback to basic query without search
         where = {};
       }
-      
-      console.log('🔍 Debug findAll - where clause:', JSON.stringify(where, null, 2));
+
+      console.log(
+        '🔍 Debug findAll - where clause:',
+        JSON.stringify(where, null, 2),
+      );
 
       // Validate where clause doesn't contain description fields
       const whereStr = JSON.stringify(where);
       if (whereStr.includes('description')) {
-        console.error('🚨 CRITICAL: WHERE clause contains description fields!', where);
+        console.error(
+          '🚨 CRITICAL: WHERE clause contains description fields!',
+          where,
+        );
         // Remove any OR clauses that might contain description fields
         if (where.OR) {
           where.OR = where.OR.filter((condition: any) => {
@@ -153,9 +166,15 @@ export class CountriesService {
         console.log('🔍 Debug findAll - result count:', result.data.length);
       } catch (paginationError) {
         console.error('🚨 Error in applyPagination:', paginationError);
-        console.error('🚨 Where clause that caused error:', JSON.stringify(where, null, 2));
-        console.error('🚨 Pagination DTO:', JSON.stringify(paginationDto, null, 2));
-        
+        console.error(
+          '🚨 Where clause that caused error:',
+          JSON.stringify(where, null, 2),
+        );
+        console.error(
+          '🚨 Pagination DTO:',
+          JSON.stringify(paginationDto, null, 2),
+        );
+
         // Fallback to basic pagination without filters
         try {
           result = await this.filterService.applyPagination(
@@ -166,7 +185,10 @@ export class CountriesService {
             undefined,
             paginationOptions as PaginationOptions,
           );
-          console.log('🔧 Fallback query succeeded with result count:', result.data.length);
+          console.log(
+            '🔧 Fallback query succeeded with result count:',
+            result.data.length,
+          );
         } catch (fallbackError) {
           console.error('🚨 Even fallback query failed:', fallbackError);
           throw fallbackError;

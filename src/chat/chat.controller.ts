@@ -14,7 +14,13 @@ import {
 } from '@nestjs/common';
 import { ChatService, PartialAdminInfo } from './chat.service';
 import { CreateChatDto } from './dto/create-chat.dto';
-import { CreateMessageDto, DeleteMessageResponseDto, EditMessageDto, EditMessageResponseDto, ClearChatMessagesResponseDto } from './dto/create-message.dto';
+import {
+  CreateMessageDto,
+  DeleteMessageResponseDto,
+  EditMessageDto,
+  EditMessageResponseDto,
+  ClearChatMessagesResponseDto,
+} from './dto/create-message.dto';
 import { UpdateChatStatusDto } from './dto/update-chat-status.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -252,7 +258,10 @@ export class ChatController implements OnModuleInit {
     description: 'Message deleted',
     type: DeleteMessageResponseDto,
   })
-  @ApiResponse({ status: 404, description: 'Chat not found or Message not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'Chat not found or Message not found',
+  })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async deleteMessage(
     @Request() req,
@@ -260,7 +269,11 @@ export class ChatController implements OnModuleInit {
     @Param('messageId') messageId: string,
   ) {
     const userRolePrisma = mapToPrismaRole(req.user.role);
-    return this.chatService.deleteMessage(messageId, req.user.userId, userRolePrisma);
+    return this.chatService.deleteMessage(
+      messageId,
+      req.user.userId,
+      userRolePrisma,
+    );
   }
 
   @Patch(':id/messages/:messageId')
@@ -272,7 +285,10 @@ export class ChatController implements OnModuleInit {
     description: 'Message edited',
     type: EditMessageResponseDto,
   })
-  @ApiResponse({ status: 404, description: 'Chat not found or Message not found' })
+  @ApiResponse({
+    status: 404,
+    description: 'Chat not found or Message not found',
+  })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   async editMessage(
     @Request() req,
@@ -281,7 +297,12 @@ export class ChatController implements OnModuleInit {
     @Body() editMessageDto: EditMessageDto,
   ) {
     const userRolePrisma = mapToPrismaRole(req.user.role);
-    return this.chatService.editMessage(messageId, req.user.userId, userRolePrisma, editMessageDto.text);
+    return this.chatService.editMessage(
+      messageId,
+      req.user.userId,
+      userRolePrisma,
+      editMessageDto.text,
+    );
   }
 
   @Delete(':id/messages')
@@ -295,12 +316,13 @@ export class ChatController implements OnModuleInit {
   })
   @ApiResponse({ status: 404, description: 'Chat not found' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
-  async clearChatMessages(
-    @Request() req,
-    @Param('id') id: string,
-  ) {
+  async clearChatMessages(@Request() req, @Param('id') id: string) {
     const userRolePrisma = mapToPrismaRole(req.user.role);
-    return this.chatService.clearChatMessages(id, req.user.userId, userRolePrisma);
+    return this.chatService.clearChatMessages(
+      id,
+      req.user.userId,
+      userRolePrisma,
+    );
   }
 
   @Delete(':id')
@@ -313,10 +335,7 @@ export class ChatController implements OnModuleInit {
   })
   @ApiResponse({ status: 404, description: 'Chat not found' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
-  async deleteChat(
-    @Request() req,
-    @Param('id') id: string,
-  ) {
+  async deleteChat(@Request() req, @Param('id') id: string) {
     const userRolePrisma = mapToPrismaRole(req.user.role);
     return this.chatService.deleteChat(id, req.user.userId, userRolePrisma);
   }

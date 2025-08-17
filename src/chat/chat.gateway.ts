@@ -82,21 +82,25 @@ export class ChatGateway
   async handleConnection(client: Socket) {
     try {
       console.log(`[WebSocket] New connection attempt: ${client.id}`);
-      
+
       // Extract and verify JWT token
       const token =
         client.handshake.auth.token ||
         client.handshake.headers.authorization?.split(' ')[1];
 
       if (!token) {
-        console.error(`[WebSocket] No token provided for connection ${client.id}`);
+        console.error(
+          `[WebSocket] No token provided for connection ${client.id}`,
+        );
         client.disconnect();
         return;
       }
 
-      console.log(`[WebSocket] Token found, verifying for connection ${client.id}`);
+      console.log(
+        `[WebSocket] Token found, verifying for connection ${client.id}`,
+      );
       const payload = this.jwtService.verify(token);
-      
+
       console.log(`[WebSocket] Token verified, fetching user ${payload.sub}`);
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
@@ -130,7 +134,9 @@ export class ChatGateway
       // Join admin room if applicable
       if (user.role === PrismaRole.ADMIN) {
         client.join(this.adminRoom);
-        console.log(`[WebSocket] Admin ${user.id} joined room: ${this.adminRoom}`);
+        console.log(
+          `[WebSocket] Admin ${user.id} joined room: ${this.adminRoom}`,
+        );
       }
 
       client.emit('connected', { userId: user.id }); // Confirm connection to client
@@ -182,7 +188,9 @@ export class ChatGateway
       const userId = client.user.id;
       const userRole = client.user.role;
 
-      console.log(`[WebSocket] User ${userId} (${userRole}) attempting to join chat ${chatId}`);
+      console.log(
+        `[WebSocket] User ${userId} (${userRole}) attempting to join chat ${chatId}`,
+      );
 
       // Validate chatId parameter
       if (!chatId || typeof chatId !== 'string') {
@@ -205,23 +213,32 @@ export class ChatGateway
         throw new Error('Chat not found');
       }
 
-      console.log(`[WebSocket] Chat found: clientId=${chat.clientId}, adminId=${chat.adminId}, status=${chat.status}`);
+      console.log(
+        `[WebSocket] Chat found: clientId=${chat.clientId}, adminId=${chat.adminId}, status=${chat.status}`,
+      );
 
       // Check if user has access to this chat
-      const hasAccess = chat.clientId === userId || 
-                       chat.adminId === userId || 
-                       userRole === PrismaRole.ADMIN;
+      const hasAccess =
+        chat.clientId === userId ||
+        chat.adminId === userId ||
+        userRole === PrismaRole.ADMIN;
 
       if (!hasAccess) {
-        console.error(`[WebSocket] Access denied for user ${userId} to chat ${chatId}. ClientId: ${chat.clientId}, AdminId: ${chat.adminId}, UserRole: ${userRole}`);
+        console.error(
+          `[WebSocket] Access denied for user ${userId} to chat ${chatId}. ClientId: ${chat.clientId}, AdminId: ${chat.adminId}, UserRole: ${userRole}`,
+        );
         throw new Error('Access denied to this chat');
       }
 
-      console.log(`[WebSocket] Access granted for user ${userId} to chat ${chatId}`);
+      console.log(
+        `[WebSocket] Access granted for user ${userId} to chat ${chatId}`,
+      );
 
       // Join the socket room for this chat
       client.join(`chat:${chatId}`);
-      console.log(`[WebSocket] User ${userId} joined socket room: chat:${chatId}`);
+      console.log(
+        `[WebSocket] User ${userId} joined socket room: chat:${chatId}`,
+      );
 
       // Track user in chat room
       if (!this.chatRooms.has(chatId)) {
@@ -239,19 +256,24 @@ export class ChatGateway
         20,
       );
 
-      console.log(`[WebSocket] Successfully joined chat ${chatId}. Messages count: ${messagesPayload.data?.length || 0}`);
+      console.log(
+        `[WebSocket] Successfully joined chat ${chatId}. Messages count: ${messagesPayload.data?.length || 0}`,
+      );
       return {
         success: true,
         chatId,
         messages: messagesPayload,
       };
     } catch (error) {
-      console.error(`[WebSocket] Join chat error for user ${client.user?.id} and chat ${chatId}:`, {
-        error: error.message,
-        stack: error.stack,
-        user: client.user,
-        chatId,
-      });
+      console.error(
+        `[WebSocket] Join chat error for user ${client.user?.id} and chat ${chatId}:`,
+        {
+          error: error.message,
+          stack: error.stack,
+          user: client.user,
+          chatId,
+        },
+      );
 
       // Throw error to be handled by NestJS WebSocket exception filter
       throw error;
@@ -359,7 +381,7 @@ export class ChatGateway
   @SubscribeMessage('readMessages')
   async handleReadMessages(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { chatId: string;  messageIds: string[] },
+    @MessageBody() data: { chatId: string; messageIds: string[] },
   ): Promise<ReadMessagesAckResponse> {
     try {
       const userRole = client.user.role;
@@ -396,7 +418,11 @@ export class ChatGateway
       }
 
       // Delegate to service
-      const result = await this.chatService.deleteMessage(messageId, userId, userRole);
+      const result = await this.chatService.deleteMessage(
+        messageId,
+        userId,
+        userRole,
+      );
 
       return result;
     } catch (error) {
@@ -425,7 +451,12 @@ export class ChatGateway
       }
 
       // Delegate to service
-      const result = await this.chatService.editMessage(messageId, userId, userRole, text);
+      const result = await this.chatService.editMessage(
+        messageId,
+        userId,
+        userRole,
+        text,
+      );
 
       return result;
     } catch (error) {
@@ -450,7 +481,11 @@ export class ChatGateway
       }
 
       // Delegate to service
-      const result = await this.chatService.clearChatMessages(chatId, userId, userRole);
+      const result = await this.chatService.clearChatMessages(
+        chatId,
+        userId,
+        userRole,
+      );
 
       return result;
     } catch (error) {
@@ -480,7 +515,12 @@ export class ChatGateway
       }
 
       // Delegate to service
-      const result = await this.chatService.updateMessageStatus(messageId, status, userId, userRole);
+      const result = await this.chatService.updateMessageStatus(
+        messageId,
+        status,
+        userId,
+        userRole,
+      );
 
       return { success: true, message: result };
     } catch (error) {
@@ -505,7 +545,11 @@ export class ChatGateway
       }
 
       // Delegate to service
-      const result = await this.chatService.deleteChat(chatId, userId, userRole);
+      const result = await this.chatService.deleteChat(
+        chatId,
+        userId,
+        userRole,
+      );
 
       return result;
     } catch (error) {

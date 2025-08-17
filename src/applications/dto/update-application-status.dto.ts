@@ -10,4 +10,4 @@ export class UpdateApplicationStatusDto {
   })
   @IsEnum(ApplicationStatus)
   status: ApplicationStatus;
-} 
+}

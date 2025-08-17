@@ -19,10 +19,10 @@ export class AuthController {
     status: 200,
     description: 'Login successful',
     type: Object,
-    example: { 
-      access_token: 'jwt.token.here', 
+    example: {
+      access_token: 'jwt.token.here',
       refresh_token: 'refresh.token.here',
-      user: { id: 'uuid', email: 'user@example.com', role: 'CLIENT' }
+      user: { id: 'uuid', email: 'user@example.com', role: 'CLIENT' },
     },
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
@@ -31,22 +31,24 @@ export class AuthController {
   }
 
   @Post('register')
-  @ApiOperation({ summary: 'User registration with automatic profile creation' })
+  @ApiOperation({
+    summary: 'User registration with automatic profile creation',
+  })
   @ApiBody({ type: CreateUserDto })
-  @ApiResponse({ 
-    status: 201, 
-    description: 'User and profile created successfully', 
-    type: UserResponseDto 
+  @ApiResponse({
+    status: 201,
+    description: 'User and profile created successfully',
+    type: UserResponseDto,
   })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Bad request - Invalid data provided', 
-    type: ErrorResponseDto 
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Invalid data provided',
+    type: ErrorResponseDto,
   })
-  @ApiResponse({ 
-    status: 409, 
-    description: 'Email already in use', 
-    type: ErrorResponseDto 
+  @ApiResponse({
+    status: 409,
+    description: 'Email already in use',
+    type: ErrorResponseDto,
   })
   async register(@Body() createUserDto: CreateUserDto) {
     return this.authService.register(createUserDto);
@@ -59,9 +61,9 @@ export class AuthController {
     status: 200,
     description: 'Token refreshed successfully',
     type: Object,
-    example: { 
-      access_token: 'new.jwt.token.here', 
-      refresh_token: 'new.refresh.token.here' 
+    example: {
+      access_token: 'new.jwt.token.here',
+      refresh_token: 'new.refresh.token.here',
     },
   })
   @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })

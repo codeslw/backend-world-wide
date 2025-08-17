@@ -5,7 +5,7 @@ import {
   IsInt,
   IsNotEmpty,
   IsOptional,
-  IsUrl,
+  IsUUID,
   Min,
 } from 'class-validator';
 import { StandardizedTestType } from '@prisma/client';
@@ -24,10 +24,10 @@ export class StandardizedTestDto {
   @Min(0)
   score: number;
 
-  @ApiPropertyOptional({ description: 'URL to the test certificate' })
+  @ApiPropertyOptional({ description: 'File GUID for the test certificate' })
   @IsOptional()
-  @IsUrl()
-  certificateUrl?: string;
+  @IsUUID()
+  certificateGuid?: string;
 
   @ApiProperty({
     description: 'The date the test was taken (ISO-8601 format)',

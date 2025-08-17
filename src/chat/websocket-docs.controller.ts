@@ -292,7 +292,10 @@ export class WebSocketDocsController {
       properties: {
         success: { type: 'boolean', example: true },
         deletedCount: { type: 'number', example: 25 },
-        message: { type: 'string', example: 'Successfully deleted 25 messages' },
+        message: {
+          type: 'string',
+          example: 'Successfully deleted 25 messages',
+        },
       },
     },
   })
@@ -358,7 +361,8 @@ export class WebSocketDocsController {
   })
   @ApiResponse({
     status: 403,
-    description: 'Access denied or business rule violation (time limit, has replies, etc.)',
+    description:
+      'Access denied or business rule violation (time limit, has replies, etc.)',
     type: WebSocketErrorDto,
   })
   @ApiResponse({
@@ -647,7 +651,8 @@ export class WebSocketDocsController {
   @Get('events/chat-cleared')
   @WebSocketDoc({
     summary: '[Event] Chat messages cleared',
-    description: 'Received when all messages in a chat are cleared by an admin.',
+    description:
+      'Received when all messages in a chat are cleared by an admin.',
   })
   @ApiResponse({
     status: 200,
@@ -723,7 +728,8 @@ export class WebSocketDocsController {
   @Get('events/message-status-updated')
   @WebSocketDoc({
     summary: '[Event] Message status updated',
-    description: 'Received when a message status is updated (SENDING | SENT | DELIVERED | READ).',
+    description:
+      'Received when a message status is updated (SENDING | SENT | DELIVERED | READ).',
   })
   @ApiResponse({
     status: 200,
@@ -765,7 +771,8 @@ export class WebSocketDocsController {
   @Get('events/chat-deleted')
   @WebSocketDoc({
     summary: '[Event] Chat deleted',
-    description: 'Received when an entire chat is deleted by its owner or assigned admin.',
+    description:
+      'Received when an entire chat is deleted by its owner or assigned admin.',
   })
   @ApiResponse({
     status: 200,

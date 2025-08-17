@@ -8,7 +8,6 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 
 //update migrations
 
-
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 

@@ -6,7 +6,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  IsUrl,
+  IsUUID,
   Max,
   Min,
 } from 'class-validator';
@@ -36,13 +36,13 @@ export class EducationDto {
   @Max(5)
   gpa?: number;
 
-  @ApiPropertyOptional({ description: 'URL to the transcript document' })
+  @ApiPropertyOptional({ description: 'File GUID for the transcript document' })
   @IsOptional()
-  @IsUrl()
-  transcriptUrl?: string;
+  @IsUUID()
+  transcriptGuid?: string;
 
-  @ApiPropertyOptional({ description: 'URL to the diploma document' })
+  @ApiPropertyOptional({ description: 'File GUID for the diploma document' })
   @IsOptional()
-  @IsUrl()
-  diplomaUrl?: string;
+  @IsUUID()
+  diplomaGuid?: string;
 }

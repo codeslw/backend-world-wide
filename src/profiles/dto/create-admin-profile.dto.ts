@@ -5,7 +5,7 @@ import {
   IsEnum,
   IsInt,
   IsArray,
-  IsUrl,
+  IsUUID,
   MinLength,
   MaxLength,
   IsEmail,
@@ -84,38 +84,38 @@ export class CreateAdminProfileDto {
   passportExpiryDate?: string;
 
   @ApiPropertyOptional({
-    example: 'http://example.com/passport.jpg',
-    description: 'URL to passport copy',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: 'File GUID for passport copy',
   })
   @IsOptional()
-  @IsUrl()
-  passportCopyUrl?: string;
+  @IsUUID()
+  passportCopyGuid?: string;
 
   @ApiPropertyOptional({
-    example: 'http://example.com/motivation.pdf',
-    description: 'URL to motivation letter',
+    example: '550e8400-e29b-41d4-a716-446655440001',
+    description: 'File GUID for motivation letter',
   })
   @IsOptional()
-  @IsUrl()
-  motivationLetterUrl?: string;
+  @IsUUID()
+  motivationLetterGuid?: string;
 
   @ApiPropertyOptional({
     type: [String],
-    example: ['http://example.com/rec1.pdf', 'http://example.com/rec2.pdf'],
-    description: 'URLs to recommendation letters',
+    example: ['550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440003'],
+    description: 'File GUIDs for recommendation letters',
   })
   @IsOptional()
   @IsArray()
-  @IsUrl({}, { each: true })
-  recommendationLetterUrls?: string[];
+  @IsUUID('4', { each: true })
+  recommendationLetterGuids?: string[];
 
   @ApiPropertyOptional({
-    example: 'http://example.com/cv.pdf',
-    description: 'URL to CV',
+    example: '550e8400-e29b-41d4-a716-446655440004',
+    description: 'File GUID for CV',
   })
   @IsOptional()
-  @IsUrl()
-  cvUrl?: string;
+  @IsUUID()
+  cvGuid?: string;
 
   @ApiPropertyOptional({ example: 1990, description: 'Year of birth' })
   @IsOptional()

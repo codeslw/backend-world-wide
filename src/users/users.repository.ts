@@ -32,7 +32,10 @@ export class UsersRepository {
             create: educationHistory,
           },
           languageCertificates: {
-            create: languageCertificates,
+            create: languageCertificates.map((cert) => ({
+              ...cert,
+              certificateUrl: cert.certificateUrl || '',
+            })),
           },
           standardizedTests: {
             create: standardizedTests,

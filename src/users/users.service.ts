@@ -27,13 +27,16 @@ export class UsersService {
   async create(createUserDto: CreateUserDto) {
     try {
       console.log('Starting user creation for:', createUserDto.email);
-      
+
       // Check if user already exists
       console.log('Checking for existing user...');
       const existingUser = await this.prisma.user.findUnique({
         where: { email: createUserDto.email },
       });
-      console.log('Existing user check completed:', existingUser ? 'Found' : 'Not found');
+      console.log(
+        'Existing user check completed:',
+        existingUser ? 'Found' : 'Not found',
+      );
 
       if (existingUser) {
         throw new ConflictException(
@@ -80,7 +83,9 @@ export class UsersService {
         await this.profilesService.create(user.id, defaultProfileData);
         console.log('Default profile created successfully');
       } else {
-        console.log('No profile data provided for ADMIN user, skipping profile creation');
+        console.log(
+          'No profile data provided for ADMIN user, skipping profile creation',
+        );
       }
 
       return user;
@@ -98,7 +103,7 @@ export class UsersService {
   async createMany(createUserDto: CreateUserDto[]) {
     const maxRetries = 3;
     let attempt = 0;
-    
+
     while (attempt < maxRetries) {
       try {
         // Check if any users already exist
@@ -128,7 +133,7 @@ export class UsersService {
         const userData = createUserDto.map((user, index) => {
           // Extract profile data for later use but don't store it in a variable
           const { profile: _, ...userOnly } = user;
-          
+
           return {
             ...userOnly,
             password: hashedPasswords[index],
@@ -181,19 +186,26 @@ export class UsersService {
       } catch (error) {
         attempt++;
         console.error(`Attempt ${attempt} failed:`, error.message);
-        
+
         // If it's already our custom exception, just rethrow it
         if (error instanceof ConflictException) {
           throw error;
         }
-        
+
         // Check if it's a connection error
-        if (error.message?.includes('Server has closed the connection') && attempt < maxRetries) {
-          console.log(`Retrying after connection error (attempt ${attempt}/${maxRetries})...`);
-          
+        if (
+          error.message?.includes('Server has closed the connection') &&
+          attempt < maxRetries
+        ) {
+          console.log(
+            `Retrying after connection error (attempt ${attempt}/${maxRetries})...`,
+          );
+
           // Wait before retrying (exponential backoff)
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-          
+          await new Promise((resolve) =>
+            setTimeout(resolve, Math.pow(2, attempt) * 1000),
+          );
+
           // Try to reconnect
           try {
             await this.prisma.$disconnect();
@@ -202,10 +214,10 @@ export class UsersService {
           } catch (reconnectError) {
             console.error('Failed to reconnect:', reconnectError.message);
           }
-          
+
           continue; // Retry the operation
         }
-        
+
         // Otherwise let the global exception filter handle it
         throw error;
       }
@@ -214,14 +226,20 @@ export class UsersService {
 
   async createAsAdmin(createAdminUserDto: CreateAdminUserDto) {
     try {
-      console.log('Starting admin user creation for:', createAdminUserDto.email);
-      
+      console.log(
+        'Starting admin user creation for:',
+        createAdminUserDto.email,
+      );
+
       // Check if user already exists
       console.log('Checking for existing user...');
       const existingUser = await this.prisma.user.findUnique({
         where: { email: createAdminUserDto.email },
       });
-      console.log('Existing user check completed:', existingUser ? 'Found' : 'Not found');
+      console.log(
+        'Existing user check completed:',
+        existingUser ? 'Found' : 'Not found',
+      );
 
       if (existingUser) {
         throw new ConflictException(
@@ -301,7 +319,7 @@ export class UsersService {
       const userData = createAdminUserDto.map((user, index) => {
         // Extract profile data for later use but don't store it in a variable
         const { profile: _, ...userOnly } = user;
-        
+
         return {
           ...userOnly,
           password: hashedPasswords[index],

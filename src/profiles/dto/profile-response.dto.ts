@@ -40,9 +40,9 @@ export class ProfileResponseDto {
   passportExpiryDate?: Date;
 
   @ApiPropertyOptional({
-    description: 'URL to the uploaded passport copy',
+    description: 'File GUID for the uploaded passport copy',
   })
-  passportCopyUrl?: string;
+  passportCopyGuid?: string;
 
   @ApiPropertyOptional({ description: 'Year of birth' })
   yearOfBirth?: number;
@@ -57,18 +57,18 @@ export class ProfileResponseDto {
   phoneNumber?: string;
 
   @ApiPropertyOptional({
-    description: 'URL to uploaded motivation letter',
+    description: 'File GUID for uploaded motivation letter',
   })
-  motivationLetterUrl?: string;
+  motivationLetterGuid?: string;
 
   @ApiPropertyOptional({
-    description: 'URLs to uploaded recommendation letters',
+    description: 'File GUIDs for uploaded recommendation letters',
     type: [String],
   })
-  recommendationLetterUrls?: string[];
+  recommendationLetterGuids?: string[];
 
-  @ApiPropertyOptional({ description: 'URL to uploaded CV' })
-  cvUrl?: string;
+  @ApiPropertyOptional({ description: 'File GUID for uploaded CV' })
+  cvGuid?: string;
 
   @ApiProperty({ description: 'Profile creation date' })
   createdAt: Date;
