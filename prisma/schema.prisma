@@ -252,7 +252,7 @@ model LanguageCertificate {
   profile        Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
   testType       LanguageTest
   score          Float
-  certificateGuid String
+  certificateGuid String?
   dateOfIssue    DateTime
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt

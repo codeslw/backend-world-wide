@@ -4,6 +4,7 @@ import {
   IsEnum,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   IsUUID,
   Min,
@@ -21,10 +22,10 @@ export class LanguageCertificateDto {
   @Min(0)
   score: number;
 
-  @ApiProperty({ description: 'File GUID for the language certificate' })
-  @IsString()
+  @ApiPropertyOptional({ description: 'File GUID for the language certificate' })
+  @IsOptional()
   @IsUUID()
-  certificateGuid: string;
+  certificateGuid?: string;
 
   @ApiPropertyOptional({ description: 'URL of the certificate file' })
   @IsString()
