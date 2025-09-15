@@ -34,7 +34,6 @@ export class UsersRepository {
           languageCertificates: {
             create: languageCertificates.map((cert) => ({
               ...cert,
-              certificateUrl: cert.certificateUrl || '',
             })),
           },
           standardizedTests: {

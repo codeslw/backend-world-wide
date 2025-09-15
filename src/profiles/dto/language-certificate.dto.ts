@@ -27,10 +27,6 @@ export class LanguageCertificateDto {
   @IsUUID()
   certificateGuid?: string;
 
-  @ApiPropertyOptional({ description: 'URL of the certificate file' })
-  @IsString()
-  certificateUrl?: string;
-
   @ApiProperty({
     description: 'The date the certificate was issued (ISO-8601 format)',
     example: '2023-09-25T00:00:00.000Z',

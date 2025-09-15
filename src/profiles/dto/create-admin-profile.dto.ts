@@ -117,10 +117,10 @@ export class CreateAdminProfileDto {
   @IsUUID()
   cvGuid?: string;
 
-  @ApiPropertyOptional({ example: 1990, description: 'Year of birth' })
-  @IsOptional()
-  @IsInt()
-  yearOfBirth?: number;
+  // @ApiPropertyOptional({ example: 1990, description: 'Year of birth' })
+  // @IsOptional()
+  // @IsInt()
+  // yearOfBirth?: number;
 
   @ApiPropertyOptional({
     example: 'user@example.com',

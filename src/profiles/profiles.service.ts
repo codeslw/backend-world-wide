@@ -41,10 +41,7 @@ export class ProfilesService {
           : undefined,
         languageCertificates: languageCertificates
           ? {
-              create: languageCertificates.map((cert) => ({
-                ...cert,
-                certificateUrl: cert.certificateUrl || '',
-              })),
+              create: languageCertificates,
             }
           : undefined,
         standardizedTests: standardizedTests
@@ -243,7 +240,6 @@ export class ProfilesService {
           data: languageCertificates.map((cert) => ({
             ...cert,
             profileId: id,
-            certificateUrl: cert.certificateUrl || '',
           })),
         });
       }
@@ -280,6 +276,7 @@ export class ProfilesService {
       educationHistory?: any[];
       languageCertificates?: any[];
       standardizedTests?: any[];
+      recommendationLetterGuids?: any[];
     },
   ): ProfileResponseDto {
     return {
@@ -297,7 +294,6 @@ export class ProfilesService {
       motivationLetterGuid: profile.motivationLetterGuid || undefined,
       recommendationLetterGuids: profile.recommendationLetterGuids || undefined,
       cvGuid: profile.cvGuid || undefined,
-      yearOfBirth: profile.yearOfBirth || undefined,
       passportSeriesAndNumber: profile.passportSeriesAndNumber || undefined,
       email: profile.email || undefined,
       phoneNumber: profile.phoneNumber || undefined,

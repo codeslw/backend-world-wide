@@ -188,7 +188,6 @@ model Profile {
   id                       String              @id @default(uuid())
   firstName                String?
   lastName                 String?
-  yearOfBirth              Int?
   passportSeriesAndNumber  String?
   email                    String?
   phoneNumber              String?

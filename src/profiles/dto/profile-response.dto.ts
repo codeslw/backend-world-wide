@@ -44,8 +44,8 @@ export class ProfileResponseDto {
   })
   passportCopyGuid?: string;
 
-  @ApiPropertyOptional({ description: 'Year of birth' })
-  yearOfBirth?: number;
+  // @ApiPropertyOptional({ description: 'Year of birth' })
+  // yearOfBirth?: number;
 
   @ApiPropertyOptional({ description: 'Passport series and number' })
   passportSeriesAndNumber?: string;
