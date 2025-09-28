@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsOptional, IsString, ValidateIf } from 'class-validator';
 import { ApplicationStatus } from '../../common/enums/application.enum';
 
 export class UpdateApplicationStatusDto {
@@ -10,4 +10,13 @@ export class UpdateApplicationStatusDto {
   })
   @IsEnum(ApplicationStatus)
   status: ApplicationStatus;
+
+  @ApiPropertyOptional({
+    description: 'Rejection reason (required when status is REJECTED)',
+    example: 'Insufficient academic qualifications',
+  })
+  @IsOptional()
+  @ValidateIf((o) => o.status === ApplicationStatus.REJECTED)
+  @IsString()
+  reason?: string;
 }

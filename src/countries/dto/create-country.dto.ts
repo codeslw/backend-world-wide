@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsNumber,
   IsString,
@@ -6,6 +6,10 @@ import {
   MaxLength,
   Min,
   MinLength,
+  IsBoolean,
+  IsOptional,
+  IsUrl,
+  ValidateIf,
 } from 'class-validator';
 
 export class CreateCountryDto {
@@ -32,4 +36,22 @@ export class CreateCountryDto {
   @MinLength(2)
   @MaxLength(100)
   nameEn: string;
+
+  @ApiPropertyOptional({
+    description: 'Whether this country is featured as main (only 3 allowed)',
+    example: false,
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isMain?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Photo URL for the country (required when isMain is true)',
+    example: 'https://example.com/country.jpg',
+  })
+  @IsOptional()
+  @ValidateIf((o) => o.isMain === true)
+  @IsUrl()
+  photoUrl?: string;
 }

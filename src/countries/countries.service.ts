@@ -22,12 +22,24 @@ export class CountriesService {
 
   async create(createCountryDto: CreateCountryDto) {
     try {
+      // Validate isMain limit if setting country as main
+      if (createCountryDto.isMain) {
+        await this.validateIsMainLimit();
+      }
+
+      // Validate photoUrl is required when isMain is true
+      if (createCountryDto.isMain && !createCountryDto.photoUrl) {
+        throw new InvalidDataException('photoUrl is required when isMain is true');
+      }
+
       return this.prisma.country.create({
         data: {
           code: createCountryDto.code,
           nameUz: createCountryDto.nameUz,
           nameRu: createCountryDto.nameRu,
           nameEn: createCountryDto.nameEn,
+          isMain: createCountryDto.isMain || false,
+          photoUrl: createCountryDto.photoUrl,
         },
       });
     } catch (error) {
@@ -247,6 +259,16 @@ export class CountriesService {
         throw new EntityNotFoundException('Country', code);
       }
 
+      // Validate isMain limit if setting country as main and it's not already main
+      if (updateCountryDto.isMain && !country.isMain) {
+        await this.validateIsMainLimit();
+      }
+
+      // Validate photoUrl is required when isMain is true
+      if (updateCountryDto.isMain && !updateCountryDto.photoUrl && !country.photoUrl) {
+        throw new InvalidDataException('photoUrl is required when isMain is true');
+      }
+
       // Proceed with update
       return await this.prisma.country.update({
         where: { code },
@@ -317,5 +339,15 @@ export class CountriesService {
     }
 
     return result;
+  }
+
+  private async validateIsMainLimit(): Promise<void> {
+    const count = await this.prisma.country.count({
+      where: { isMain: true }
+    });
+    
+    if (count >= 3) {
+      throw new InvalidDataException('Cannot set as main: maximum of 3 countries can be marked as main');
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProfileResponseDto } from '../../profiles/dto/profile-response.dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination-response.dto';
 import { IntakeSeason, ApplicationStatus } from '@prisma/client';
@@ -52,6 +52,12 @@ export class ApplicationResponseDto {
     description: 'Status of the application',
   })
   applicationStatus: ApplicationStatus;
+
+  @ApiPropertyOptional({
+    description: 'Rejection reason (only present when status is REJECTED)',
+    example: 'Insufficient academic qualifications',
+  })
+  rejectionReason?: string;
 
   @ApiProperty({ description: 'Submission date', required: false })
   submittedAt?: Date;

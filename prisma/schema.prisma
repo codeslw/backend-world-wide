@@ -48,6 +48,8 @@ model Country {
   nameUz       String
   nameRu       String
   nameEn       String
+  isMain       Boolean      @default(false)
+  photoUrl     String?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   cities       City[]
@@ -87,6 +89,7 @@ model University {
   acceptanceRate       Float?
   avgApplicationFee    Float?
   photoUrl             String?
+  isMain               Boolean                @default(false)
   cityId               String
   countryCode          Int
   createdAt            DateTime               @default(now())
@@ -269,6 +272,7 @@ model Application {
   intakeSeason        IntakeSeason
   intakeYear          Int
   applicationStatus   ApplicationStatus @default(DRAFT)
+  rejectionReason     String?
   submittedAt         DateTime?
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt

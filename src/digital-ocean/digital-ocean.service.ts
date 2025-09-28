@@ -48,7 +48,7 @@ export class DigitalOceanService {
       Bucket: this.bucket,
       Key: key,
       Body: file.buffer,
-      ACL: 'private',
+      ACL: 'public-read',
       ContentType: file.mimetype,
     };
 
@@ -64,7 +64,7 @@ export class DigitalOceanService {
       Bucket: this.bucket,
       Key: key,
       ContentType: file.mimetype,
-      ACL: 'private',
+      ACL: 'public-read',
     };
 
     const multipartUpload = await this.s3

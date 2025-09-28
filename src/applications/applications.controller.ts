@@ -197,7 +197,7 @@ export class ApplicationsController {
 
     if (
       req.user.role === Role.CLIENT &&
-      application.profileId !== req.user.userId
+      application.profile?.userId !== req.user.userId
     ) {
       // Check if profileId on the DTO matches the user ID.
       // The service layer might need adjustment if profile details aren't mapped directly.
@@ -321,7 +321,7 @@ export class ApplicationsController {
     @Param('id') id: string,
     @Body() updateStatusDto: UpdateApplicationStatusDto,
   ) {
-    return this.applicationsService.updateStatus(id, updateStatusDto.status);
+    return this.applicationsService.updateStatus(id, updateStatusDto.status, updateStatusDto.reason);
   }
 
   @Patch(':id/submit')

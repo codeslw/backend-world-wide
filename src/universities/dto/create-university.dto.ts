@@ -14,6 +14,7 @@ import {
   IsNumber,
   Min,
   Max,
+  IsBoolean,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UniversityType } from '../../common/enum/university-type.enum';
@@ -155,6 +156,15 @@ export class CreateUniversityDto {
   @IsOptional()
   @IsUrl()
   photoUrl?: string;
+
+  @ApiPropertyOptional({
+    description: 'Whether this university is featured as main (only 3 allowed)',
+    example: false,
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isMain?: boolean;
 
   @ApiProperty({
     description: 'ID of the city where the university is located',

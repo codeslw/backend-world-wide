@@ -252,6 +252,7 @@ export class ApplicationsService {
   async updateStatus(
     id: string,
     newStatus: ApplicationStatus,
+    rejectionReason?: string,
   ): Promise<ApplicationResponseDto> {
     try {
       // Fetch the application entity
@@ -260,10 +261,20 @@ export class ApplicationsService {
         throw new EntityNotFoundException('Application', id);
       }
 
+      // Validate rejection reason is provided when status is REJECTED
+      if (newStatus === ApplicationStatus.REJECTED && !rejectionReason) {
+        throw new InvalidDataException('Rejection reason is required when status is REJECTED');
+      }
+
       // Prepare the status update DTO
       const statusUpdateDto: UpdateApplicationDto = {
         applicationStatus: newStatus,
       };
+
+      // Add rejection reason if provided
+      if (rejectionReason) {
+        (statusUpdateDto as any).rejectionReason = rejectionReason;
+      }
 
       // If status is changing to APPROVED or REJECTED, handle reviewDate
       if (
@@ -282,7 +293,7 @@ export class ApplicationsService {
       // Map the updated entity back to DTO
       return this.mapToResponseDto(updatedApplication);
     } catch (error) {
-      if (error instanceof EntityNotFoundException) {
+      if (error instanceof EntityNotFoundException || error instanceof InvalidDataException) {
         throw error;
       }
       throw new InvalidDataException(
@@ -444,6 +455,7 @@ export class ApplicationsService {
 
       // Status fields
       applicationStatus: application.applicationStatus,
+      rejectionReason: application.rejectionReason,
       submittedAt: application.submittedAt,
       createdAt: application.createdAt,
       updatedAt: application.updatedAt,

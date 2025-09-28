@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedResponseDto } from '../../common/dto/pagination-response.dto';
 import { Type } from 'class-transformer';
 
@@ -19,6 +19,12 @@ export class CountryResponseDto {
     description: 'Localized country name based on language preference',
   })
   name: string;
+
+  @ApiProperty({ description: 'Whether this country is featured as main' })
+  isMain: boolean;
+
+  @ApiPropertyOptional({ description: 'Photo URL for the country' })
+  photoUrl?: string;
 
   @ApiProperty({ description: 'Creation timestamp' })
   createdAt: Date;

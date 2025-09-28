@@ -90,6 +90,9 @@ export class UniversityResponseDto {
   @ApiPropertyOptional({ description: 'University photo URL' })
   photoUrl?: string;
 
+  @ApiProperty({ description: 'Whether this university is featured as main' })
+  isMain: boolean;
+
   @ApiProperty({ description: 'Timestamp of creation' })
   createdAt: string;
 

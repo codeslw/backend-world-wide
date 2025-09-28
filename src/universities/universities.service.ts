@@ -29,6 +29,11 @@ export class UniversitiesService {
     const { programs, countryCode, cityId, requirements, ...universityData } =
       createUniversityDto;
 
+    // Validate isMain limit if setting university as main
+    if (universityData.isMain) {
+      await this.validateIsMainLimit('university');
+    }
+
     // Validate that all provided programIds exist
     await this.validateProgramIds(programs.map((p) => p.programId));
 
@@ -130,150 +135,153 @@ export class UniversitiesService {
 
   async findAll(filterDto: UniversityFilterDto, lang: string = 'uz') {
     try {
-      const paginationDto: PaginationDto = {
-        page: filterDto.page,
-        limit: filterDto.limit,
-      };
-      const { programs: programFilters, ...otherFilters } = filterDto;
+      const {
+        page = 1,
+        limit = 10,
+        sortBy = 'ranking',
+        sortDirection = 'asc',
+        countryCode,
+        cityId,
+        type,
+        minRanking,
+        maxRanking,
+        minEstablished,
+        maxEstablished,
+        minAcceptanceRate,
+        maxAcceptanceRate,
+        minApplicationFee,
+        maxApplicationFee,
+        programs,
+        search,
+      } = filterDto;
 
-      const filterOptions: FilterOptions = {
-        filters: [
-          { field: 'countryCode', queryParam: 'countryCode' },
-          { field: 'cityId', queryParam: 'cityId' },
-          { field: 'type', queryParam: 'type' },
-          {
-            field: 'ranking',
-            queryParam: 'minRanking',
-            operator: 'gte',
-            transform: (value) => parseInt(value),
-          },
-          {
-            field: 'ranking',
-            queryParam: 'maxRanking',
-            operator: 'lte',
-            transform: (value) => parseInt(value),
-          },
-          {
-            field: 'established',
-            queryParam: 'minEstablished',
-            operator: 'gte',
-            transform: (value) => parseInt(value),
-          },
-          {
-            field: 'established',
-            queryParam: 'maxEstablished',
-            operator: 'lte',
-            transform: (value) => parseInt(value),
-          },
-          {
-            field: 'acceptanceRate',
-            queryParam: 'minAcceptanceRate',
-            operator: 'gte',
-            transform: (value) => parseFloat(value),
-          },
-          {
-            field: 'acceptanceRate',
-            queryParam: 'maxAcceptanceRate',
-            operator: 'lte',
-            transform: (value) => parseFloat(value),
-          },
-          {
-            field: 'avgApplicationFee',
-            queryParam: 'minApplicationFee',
-            operator: 'gte',
-            transform: (value) => parseFloat(value),
-          },
-          {
-            field: 'avgApplicationFee',
-            queryParam: 'maxApplicationFee',
-            operator: 'lte',
-            transform: (value) => parseFloat(value),
-          },
-          {
-            field: 'createdAt',
-            queryParam: 'createdAfter',
-            operator: 'gte',
-            transform: (value) => new Date(value),
-          },
-          {
-            field: 'createdAt',
-            queryParam: 'createdBefore',
-            operator: 'lte',
-            transform: (value) => new Date(value),
-          },
-          { field: 'id', queryParam: 'ids', operator: 'in', isArray: true },
-          // Updated program filter to target the join table
-          {
-            field: 'universityPrograms',
-            queryParam: 'programs', // Kept query param name for consistency
-            operator: 'some',
-            transform: (value) => {
-              let programIds: string[] = [];
-              if (Array.isArray(value)) {
-                programIds = value;
-              } else if (typeof value === 'string') {
-                programIds = value.split(',').filter((id) => id);
-              }
-              if (programIds.length > 0) {
-                return { programId: { in: programIds } };
-              }
-              return undefined; // Don't filter if no valid program IDs are provided
+      const where: Prisma.UniversityWhereInput = {};
+
+      if (countryCode) {
+        where.countryCode = Number(countryCode);
+      }
+      if (cityId) {
+        where.cityId = cityId;
+      }
+      if (type) {
+        where.type = type;
+      }
+
+      if (minRanking !== undefined || maxRanking !== undefined) {
+        where.ranking = {};
+        if (minRanking !== undefined) where.ranking.gte = Number(minRanking);
+        if (maxRanking !== undefined) where.ranking.lte = Number(maxRanking);
+      }
+
+      if (minEstablished !== undefined || maxEstablished !== undefined) {
+        where.established = {};
+        if (minEstablished !== undefined)
+          where.established.gte = Number(minEstablished);
+        if (maxEstablished !== undefined)
+          where.established.lte = Number(maxEstablished);
+      }
+
+      if (
+        minAcceptanceRate !== undefined ||
+        maxAcceptanceRate !== undefined
+      ) {
+        where.acceptanceRate = {};
+        if (minAcceptanceRate !== undefined)
+          where.acceptanceRate.gte = Number(minAcceptanceRate);
+        if (maxAcceptanceRate !== undefined)
+          where.acceptanceRate.lte = Number(maxAcceptanceRate);
+      }
+
+      if (
+        minApplicationFee !== undefined ||
+        maxApplicationFee !== undefined
+      ) {
+        where.avgApplicationFee = {};
+        if (minApplicationFee !== undefined)
+          where.avgApplicationFee.gte = Number(minApplicationFee);
+        if (maxApplicationFee !== undefined)
+          where.avgApplicationFee.lte = Number(maxApplicationFee);
+      }
+
+      if (programs && programs.length > 0) {
+        const programIds = Array.isArray(programs)
+          ? programs
+          : `${programs}`.split(',').filter((id) => id);
+        if (programIds.length > 0) {
+          where.universityPrograms = {
+            some: {
+              programId: { in: programIds },
             },
-          },
-        ],
-        searchFields: [
-          'name',
-          'descriptionUz',
-          'descriptionRu',
-          'descriptionEn',
-          'website',
-        ],
-        searchMode: 'contains',
-        caseSensitive: false,
+          };
+        }
+      }
+
+      if (search) {
+        where.OR = [
+          { name: { contains: search, mode: 'insensitive' } },
+          { descriptionUz: { contains: search, mode: 'insensitive' } },
+          { descriptionRu: { contains: search, mode: 'insensitive' } },
+          { descriptionEn: { contains: search, mode: 'insensitive' } },
+          { website: { contains: search, mode: 'insensitive' } },
+        ];
+      }
+
+      const sortFieldMap: Record<string, string> = {
+        ranking: 'ranking',
+        established: 'established',
+        acceptanceRate: 'acceptanceRate',
+        applicationFee: 'avgApplicationFee',
+        nameEn: 'name',
+      };
+      const dbSortField = sortFieldMap[sortBy] || 'ranking';
+
+      const orderBy: Prisma.UniversityOrderByWithRelationInput = {
+        [dbSortField]: sortDirection,
       };
 
-      const query = { ...otherFilters, programs: programFilters }; // Pass original filter DTO
-      const where = this.filterService.buildFilterQuery(query, filterOptions);
+      const skip = (Number(page) - 1) * Number(limit);
+      const take = Number(limit);
 
-      const paginationOptions: PaginationOptions = {
-        defaultLimit: 10,
-        maxLimit: 300,
-        defaultSortField: 'ranking', // Consider allowing sort by other fields
-        defaultSortDirection: 'asc',
-      };
-
-      const result = await this.filterService.applyPagination(
-        this.prisma.university,
-        where,
-        paginationDto,
-        {
-          country: true,
-          city: true,
-          universityPrograms: {
-            include: {
-              program: {
-                select: {
-                  id: true,
-                  titleUz: true,
-                  titleRu: true,
-                  titleEn: true,
+      const [universities, total] = await this.prisma.$transaction([
+        this.prisma.university.findMany({
+          where,
+          orderBy,
+          skip,
+          take,
+          include: {
+            country: true,
+            city: true,
+            universityPrograms: {
+              include: {
+                program: {
+                  select: {
+                    id: true,
+                    titleUz: true,
+                    titleRu: true,
+                    titleEn: true,
+                  },
                 },
-              }, // Select specific program fields
+              },
             },
+            requirements: true,
           },
-          requirements: true,
-        },
-        undefined,
-        paginationOptions,
-      );
+        }),
+        this.prisma.university.count({ where }),
+      ]);
 
-      const localizedData = result.data.map((university) =>
+      const localizedData = universities.map((university) =>
         this.localizeAndMapUniversity(university, lang),
       );
 
+      const totalPages = Math.ceil(total / Number(limit));
       return {
         data: localizedData,
-        meta: result.meta,
+        meta: {
+          total,
+          page: Number(page),
+          limit: Number(limit),
+          totalPages,
+        },
       };
     } catch (error) {
       console.error('Error finding universities:', error);
@@ -328,6 +336,11 @@ export class UniversitiesService {
     });
     if (!existingUniversity) {
       throw new EntityNotFoundException('University', id);
+    }
+
+    // Validate isMain limit if setting university as main and it's not already main
+    if (otherFields.isMain && !existingUniversity.isMain) {
+      await this.validateIsMainLimit('university');
     }
 
     // 2. Validate incoming program IDs if programs are being updated
@@ -601,6 +614,7 @@ export class UniversitiesService {
       phone: university.phone,
       address: university.address,
       photoUrl: university.photoUrl,
+      isMain: university.isMain,
       createdAt: university.createdAt,
       updatedAt: university.updatedAt,
       universityPrograms:
@@ -678,6 +692,25 @@ export class UniversitiesService {
       program[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
       program.descriptionUz;
     return { ...program, title, description };
+  }
+
+  private async validateIsMainLimit(entityType: 'university' | 'country'): Promise<void> {
+    const table = entityType === 'university' ? 'university' : 'country';
+    let count;
+    if(entityType == 'country') {
+      count = await this.prisma.country.count({
+        where: { isMain: true }
+      });
+    }
+    else if(entityType === 'university') {
+      count = await this.prisma.university.count({
+        where: { isMain: true }
+      });
+    }
+    
+    if (count >= 3) {
+      throw new InvalidDataException(`Cannot set as main: maximum of 3 ${entityType === 'university' ? 'universities' : 'countries'} can be marked as main`);
+    }
   }
 
   // Note: createMany is omitted for brevity but would need similar updates as `create`
