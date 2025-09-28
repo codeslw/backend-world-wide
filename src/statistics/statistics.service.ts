@@ -277,79 +277,99 @@ export class StatisticsService {
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - months);
 
-    // Get monthly data for the specified period
-    const monthlyData = await this.prisma.$queryRaw<Array<{
-      month: string;
-      new_profiles: bigint;
-      new_applications: bigint;
-      messages_count: bigint;
-    }>>`
-      SELECT 
-        TO_CHAR(date_trunc('month', created_at), 'YYYY-MM') as month,
-        0::bigint as new_profiles,
-        0::bigint as new_applications,
-        0::bigint as messages_count
-      FROM generate_series(
-        date_trunc('month', ${startDate}::timestamp),
-        date_trunc('month', CURRENT_DATE),
-        '1 month'::interval
-      ) as created_at
-      ORDER BY month
-    `;
+    // Get data using Prisma's findMany instead of raw SQL
+    const [profiles, applications, messages] = await Promise.all([
+      this.prisma.profile.findMany({
+        select: {
+          createdAt: true,
+        },
+        where: {
+          createdAt: {
+            gte: startDate,
+          },
+        },
+        orderBy: {
+          createdAt: 'asc',
+        },
+      }),
+      this.prisma.application.findMany({
+        select: {
+          createdAt: true,
+        },
+        where: {
+          createdAt: {
+            gte: startDate,
+          },
+        },
+        orderBy: {
+          createdAt: 'asc',
+        },
+      }),
+      this.prisma.message.findMany({
+        select: {
+          createdAt: true,
+        },
+        where: {
+          createdAt: {
+            gte: startDate,
+          },
+        },
+        orderBy: {
+          createdAt: 'asc',
+        },
+      }),
+    ]);
 
-    // Get actual profile counts
-    const profileStats = await this.prisma.$queryRaw<Array<{
-      month: string;
-      count: bigint;
-    }>>`
-      SELECT 
-        TO_CHAR(date_trunc('month', created_at), 'YYYY-MM') as month,
-        COUNT(*)::bigint as count
-      FROM profiles
-      WHERE created_at >= ${startDate}
-      GROUP BY date_trunc('month', created_at)
-      ORDER BY month
-    `;
+    // Group by month
+    const monthlyData = new Map<string, { newProfiles: number; newApplications: number; messagesCount: number }>();
 
-    // Get actual application counts
-    const applicationStats = await this.prisma.$queryRaw<Array<{
-      month: string;
-      count: bigint;
-    }>>`
-      SELECT 
-        TO_CHAR(date_trunc('month', created_at), 'YYYY-MM') as month,
-        COUNT(*)::bigint as count
-      FROM applications
-      WHERE created_at >= ${startDate}
-      GROUP BY date_trunc('month', created_at)
-      ORDER BY month
-    `;
+    // Process profiles
+    profiles.forEach((profile) => {
+      const month = profile.createdAt.toISOString().substring(0, 7); // YYYY-MM format
+      if (!monthlyData.has(month)) {
+        monthlyData.set(month, { newProfiles: 0, newApplications: 0, messagesCount: 0 });
+      }
+      monthlyData.get(month)!.newProfiles++;
+    });
 
-    // Get actual message counts
-    const messageStats = await this.prisma.$queryRaw<Array<{
-      month: string;
-      count: bigint;
-    }>>`
-      SELECT 
-        TO_CHAR(date_trunc('month', created_at), 'YYYY-MM') as month,
-        COUNT(*)::bigint as count
-      FROM messages
-      WHERE created_at >= ${startDate}
-      GROUP BY date_trunc('month', created_at)
-      ORDER BY month
-    `;
+    // Process applications
+    applications.forEach((application) => {
+      const month = application.createdAt.toISOString().substring(0, 7); // YYYY-MM format
+      if (!monthlyData.has(month)) {
+        monthlyData.set(month, { newProfiles: 0, newApplications: 0, messagesCount: 0 });
+      }
+      monthlyData.get(month)!.newApplications++;
+    });
 
-    // Combine the data
-    const profileMap = new Map(profileStats.map(p => [p.month, Number(p.count)]));
-    const applicationMap = new Map(applicationStats.map(a => [a.month, Number(a.count)]));
-    const messageMap = new Map(messageStats.map(m => [m.month, Number(m.count)]));
+    // Process messages
+    messages.forEach((message) => {
+      const month = message.createdAt.toISOString().substring(0, 7); // YYYY-MM format
+      if (!monthlyData.has(month)) {
+        monthlyData.set(month, { newProfiles: 0, newApplications: 0, messagesCount: 0 });
+      }
+      monthlyData.get(month)!.messagesCount++;
+    });
 
-    return monthlyData.map((data) => ({
-      period: data.month,
-      newProfiles: profileMap.get(data.month) || 0,
-      newApplications: applicationMap.get(data.month) || 0,
-      messagesCount: messageMap.get(data.month) || 0,
-    }));
+    // Generate result array with all months in the range
+    const result: GrowthStatsDto[] = [];
+    const currentDate = new Date(startDate);
+    const endDate = new Date();
+
+    while (currentDate <= endDate) {
+      const month = currentDate.toISOString().substring(0, 7); // YYYY-MM format
+      const data = monthlyData.get(month) || { newProfiles: 0, newApplications: 0, messagesCount: 0 };
+      
+      result.push({
+        period: month,
+        newProfiles: data.newProfiles,
+        newApplications: data.newApplications,
+        messagesCount: data.messagesCount,
+      });
+
+      currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+
+    return result;
   }
 
   /**
@@ -497,23 +517,34 @@ export class StatisticsService {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const trends = await this.prisma.$queryRaw<Array<{
-      date: string;
-      count: bigint;
-    }>>`
-      SELECT 
-        TO_CHAR(date_trunc('day', created_at), 'YYYY-MM-DD') as date,
-        COUNT(*)::bigint as count
-      FROM applications
-      WHERE created_at >= ${startDate}
-      GROUP BY date_trunc('day', created_at)
-      ORDER BY date
-    `;
+    // Use Prisma's groupBy instead of raw SQL
+    const trends = await this.prisma.application.groupBy({
+      by: ['createdAt'],
+      where: {
+        createdAt: {
+          gte: startDate,
+        },
+      },
+      _count: {
+        _all: true,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
 
-    return trends.map((trend) => ({
-      date: trend.date,
-      count: Number(trend.count),
-    }));
+    // Group by date (day) manually since Prisma doesn't support date truncation in groupBy
+    const dailyGroups = new Map<string, number>();
+    
+    trends.forEach((trend) => {
+      const date = trend.createdAt.toISOString().split('T')[0]; // Get YYYY-MM-DD format
+      dailyGroups.set(date, (dailyGroups.get(date) || 0) + trend._count._all);
+    });
+
+    // Convert to array and sort by date
+    return Array.from(dailyGroups.entries())
+      .map(([date, count]) => ({ date, count }))
+      .sort((a, b) => a.date.localeCompare(b.date));
   }
 
   // Helper methods
