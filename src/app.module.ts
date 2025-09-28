@@ -17,6 +17,7 @@ import { ProfilesModule } from './profiles/profiles.module';
 import { ApplicationsModule } from './applications/applications.module';
 import { MiniApplicationsModule } from './modules/mini-applications.module';
 import { ValidityModule } from './validity/validity.module';
+import { StatisticsModule } from './statistics/statistics.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { ValidityModule } from './validity/validity.module';
     ApplicationsModule,
     MiniApplicationsModule,
     ValidityModule,
+    StatisticsModule,
   ],
   providers: [PrismaService, DigitalOceanService],
   controllers: [],
