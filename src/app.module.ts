@@ -18,6 +18,7 @@ import { ApplicationsModule } from './applications/applications.module';
 import { MiniApplicationsModule } from './modules/mini-applications.module';
 import { ValidityModule } from './validity/validity.module';
 import { StatisticsModule } from './statistics/statistics.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { StatisticsModule } from './statistics/statistics.module';
     MiniApplicationsModule,
     ValidityModule,
     StatisticsModule,
+    NotificationsModule,
   ],
   providers: [PrismaService, DigitalOceanService],
   controllers: [],
