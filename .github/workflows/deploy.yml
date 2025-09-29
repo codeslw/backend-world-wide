@@ -41,6 +41,11 @@ jobs:
             
             # Navigate to project directory
             cd /home/${{ secrets.DROPLET_USER }}/backend-world-wide
+
+            #Cleanup before fetch
+            echo "Cleaning up disk space..."
+            docker system prune -af --volumes || true
+            sudo journalctl --vacuum-time=3d || true
             
             # Pull latest changes
             echo "Fetching latest changes..."
