@@ -8,16 +8,16 @@ datasource db {
 }
 
 model User {
-  id           String         @id @default(uuid())
-  email        String         @unique
-  password     String
-  role         Role           @default(CLIENT)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  adminChats   Chat[]         @relation("AdminChats")
-  clientChats  Chat[]         @relation("ClientChats")
-  messages     Message[]
-  profile      Profile?
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  role          Role           @default(CLIENT)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  adminChats    Chat[]         @relation("AdminChats")
+  clientChats   Chat[]         @relation("ClientChats")
+  messages      Message[]
+  profile       Profile?
   refreshTokens RefreshToken[]
   // readMessages Message[] @relation("MessageReads")
 
@@ -38,7 +38,7 @@ model Program {
   parent             Program?            @relation("ProgramToProgram", fields: [parentId], references: [id])
   children           Program[]           @relation("ProgramToProgram")
   universityPrograms UniversityProgram[]
-  applications      Application[]
+  applications       Application[]
 
   @@map("programs")
 }
@@ -72,42 +72,43 @@ model City {
 }
 
 model University {
-  id                   String                 @id @default(uuid())
-  established          Int?
-  type                 String
-  descriptionUz        String?
-  descriptionRu        String?
-  descriptionEn        String?
-  website              String?
-  email                String?
-  phone                String?
-  address              String
-  winterIntakeDeadline DateTime?
-  autumnIntakeDeadline DateTime?
-  ranking              Int?
-  studentsCount        Int?
-  acceptanceRate       Float?
-  avgApplicationFee    Float?
-  photoUrl             String?
-  isMain               Boolean                @default(false)
-  cityId               String
-  countryCode          Int
-  createdAt            DateTime               @default(now())
-  updatedAt            DateTime               @updatedAt
-  name                 String
-  city                 City                   @relation(fields: [cityId], references: [id])
-  country              Country                @relation(fields: [countryCode], references: [code])
-  universityPrograms   UniversityProgram[]
-  applications         Application[]
-  requirements         UniversityRequirements?
+  id                     String                  @id @default(uuid())
+  established            Int?
+  type                   String
+  descriptionUz          String?
+  descriptionRu          String?
+  descriptionEn          String?
+  website                String?
+  email                  String?
+  phone                  String?
+  address                String
+  winterIntakeDeadline   DateTime?
+  autumnIntakeDeadline   DateTime?
+  ranking                Int?
+  studentsCount          Int?
+  acceptanceRate         Float?
+  avgApplicationFee      Float?
+  applicationFeeCurrency String?
+  photoUrl               String?
+  isMain                 Boolean                 @default(false)
+  cityId                 String
+  countryCode            Int
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  name                   String
+  city                   City                    @relation(fields: [cityId], references: [id])
+  country                Country                 @relation(fields: [countryCode], references: [code])
+  universityPrograms     UniversityProgram[]
+  applications           Application[]
+  requirements           UniversityRequirements?
 
   @@map("universities")
 }
 
 model UniversityRequirements {
-  id                            String     @id @default(uuid())
-  universityId                  String     @unique
-  university                    University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  id                            String      @id @default(uuid())
+  universityId                  String      @unique
+  university                    University  @relation(fields: [universityId], references: [id], onDelete: Cascade)
   minIeltsScore                 Float?
   minToeflScore                 Int?
   minDuolingoScore              Int?
@@ -115,10 +116,10 @@ model UniversityRequirements {
   minGpa                        Float?
   minGmatScore                  Int?
   minCatScore                   Int?
-  requiredRecommendationLetters Int?       @default(0)
+  requiredRecommendationLetters Int?        @default(0)
   otherRequirements             Json?
-  createdAt                     DateTime   @default(now())
-  updatedAt                     DateTime   @updatedAt
+  createdAt                     DateTime    @default(now())
+  updatedAt                     DateTime    @updatedAt
 
   @@map("university_requirements")
 }
@@ -129,12 +130,13 @@ model UniversityProgram {
   programId          String
   tuitionFee         Float
   tuitionFeeCurrency String     @default("USD")
+  studyLevel         StudyLevel @default(BACHELOR)
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
   program            Program    @relation(fields: [programId], references: [id])
   university         University @relation(fields: [universityId], references: [id], onDelete: Cascade)
 
-  @@unique([universityId, programId])
+  @@unique([universityId, programId, studyLevel])
   @@index([universityId])
   @@index([programId])
   @@map("university_programs")
@@ -164,22 +166,22 @@ model Chat {
 }
 
 model Message {
-  id        String        @id @default(uuid())
-  chatId    String
-  senderId  String
-  text      String?
-  fileUrl   String?
-  replyToId String?
-  readByClient Boolean @default(false)
-  readByAdmin Boolean @default(false)
-  isEdited  Boolean       @default(false)
-  editedAt  DateTime?
-  status    MessageStatus @default(SENT)
-  createdAt DateTime      @default(now())
-  chat      Chat          @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  replyTo   Message?      @relation("Replies", fields: [replyToId], references: [id])
-  replies   Message[]     @relation("Replies")
-  sender    User          @relation(fields: [senderId], references: [id])
+  id           String        @id @default(uuid())
+  chatId       String
+  senderId     String
+  text         String?
+  fileUrl      String?
+  replyToId    String?
+  readByClient Boolean       @default(false)
+  readByAdmin  Boolean       @default(false)
+  isEdited     Boolean       @default(false)
+  editedAt     DateTime?
+  status       MessageStatus @default(SENT)
+  createdAt    DateTime      @default(now())
+  chat         Chat          @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  replyTo      Message?      @relation("Replies", fields: [replyToId], references: [id])
+  replies      Message[]     @relation("Replies")
+  sender       User          @relation(fields: [senderId], references: [id])
   // readBy    User[]    @relation("MessageReads")
 
   @@index([chatId])
@@ -188,47 +190,47 @@ model Message {
 }
 
 model Profile {
-  id                       String              @id @default(uuid())
-  firstName                String?
-  lastName                 String?
-  passportSeriesAndNumber  String?
-  email                    String?
-  phoneNumber              String?
-  userId                   String              @unique
-  createdAt                DateTime            @default(now())
-  updatedAt                DateTime            @updatedAt
-  address                  String?
-  dateOfBirth              DateTime?
-  gender                   Gender?
-  middleName               String?
-  nationality              String?
-  passportCopyGuid         String?
-  passportExpiryDate       DateTime?
-  cvGuid                   String?
-  motivationLetterGuid     String?
-  recommendationLetterGuids String[]           @default([])
-  applications             Application[]
-  user                     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  educationHistory         Education[]
-  languageCertificates     LanguageCertificate[]
-  standardizedTests        StandardizedTest[]
+  id                        String                @id @default(uuid())
+  firstName                 String?
+  lastName                  String?
+  passportSeriesAndNumber   String?
+  email                     String?
+  phoneNumber               String?
+  userId                    String                @unique
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
+  address                   String?
+  dateOfBirth               DateTime?
+  gender                    Gender?
+  middleName                String?
+  nationality               String?
+  passportCopyGuid          String?
+  passportExpiryDate        DateTime?
+  cvGuid                    String?
+  motivationLetterGuid      String?
+  recommendationLetterGuids String[]              @default([])
+  applications              Application[]
+  user                      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  educationHistory          Education[]
+  languageCertificates      LanguageCertificate[]
+  standardizedTests         StandardizedTest[]
 
   @@map("profiles")
 }
 
 model StandardizedTest {
-  id             String               @id @default(uuid())
-  profileId      String
-  profile        Profile              @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  testType       StandardizedTestType
-  score          Int
+  id              String               @id @default(uuid())
+  profileId       String
+  profile         Profile              @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  testType        StandardizedTestType
+  score           Int
   certificateGuid String?
-  dateOfIssue    DateTime
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
+  dateOfIssue     DateTime
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
 
-  @@map("standardized_tests")
   @@index([profileId])
+  @@map("standardized_tests")
 }
 
 model Education {
@@ -244,23 +246,23 @@ model Education {
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 
-  @@map("education_history")
   @@index([profileId])
+  @@map("education_history")
 }
 
 model LanguageCertificate {
-  id             String       @id @default(uuid())
-  profileId      String
-  profile        Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  testType       LanguageTest
-  score          Float
+  id              String       @id @default(uuid())
+  profileId       String
+  profile         Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  testType        LanguageTest
+  score           Float
   certificateGuid String?
-  dateOfIssue    DateTime
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  dateOfIssue     DateTime
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  @@map("language_certificates")
   @@index([profileId])
+  @@map("language_certificates")
 }
 
 model Application {
@@ -279,6 +281,7 @@ model Application {
   profile             Profile           @relation(fields: [profileId], references: [id])
   program             Program           @relation(fields: [preferredProgram], references: [id])
   university          University        @relation(fields: [preferredUniversity], references: [id])
+
   @@index([profileId])
   @@index([applicationStatus])
   @@map("applications")
@@ -381,4 +384,10 @@ enum MessageStatus {
   SENT
   DELIVERED
   READ
+}
+
+enum StudyLevel {
+  BACHELOR
+  MASTER
+  PHD
 }

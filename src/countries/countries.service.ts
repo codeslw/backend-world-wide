@@ -12,6 +12,7 @@ import {
   EntityNotFoundException,
   InvalidDataException,
 } from '../common/exceptions/app.exceptions';
+import { CountryResponseDto } from './dto/country-response.dto';
 
 @Injectable()
 export class CountriesService {
@@ -345,9 +346,24 @@ export class CountriesService {
     const count = await this.prisma.country.count({
       where: { isMain: true }
     });
-    
+
     if (count >= 3) {
       throw new InvalidDataException('Cannot set as main: maximum of 3 countries can be marked as main');
+    }
+  }
+
+  async findMainCountries(lang: string = 'uz'): Promise<CountryResponseDto[]> {
+    try {
+      const countries = await this.prisma.country.findMany({
+        where: { isMain: true },
+        take: 3,
+        orderBy: { code: 'asc' },
+      });
+
+      return countries.map((country) => this.localizeCountry(country, lang));
+    } catch (error) {
+      console.error('Error finding main countries:', error);
+      throw error;
     }
   }
 }

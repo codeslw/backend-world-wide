@@ -5,6 +5,8 @@ import { PaginatedResponseDto } from '../../common/dto/pagination-response.dto';
 import { CountryResponseDto } from '../../countries/dto/country-response.dto';
 import { CityResponseDto } from '../../cities/dto/city-response.dto';
 import { UniversityRequirementsDto } from './university-requirements.dto';
+import { Currency } from '../../common/enum/currency.enum';
+import { StudyLevel } from '../../common/enum/study-level.enum';
 
 // DTO for representing program details within the university response
 class UniversityProgramResponseDto {
@@ -19,8 +21,11 @@ class UniversityProgramResponseDto {
   })
   tuitionFee: number;
 
-  @ApiProperty({ description: 'Tuition fee currency' })
-  tuitionFeeCurrency: string;
+  @ApiProperty({ description: 'Tuition fee currency', enum: Currency })
+  tuitionFeeCurrency: Currency;
+
+  @ApiProperty({ description: 'Study level', enum: StudyLevel })
+  studyLevel: StudyLevel;
 }
 
 export class UniversityResponseDto {
@@ -38,6 +43,12 @@ export class UniversityResponseDto {
 
   @ApiPropertyOptional({ description: 'Average application fee' })
   avgApplicationFee?: number;
+
+  @ApiPropertyOptional({
+    description: 'Application fee currency',
+    enum: Currency,
+  })
+  applicationFeeCurrency?: Currency;
 
   @ApiProperty({ description: 'Country Code' }) // Changed from countryId for clarity
   countryCode: number;

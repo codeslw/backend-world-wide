@@ -21,6 +21,7 @@ import { UniversityType } from '../../common/enum/university-type.enum';
 import { UniversityProgramDto } from './university-program.dto';
 import { Type } from 'class-transformer';
 import { UniversityRequirementsDto } from './university-requirements.dto';
+import { Currency } from '../../common/enum/currency.enum';
 
 export class CreateUniversityDto {
   @ApiProperty({
@@ -148,6 +149,15 @@ export class CreateUniversityDto {
   @IsOptional()
   @IsNumber()
   avgApplicationFee?: number;
+
+  @ApiPropertyOptional({
+    description: 'Currency for the application fee',
+    example: Currency.USD,
+    enum: Currency,
+  })
+  @IsOptional()
+  @IsEnum(Currency)
+  applicationFeeCurrency?: Currency;
 
   @ApiPropertyOptional({
     description: 'URL to a photo of the university',

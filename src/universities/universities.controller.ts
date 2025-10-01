@@ -39,6 +39,12 @@ import { UniversityType } from '../common/enum/university-type.enum';
 import { ErrorResponseDto } from '../common/dto/error-response.dto';
 import { UniversityFilterDto } from './dto/university-filter.dto';
 import { CreateManyUniversitiesDto } from './dto/create-many-universities.dto';
+import { UniversitiesByProgramsFilterDto } from './dto/universities-by-programs-filter.dto';
+import {
+  UniversityByProgramResponseDto,
+  PaginatedUniversityByProgramResponseDto,
+} from './dto/university-by-program-response.dto';
+import { MainUniversityResponseDto } from './dto/main-university-response.dto';
 
 @ApiTags('Universities')
 @Controller('universities')
@@ -128,6 +134,140 @@ export class UniversitiesController {
     return this.universitiesService.createMany(createManyDto.universities);
   }
 
+  @Get('main')
+  @ApiOperation({
+    summary: 'Get main universities (maximum 3)',
+  })
+  @ApiHeader({
+    name: 'Accept-Language',
+    required: false,
+    enum: ['uz', 'ru', 'en'],
+    description: 'Language preference for localized fields (default: uz)',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Successfully retrieved list of main universities',
+    type: [MainUniversityResponseDto],
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal Server Error',
+    type: ErrorResponseDto,
+  })
+  async findMainUniversities(
+    @Headers('Accept-Language') lang: string = 'uz',
+  ): Promise<MainUniversityResponseDto[]> {
+    const validLangs = ['uz', 'ru', 'en'];
+    const effectiveLang = validLangs.includes(lang) ? lang : 'uz';
+    return this.universitiesService.findMainUniversities(effectiveLang);
+  }
+
+  @Get('universities-by-programs')
+  @ApiOperation({
+    summary:
+      'Get universities expanded by programs - each program becomes a separate entry',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page (default: 10)',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search term for university name, description, or program title',
+  })
+  @ApiQuery({
+    name: 'countryCode',
+    required: false,
+    type: Number,
+    description: 'Filter by country code (integer ID)',
+  })
+  @ApiQuery({
+    name: 'cityId',
+    required: false,
+    type: String,
+    description: 'Filter by city ID (UUID)',
+  })
+  @ApiQuery({
+    name: 'minTuitionFee',
+    required: false,
+    type: Number,
+    description: 'Filter by minimum tuition fee',
+  })
+  @ApiQuery({
+    name: 'maxTuitionFee',
+    required: false,
+    type: Number,
+    description: 'Filter by maximum tuition fee',
+  })
+  @ApiQuery({
+    name: 'minRanking',
+    required: false,
+    type: Number,
+    description: 'Filter by minimum university ranking',
+  })
+  @ApiQuery({
+    name: 'maxRanking',
+    required: false,
+    type: Number,
+    description: 'Filter by maximum university ranking',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    description:
+      'Field to sort by (ranking, tuitionFee, universityName, established)',
+  })
+  @ApiQuery({
+    name: 'sortDirection',
+    required: false,
+    enum: ['asc', 'desc'],
+    description: 'Sort direction (asc or desc)',
+  })
+  @ApiHeader({
+    name: 'Accept-Language',
+    required: false,
+    enum: ['uz', 'ru', 'en'],
+    description: 'Language preference for localized fields (default: uz)',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description:
+      'Successfully retrieved list of universities expanded by programs',
+    type: PaginatedUniversityByProgramResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Bad Request - Invalid query parameters',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal Server Error',
+    type: ErrorResponseDto,
+  })
+  async findUniversitiesByPrograms(
+    @Headers('Accept-Language') lang: string = 'uz',
+    @Query() filterDto: UniversitiesByProgramsFilterDto,
+  ): Promise<PaginatedUniversityByProgramResponseDto> {
+    const validLangs = ['uz', 'ru', 'en'];
+    const effectiveLang = validLangs.includes(lang) ? lang : 'uz';
+    return this.universitiesService.findUniversitiesByPrograms(
+      filterDto,
+      effectiveLang,
+    );
+  }
+
   @Get()
   @ApiOperation({
     summary: 'Get all universities with pagination, filtering, and search',
@@ -215,6 +355,18 @@ export class UniversitiesController {
     required: false,
     type: Number,
     description: 'Filter by maximum average application fee',
+  })
+  @ApiQuery({
+    name: 'minTuitionFee',
+    required: false,
+    type: Number,
+    description: 'Filter by minimum tuition fee across programs',
+  })
+  @ApiQuery({
+    name: 'maxTuitionFee',
+    required: false,
+    type: Number,
+    description: 'Filter by maximum tuition fee across programs',
   })
   @ApiQuery({
     name: 'programs',

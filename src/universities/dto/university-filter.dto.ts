@@ -103,6 +103,20 @@ export class UniversityFilterDto {
   @Type(() => Number)
   maxApplicationFee?: number;
 
+  @ApiProperty({ description: 'Minimum tuition fee', required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  minTuitionFee?: number;
+
+  @ApiProperty({ description: 'Maximum tuition fee', required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  maxTuitionFee?: number;
+
   @ApiProperty({ description: 'Field to sort by', required: false })
   @IsOptional()
   @IsString()

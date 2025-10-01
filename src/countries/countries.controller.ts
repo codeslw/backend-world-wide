@@ -102,6 +102,27 @@ export class CountriesController {
     return this.countriesService.createMany(createManyCountriesDto.countries);
   }
 
+  @Get('main')
+  @ApiOperation({ summary: 'Get main countries (maximum 3)' })
+  @ApiHeader({
+    name: 'Accept-Language',
+    enum: ['uz', 'ru', 'en'],
+    description: 'Language preference',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of main countries',
+    type: [CountryResponseDto],
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Invalid parameters',
+    type: ErrorResponseDto,
+  })
+  findMainCountries(@Headers('Accept-Language') lang: string = 'uz') {
+    return this.countriesService.findMainCountries(lang);
+  }
+
   @Get()
   @ApiOperation({ summary: 'Get all countries with pagination and search' })
   @ApiHeader({

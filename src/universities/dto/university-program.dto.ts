@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -7,6 +8,8 @@ import {
   IsUUID,
   Min,
 } from 'class-validator';
+import { Currency } from '../../common/enum/currency.enum';
+import { StudyLevel } from '../../common/enum/study-level.enum';
 
 export class UniversityProgramDto {
   @ApiProperty({
@@ -31,10 +34,20 @@ export class UniversityProgramDto {
   @ApiProperty({
     description: 'The currency of the tuition fee.',
     example: 'USD',
-    default: 'USD',
+    enum: Currency,
+    default: Currency.USD,
     required: false,
   })
-  @IsString()
+  @IsEnum(Currency)
   @IsOptional()
-  tuitionFeeCurrency?: string = 'USD';
+  tuitionFeeCurrency?: Currency = Currency.USD;
+
+  @ApiProperty({
+    description: 'The study level for this program at this university.',
+    example: StudyLevel.BACHELOR,
+    enum: StudyLevel,
+  })
+  @IsEnum(StudyLevel)
+  @IsNotEmpty()
+  studyLevel: StudyLevel;
 }

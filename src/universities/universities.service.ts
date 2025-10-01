@@ -15,6 +15,9 @@ import {
 } from '../common/exceptions/app.exceptions';
 import { UniversityFilterDto } from './dto/university-filter.dto';
 import { UniversityResponseDto } from './dto/university-response.dto';
+import { UniversitiesByProgramsFilterDto } from './dto/universities-by-programs-filter.dto';
+import { UniversityByProgramResponseDto } from './dto/university-by-program-response.dto';
+import { MainUniversityResponseDto } from './dto/main-university-response.dto';
 
 @Injectable()
 export class UniversitiesService {
@@ -48,6 +51,7 @@ export class UniversitiesService {
               program: { connect: { id: program.programId } },
               tuitionFee: program.tuitionFee,
               tuitionFeeCurrency: program.tuitionFeeCurrency || 'USD',
+              studyLevel: program.studyLevel,
             })),
           },
           requirements: requirements
@@ -151,6 +155,8 @@ export class UniversitiesService {
         maxAcceptanceRate,
         minApplicationFee,
         maxApplicationFee,
+        minTuitionFee,
+        maxTuitionFee,
         programs,
         search,
       } = filterDto;
@@ -214,6 +220,19 @@ export class UniversitiesService {
             },
           };
         }
+      }
+
+      if (minTuitionFee !== undefined || maxTuitionFee !== undefined) {
+        where.universityPrograms = {
+          ...(where.universityPrograms || {}),
+          some: {
+            ...(where.universityPrograms?.some || {}),
+            tuitionFee: {
+              ...(minTuitionFee !== undefined && { gte: Number(minTuitionFee) }),
+              ...(maxTuitionFee !== undefined && { lte: Number(maxTuitionFee) }),
+            },
+          },
+        };
       }
 
       if (search) {
@@ -392,9 +411,10 @@ export class UniversitiesService {
           for (const programData of programs) {
             await tx.universityProgram.upsert({
               where: {
-                universityId_programId: {
+                universityId_programId_studyLevel: {
                   universityId: id,
                   programId: programData.programId,
+                  studyLevel: programData.studyLevel,
                 },
               },
               create: {
@@ -402,10 +422,12 @@ export class UniversitiesService {
                 program: { connect: { id: programData.programId } },
                 tuitionFee: programData.tuitionFee,
                 tuitionFeeCurrency: programData.tuitionFeeCurrency,
+                studyLevel: programData.studyLevel,
               },
               update: {
                 tuitionFee: programData.tuitionFee,
                 tuitionFeeCurrency: programData.tuitionFeeCurrency,
+                studyLevel: programData.studyLevel,
               },
             });
           }
@@ -626,6 +648,7 @@ export class UniversitiesService {
           // titleEn: up.program?.titleEn,
           tuitionFee: up.tuitionFee,
           tuitionFeeCurrency: up.tuitionFeeCurrency,
+          studyLevel: up.studyLevel,
         })) || [],
       country: university.country,
       city: university.city,
@@ -707,9 +730,252 @@ export class UniversitiesService {
         where: { isMain: true }
       });
     }
-    
+
     if (count >= 3) {
       throw new InvalidDataException(`Cannot set as main: maximum of 3 ${entityType === 'university' ? 'universities' : 'countries'} can be marked as main`);
+    }
+  }
+
+  async findMainUniversities(lang: string = 'uz'): Promise<MainUniversityResponseDto[]> {
+    try {
+      const universities = await this.prisma.university.findMany({
+        where: { isMain: true },
+        take: 3,
+        include: {
+          country: true,
+          city: true,
+          universityPrograms: {
+            include: {
+              program: true,
+            },
+          },
+        },
+        orderBy: { ranking: 'asc' },
+      });
+
+      return universities.map((university) => {
+        const countryName =
+          university.country[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+          university.country.nameUz;
+        const cityName =
+          university.city[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+          university.city.nameUz;
+        const cityDescription =
+          university.city[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+          university.city.descriptionUz;
+
+        return {
+          name: university.name,
+          country: {
+            ...university.country,
+            name: countryName,
+          } as any,
+          city: {
+            ...university.city,
+            name: cityName,
+            description: cityDescription,
+          } as any,
+          programs: university.universityPrograms.map((up) => {
+            const programTitle =
+              up.program[`title${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+              up.program.titleUz;
+
+            return {
+              programId: up.programId,
+              title: programTitle,
+              tuitionFee: up.tuitionFee,
+              tuitionFeeCurrency: up.tuitionFeeCurrency as any,
+              studyLevel: up.studyLevel as any,
+            };
+          }),
+          ranking: university.ranking,
+          established: university.established,
+          photoUrl: university.photoUrl,
+        };
+      });
+    } catch (error) {
+      console.error('Error finding main universities:', error);
+      throw error;
+    }
+  }
+
+  async findUniversitiesByPrograms(
+    filterDto: UniversitiesByProgramsFilterDto,
+    lang: string = 'uz',
+  ) {
+    try {
+      const {
+        page = 1,
+        limit = 10,
+        sortBy = 'ranking',
+        sortDirection = 'asc',
+        countryCode,
+        cityId,
+        minRanking,
+        maxRanking,
+        minTuitionFee,
+        maxTuitionFee,
+        search,
+      } = filterDto;
+
+      const where: Prisma.UniversityProgramWhereInput = {
+        university: {},
+      };
+
+      // Location filters
+      if (countryCode) {
+        where.university.countryCode = Number(countryCode);
+      }
+      if (cityId) {
+        where.university.cityId = cityId;
+      }
+
+      // Ranking filters
+      if (minRanking !== undefined || maxRanking !== undefined) {
+        where.university.ranking = {};
+        if (minRanking !== undefined) where.university.ranking.gte = Number(minRanking);
+        if (maxRanking !== undefined) where.university.ranking.lte = Number(maxRanking);
+      }
+
+      // Tuition fee filters
+      if (minTuitionFee !== undefined || maxTuitionFee !== undefined) {
+        where.tuitionFee = {};
+        if (minTuitionFee !== undefined) where.tuitionFee.gte = Number(minTuitionFee);
+        if (maxTuitionFee !== undefined) where.tuitionFee.lte = Number(maxTuitionFee);
+      }
+
+      // Search functionality
+      if (search) {
+        where.OR = [
+          { university: { name: { contains: search, mode: 'insensitive' } } },
+          { university: { descriptionUz: { contains: search, mode: 'insensitive' } } },
+          { university: { descriptionRu: { contains: search, mode: 'insensitive' } } },
+          { university: { descriptionEn: { contains: search, mode: 'insensitive' } } },
+          { program: { titleUz: { contains: search, mode: 'insensitive' } } },
+          { program: { titleRu: { contains: search, mode: 'insensitive' } } },
+          { program: { titleEn: { contains: search, mode: 'insensitive' } } },
+        ];
+      }
+
+      // Determine sort field and build orderBy
+      const orderBy: Prisma.UniversityProgramOrderByWithRelationInput[] = [];
+
+      const sortFieldMap: Record<string, any> = {
+        ranking: { university: { ranking: sortDirection } },
+        tuitionFee: { tuitionFee: sortDirection },
+        universityName: { university: { name: sortDirection } },
+        established: { university: { established: sortDirection } },
+      };
+
+      const sortConfig = sortFieldMap[sortBy] || sortFieldMap.ranking;
+      orderBy.push(sortConfig);
+
+      const skip = (Number(page) - 1) * Number(limit);
+      const take = Number(limit);
+
+      // Fetch university-program combinations with pagination
+      const [universityPrograms, total] = await this.prisma.$transaction([
+        this.prisma.universityProgram.findMany({
+          where,
+          orderBy,
+          skip,
+          take,
+          include: {
+            university: {
+              include: {
+                country: true,
+                city: true,
+              },
+            },
+            program: true,
+          },
+        }),
+        this.prisma.universityProgram.count({ where }),
+      ]);
+
+      // Map to response format
+      const mappedData: UniversityByProgramResponseDto[] = universityPrograms.map(
+        (up) => {
+          const university = up.university;
+          const program = up.program;
+
+          // Localize program fields
+          const programTitle =
+            program[`title${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+            program.titleUz;
+          const programDescription =
+            program[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+            program.descriptionUz;
+
+          // Localize country and city
+          const countryName =
+            university.country[
+              `name${lang.charAt(0).toUpperCase() + lang.slice(1)}`
+            ] || university.country.nameUz;
+          const cityName =
+            university.city[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
+            university.city.nameUz;
+          const cityDescription =
+            university.city[
+              `description${lang.charAt(0).toUpperCase() + lang.slice(1)}`
+            ] || university.city.descriptionUz;
+
+          return {
+            universityId: university.id,
+            universityName: university.name,
+            established: university.established,
+            type: university.type as any,
+            descriptionUz: university.descriptionUz,
+            descriptionRu: university.descriptionRu,
+            descriptionEn: university.descriptionEn,
+            ranking: university.ranking,
+            studentsCount: university.studentsCount,
+            acceptanceRate: university.acceptanceRate,
+            website: university.website,
+            email: university.email,
+            phone: university.phone,
+            address: university.address,
+            photoUrl: university.photoUrl,
+            winterIntakeDeadline:
+              university.winterIntakeDeadline?.toISOString().split('T')[0] ?? null,
+            autumnIntakeDeadline:
+              university.autumnIntakeDeadline?.toISOString().split('T')[0] ?? null,
+            country: {
+              ...university.country,
+              name: countryName,
+            } as any,
+            city: {
+              ...university.city,
+              name: cityName,
+              description: cityDescription,
+            } as any,
+            program: {
+              programId: program.id,
+              title: programTitle,
+              description: programDescription,
+              tuitionFee: up.tuitionFee,
+              tuitionFeeCurrency: up.tuitionFeeCurrency as any,
+              studyLevel: up.studyLevel as any,
+            },
+            createdAt: university.createdAt.toISOString(),
+            updatedAt: university.updatedAt.toISOString(),
+          };
+        },
+      );
+
+      const totalPages = Math.ceil(total / Number(limit));
+      return {
+        data: mappedData,
+        meta: {
+          total,
+          page: Number(page),
+          limit: Number(limit),
+          totalPages,
+        },
+      };
+    } catch (error) {
+      console.error('Error finding universities by programs:', error);
+      throw error;
     }
   }
 
