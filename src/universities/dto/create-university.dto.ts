@@ -15,6 +15,8 @@ import {
   Min,
   Max,
   IsBoolean,
+  ArrayMaxSize,
+  ArrayMinSize,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UniversityType } from '../../common/enum/university-type.enum';
@@ -166,6 +168,18 @@ export class CreateUniversityDto {
   @IsOptional()
   @IsUrl()
   photoUrl?: string;
+
+  @ApiPropertyOptional({
+    description: 'Additional URLs to photos of the university',
+    example: '["https://example.com/university2.jpg"]',
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(0)
+  @ArrayMaxSize(4)
+  @IsUrl({}, { each: true })
+  additionalPhotoUrls?: string[];
 
   @ApiPropertyOptional({
     description: 'Whether this university is featured as main (only 3 allowed)',

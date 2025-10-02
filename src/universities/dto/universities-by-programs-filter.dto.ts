@@ -7,8 +7,11 @@ import {
   IsString,
   IsNumber,
   IsUUID,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { StudyLevel } from '../../common/enum/study-level.enum';
+import { Currency } from '../../common/enum/currency.enum';
 
 export class UniversitiesByProgramsFilterDto {
   @ApiProperty({ description: 'Country code', required: false })
@@ -35,6 +38,32 @@ export class UniversitiesByProgramsFilterDto {
   @Min(0)
   @Type(() => Number)
   maxTuitionFee?: number;
+
+  @ApiProperty({
+    description: 'Tuition fee currency',
+    required: false,
+    enum: Currency,
+  })
+  @IsOptional()
+  @IsEnum(Currency)
+  tuitionFeeCurrency?: Currency;
+
+  @ApiProperty({
+    description: 'Study level',
+    required: false,
+    enum: StudyLevel,
+  })
+  @IsOptional()
+  @IsEnum(StudyLevel)
+  studyLevel?: StudyLevel;
+
+  @ApiProperty({
+    description: 'Filter by intake ID',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID()
+  intake?: string;
 
   @ApiProperty({ description: 'Minimum university ranking', required: false })
   @IsOptional()

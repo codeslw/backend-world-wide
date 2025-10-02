@@ -38,6 +38,8 @@ import {
 import { UniversityType } from '../common/enum/university-type.enum';
 import { ErrorResponseDto } from '../common/dto/error-response.dto';
 import { UniversityFilterDto } from './dto/university-filter.dto';
+import { StudyLevel } from '../common/enum/study-level.enum';
+import { Currency } from '../common/enum/currency.enum';
 import { CreateManyUniversitiesDto } from './dto/create-many-universities.dto';
 import { UniversitiesByProgramsFilterDto } from './dto/universities-by-programs-filter.dto';
 import {
@@ -210,6 +212,18 @@ export class UniversitiesController {
     description: 'Filter by maximum tuition fee',
   })
   @ApiQuery({
+    name: 'tuitionFeeCurrency',
+    required: false,
+    enum: Currency,
+    description: 'Filter by tuition fee currency',
+  })
+  @ApiQuery({
+    name: 'studyLevel',
+    required: false,
+    enum: StudyLevel,
+    description: 'Filter by study level',
+  })
+  @ApiQuery({
     name: 'minRanking',
     required: false,
     type: Number,
@@ -357,6 +371,12 @@ export class UniversitiesController {
     description: 'Filter by maximum average application fee',
   })
   @ApiQuery({
+    name: 'applicationFeeCurrency',
+    required: false,
+    enum: Currency,
+    description: 'Filter by application fee currency',
+  })
+  @ApiQuery({
     name: 'minTuitionFee',
     required: false,
     type: Number,
@@ -367,6 +387,18 @@ export class UniversitiesController {
     required: false,
     type: Number,
     description: 'Filter by maximum tuition fee across programs',
+  })
+  @ApiQuery({
+    name: 'tuitionFeeCurrency',
+    required: false,
+    enum: Currency,
+    description: 'Filter by tuition fee currency',
+  })
+  @ApiQuery({
+    name: 'studyLevel',
+    required: false,
+    enum: StudyLevel,
+    description: 'Filter by study level',
   })
   @ApiQuery({
     name: 'programs',

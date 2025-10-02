@@ -90,6 +90,7 @@ model University {
   avgApplicationFee      Float?
   applicationFeeCurrency String?
   photoUrl               String?
+  additionalPhotoUrls    String[]                @default([])
   isMain                 Boolean                 @default(false)
   cityId                 String
   countryCode            Int
@@ -125,21 +126,49 @@ model UniversityRequirements {
 }
 
 model UniversityProgram {
-  id                 String     @id @default(uuid())
+  id                 String                        @id @default(uuid())
   universityId       String
   programId          String
   tuitionFee         Float
-  tuitionFeeCurrency String     @default("USD")
-  studyLevel         StudyLevel @default(BACHELOR)
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
-  program            Program    @relation(fields: [programId], references: [id])
-  university         University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  tuitionFeeCurrency String                        @default("USD")
+  studyLevel         StudyLevel                    @default(BACHELOR)
+  createdAt          DateTime                      @default(now())
+  updatedAt          DateTime                      @updatedAt
+  duration           Int?
+  program            Program                       @relation(fields: [programId], references: [id])
+  university         University                    @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  intakes            UniversityProgramIntake[]
 
   @@unique([universityId, programId, studyLevel])
   @@index([universityId])
   @@index([programId])
   @@map("university_programs")
+}
+
+model Intake {
+  id                   String                    @id @default(uuid())
+  month                String
+  year                 Int
+  deadline             DateTime
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  universityPrograms   UniversityProgramIntake[]
+
+  @@map("intakes")
+}
+
+model UniversityProgramIntake {
+  id                  String            @id @default(uuid())
+  universityProgramId String
+  intakeId            String
+  universityProgram   UniversityProgram @relation(fields: [universityProgramId], references: [id], onDelete: Cascade)
+  intake              Intake            @relation(fields: [intakeId], references: [id], onDelete: Cascade)
+  createdAt           DateTime          @default(now())
+
+  @@unique([universityProgramId, intakeId])
+  @@index([universityProgramId])
+  @@index([intakeId])
+  @@map("university_program_intakes")
 }
 
 model File {
@@ -390,4 +419,6 @@ enum StudyLevel {
   BACHELOR
   MASTER
   PHD
+  LANGUAGE_COURSE
+  FOUNDATION
 }

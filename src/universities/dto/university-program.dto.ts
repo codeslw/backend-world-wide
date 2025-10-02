@@ -7,6 +7,7 @@ import {
   IsString,
   IsUUID,
   Min,
+  IsArray,
 } from 'class-validator';
 import { Currency } from '../../common/enum/currency.enum';
 import { StudyLevel } from '../../common/enum/study-level.enum';
@@ -50,4 +51,23 @@ export class UniversityProgramDto {
   @IsEnum(StudyLevel)
   @IsNotEmpty()
   studyLevel: StudyLevel;
+
+  @ApiProperty({
+    description: 'The duration of the program in months.',
+    example: 24,
+    required: false,
+  })
+  @IsNumber()
+  @IsOptional()
+  duration?: number;
+
+  @ApiProperty({
+    description: 'The intakes for this program.',
+    example: ['d290f1ee-6c54-4b01-90e6-d701748f0851'],
+    required: false,
+  })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @IsOptional()
+  intakes?: string[];
 }

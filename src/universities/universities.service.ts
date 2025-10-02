@@ -52,6 +52,14 @@ export class UniversitiesService {
               tuitionFee: program.tuitionFee,
               tuitionFeeCurrency: program.tuitionFeeCurrency || 'USD',
               studyLevel: program.studyLevel,
+              duration: program.duration,
+              intakes: program.intakes
+                ? {
+                    create: program.intakes.map((intakeId) => ({
+                      intake: { connect: { id: intakeId } },
+                    })),
+                  }
+                : undefined,
             })),
           },
           requirements: requirements
@@ -93,7 +101,12 @@ export class UniversitiesService {
           city: true,
           universityPrograms: {
             include: {
-              program: true, // Include program details
+              program: true,
+              intakes: {
+                include: {
+                  intake: true,
+                },
+              },
             },
           },
           requirements: true,
@@ -155,10 +168,14 @@ export class UniversitiesService {
         maxAcceptanceRate,
         minApplicationFee,
         maxApplicationFee,
+        applicationFeeCurrency,
         minTuitionFee,
         maxTuitionFee,
+        tuitionFeeCurrency,
+        studyLevel,
         programs,
         search,
+        intake,
       } = filterDto;
 
       const where: Prisma.UniversityWhereInput = {};
@@ -209,6 +226,10 @@ export class UniversitiesService {
           where.avgApplicationFee.lte = Number(maxApplicationFee);
       }
 
+      if (applicationFeeCurrency) {
+        where.applicationFeeCurrency = applicationFeeCurrency;
+      }
+
       if (programs && programs.length > 0) {
         const programIds = Array.isArray(programs)
           ? programs
@@ -222,15 +243,44 @@ export class UniversitiesService {
         }
       }
 
-      if (minTuitionFee !== undefined || maxTuitionFee !== undefined) {
+      if (
+        minTuitionFee !== undefined ||
+        maxTuitionFee !== undefined ||
+        tuitionFeeCurrency ||
+        studyLevel
+      ) {
+        const tuitionFeeFilter: any = {};
+        if (minTuitionFee !== undefined) {
+          tuitionFeeFilter.gte = Number(minTuitionFee);
+        }
+        if (maxTuitionFee !== undefined) {
+          tuitionFeeFilter.lte = Number(maxTuitionFee);
+        }
+
+        const programFilter: any = {};
+        if (Object.keys(tuitionFeeFilter).length > 0) {
+          programFilter.tuitionFee = tuitionFeeFilter;
+        }
+        if (tuitionFeeCurrency) {
+          programFilter.tuitionFeeCurrency = tuitionFeeCurrency;
+        }
+        if (studyLevel) {
+          programFilter.studyLevel = studyLevel;
+        }
+
+        if (intake) {
+          programFilter.intakes = {
+            some: {
+              intakeId: intake,
+            },
+          };
+        }
+
         where.universityPrograms = {
           ...(where.universityPrograms || {}),
           some: {
             ...(where.universityPrograms?.some || {}),
-            tuitionFee: {
-              ...(minTuitionFee !== undefined && { gte: Number(minTuitionFee) }),
-              ...(maxTuitionFee !== undefined && { lte: Number(maxTuitionFee) }),
-            },
+            ...programFilter,
           },
         };
       }
@@ -280,6 +330,11 @@ export class UniversitiesService {
                     titleEn: true,
                   },
                 },
+                intakes: {
+                  include: {
+                    intake: true,
+                  },
+                },
               },
             },
             requirements: true,
@@ -320,7 +375,12 @@ export class UniversitiesService {
           city: true,
           universityPrograms: {
             include: {
-              program: true, // Include full program details
+              program: true,
+              intakes: {
+                include: {
+                  intake: true,
+                },
+              },
             },
           },
           requirements: true,
@@ -409,7 +469,7 @@ export class UniversitiesService {
 
           // Upserts: Iterate through incoming programs
           for (const programData of programs) {
-            await tx.universityProgram.upsert({
+            const upsertedProgram = await tx.universityProgram.upsert({
               where: {
                 universityId_programId_studyLevel: {
                   universityId: id,
@@ -423,13 +483,31 @@ export class UniversitiesService {
                 tuitionFee: programData.tuitionFee,
                 tuitionFeeCurrency: programData.tuitionFeeCurrency,
                 studyLevel: programData.studyLevel,
+                duration: programData.duration,
               },
               update: {
                 tuitionFee: programData.tuitionFee,
                 tuitionFeeCurrency: programData.tuitionFeeCurrency,
                 studyLevel: programData.studyLevel,
+                duration: programData.duration,
               },
             });
+
+            // Handle intakes separately using the join table
+            if (programData.intakes) {
+              // Delete existing intake associations
+              await tx.universityProgramIntake.deleteMany({
+                where: { universityProgramId: upsertedProgram.id },
+              });
+
+              // Create new intake associations
+              await tx.universityProgramIntake.createMany({
+                data: programData.intakes.map((intakeId) => ({
+                  universityProgramId: upsertedProgram.id,
+                  intakeId,
+                })),
+              });
+            }
           }
         }
 
@@ -479,6 +557,11 @@ export class UniversitiesService {
             universityPrograms: {
               include: {
                 program: true,
+                intakes: {
+                  include: {
+                    intake: true,
+                  },
+                },
               },
             },
             requirements: true,
@@ -636,6 +719,7 @@ export class UniversitiesService {
       phone: university.phone,
       address: university.address,
       photoUrl: university.photoUrl,
+      additionalPhotoUrls: university.additionalPhotoUrls,
       isMain: university.isMain,
       createdAt: university.createdAt,
       updatedAt: university.updatedAt,
@@ -649,6 +733,13 @@ export class UniversitiesService {
           tuitionFee: up.tuitionFee,
           tuitionFeeCurrency: up.tuitionFeeCurrency,
           studyLevel: up.studyLevel,
+          duration: up.duration,
+          intakes: up.intakes?.map((upIntake) => ({
+            id: upIntake.intake.id,
+            month: upIntake.intake.month,
+            year: upIntake.intake.year,
+            deadline: upIntake.intake.deadline.toISOString(),
+          })) || [],
         })) || [],
       country: university.country,
       city: university.city,
@@ -747,6 +838,11 @@ export class UniversitiesService {
           universityPrograms: {
             include: {
               program: true,
+              intakes: {
+                include: {
+                  intake: true,
+                },
+              },
             },
           },
         },
@@ -786,6 +882,12 @@ export class UniversitiesService {
               tuitionFee: up.tuitionFee,
               tuitionFeeCurrency: up.tuitionFeeCurrency as any,
               studyLevel: up.studyLevel as any,
+              intakes: up.intakes?.map((upIntake) => ({
+                id: upIntake.intake.id,
+                month: upIntake.intake.month,
+                year: upIntake.intake.year,
+                deadline: upIntake.intake.deadline.toISOString(),
+              })) || [],
             };
           }),
           ranking: university.ranking,
@@ -815,7 +917,10 @@ export class UniversitiesService {
         maxRanking,
         minTuitionFee,
         maxTuitionFee,
+        tuitionFeeCurrency,
+        studyLevel,
         search,
+        intake,
       } = filterDto;
 
       const where: Prisma.UniversityProgramWhereInput = {
@@ -842,6 +947,22 @@ export class UniversitiesService {
         where.tuitionFee = {};
         if (minTuitionFee !== undefined) where.tuitionFee.gte = Number(minTuitionFee);
         if (maxTuitionFee !== undefined) where.tuitionFee.lte = Number(maxTuitionFee);
+      }
+
+      if (tuitionFeeCurrency) {
+        where.tuitionFeeCurrency = tuitionFeeCurrency;
+      }
+
+      if (studyLevel) {
+        where.studyLevel = studyLevel;
+      }
+
+      if (intake) {
+        where.intakes = {
+          some: {
+            intakeId: intake,
+          },
+        };
       }
 
       // Search functionality
@@ -888,6 +1009,11 @@ export class UniversitiesService {
               },
             },
             program: true,
+            intakes: {
+              include: {
+                intake: true,
+              },
+            },
           },
         }),
         this.prisma.universityProgram.count({ where }),
@@ -956,6 +1082,7 @@ export class UniversitiesService {
               tuitionFee: up.tuitionFee,
               tuitionFeeCurrency: up.tuitionFeeCurrency as any,
               studyLevel: up.studyLevel as any,
+              duration: up.duration,
             },
             createdAt: university.createdAt.toISOString(),
             updatedAt: university.updatedAt.toISOString(),

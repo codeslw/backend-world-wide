@@ -3,6 +3,7 @@ import { CountryResponseDto } from '../../countries/dto/country-response.dto';
 import { CityResponseDto } from '../../cities/dto/city-response.dto';
 import { Currency } from '../../common/enum/currency.enum';
 import { StudyLevel } from '../../common/enum/study-level.enum';
+import { IntakeResponseDto } from './intake-response.dto';
 
 class MainUniversityProgramDto {
   @ApiProperty({ description: 'Program ID' })
@@ -19,6 +20,9 @@ class MainUniversityProgramDto {
 
   @ApiProperty({ description: 'Study level', enum: StudyLevel })
   studyLevel: StudyLevel;
+
+  @ApiProperty({ description: 'Available intakes', type: [IntakeResponseDto] })
+  intakes: IntakeResponseDto[];
 }
 
 export class MainUniversityResponseDto {

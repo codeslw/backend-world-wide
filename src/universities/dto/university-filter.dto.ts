@@ -12,6 +12,8 @@ import {
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { UniversityType } from '../../common/enum/university-type.enum';
+import { StudyLevel } from '../../common/enum/study-level.enum';
+import { Currency } from '../../common/enum/currency.enum';
 
 export class UniversityFilterDto {
   @ApiProperty({ description: 'Search query', required: false })
@@ -103,6 +105,15 @@ export class UniversityFilterDto {
   @Type(() => Number)
   maxApplicationFee?: number;
 
+  @ApiProperty({
+    description: 'Application fee currency',
+    required: false,
+    enum: Currency,
+  })
+  @IsOptional()
+  @IsEnum(Currency)
+  applicationFeeCurrency?: Currency;
+
   @ApiProperty({ description: 'Minimum tuition fee', required: false })
   @IsOptional()
   @IsNumber()
@@ -116,6 +127,32 @@ export class UniversityFilterDto {
   @Min(0)
   @Type(() => Number)
   maxTuitionFee?: number;
+
+  @ApiProperty({
+    description: 'Tuition fee currency',
+    required: false,
+    enum: Currency,
+  })
+  @IsOptional()
+  @IsEnum(Currency)
+  tuitionFeeCurrency?: Currency;
+
+  @ApiProperty({
+    description: 'Study level',
+    required: false,
+    enum: StudyLevel,
+  })
+  @IsOptional()
+  @IsEnum(StudyLevel)
+  studyLevel?: StudyLevel;
+
+  @ApiProperty({
+    description: 'Filter by intake ID',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID()
+  intake?: string;
 
   @ApiProperty({ description: 'Field to sort by', required: false })
   @IsOptional()

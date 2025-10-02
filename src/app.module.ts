@@ -10,6 +10,7 @@ import { CommonModule } from './common/common.module';
 import { UniversitiesModule } from './universities/universities.module';
 import { DigitalOceanService } from './digital-ocean/digital-ocean.service';
 import { DigitalOceanModule } from './digital-ocean/digital-ocean.module';
+import { IntakesModule } from './intakes/intakes.module';
 import { FilesModule } from './files/files.module';
 import { ChatModule } from './chat/chat.module';
 import { CatalogModule } from './catalog/catalog.module';
@@ -40,6 +41,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     ValidityModule,
     StatisticsModule,
     NotificationsModule,
+    IntakesModule,
   ],
   providers: [PrismaService, DigitalOceanService],
   controllers: [],

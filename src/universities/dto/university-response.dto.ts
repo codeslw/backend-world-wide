@@ -7,6 +7,7 @@ import { CityResponseDto } from '../../cities/dto/city-response.dto';
 import { UniversityRequirementsDto } from './university-requirements.dto';
 import { Currency } from '../../common/enum/currency.enum';
 import { StudyLevel } from '../../common/enum/study-level.enum';
+import { IntakeResponseDto } from './intake-response.dto';
 
 // DTO for representing program details within the university response
 class UniversityProgramResponseDto {
@@ -26,6 +27,9 @@ class UniversityProgramResponseDto {
 
   @ApiProperty({ description: 'Study level', enum: StudyLevel })
   studyLevel: StudyLevel;
+
+  @ApiProperty({ description: 'Available intakes', type: [IntakeResponseDto] })
+  intakes: IntakeResponseDto[];
 }
 
 export class UniversityResponseDto {
@@ -100,6 +104,12 @@ export class UniversityResponseDto {
 
   @ApiPropertyOptional({ description: 'University photo URL' })
   photoUrl?: string;
+
+  @ApiPropertyOptional({
+    description: 'Additional URLs to photos of the university',
+    type: [String],
+  })
+  additionalPhotoUrls?: string[];
 
   @ApiProperty({ description: 'Whether this university is featured as main' })
   isMain: boolean;
