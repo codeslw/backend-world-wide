@@ -12,5 +12,5 @@ export class CreateIntakeDto {
 
   @ApiProperty()
   @IsDateString()
-  deadline: Date;
+  deadline: string;
 }

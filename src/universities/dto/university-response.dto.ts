@@ -17,6 +17,15 @@ class UniversityProgramResponseDto {
   @ApiProperty({ description: 'Program Title (e.g., in Uzbek)' }) // Adjust language as needed
   titleUz: string;
 
+  @ApiProperty({ description: 'Program Title (e.g., in Russian)' })
+  titleRu: string;
+
+  @ApiProperty({ description: 'Program Title (e.g., in English)' })
+  titleEn: string;
+
+  @ApiPropertyOptional({ description: 'Duration of the program in months' })
+  duration?: number;
+
   @ApiProperty({
     description: 'Tuition fee for this program at this university',
   })

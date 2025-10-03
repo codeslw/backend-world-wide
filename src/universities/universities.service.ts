@@ -727,9 +727,9 @@ export class UniversitiesService {
         university.universityPrograms?.map((up) => ({
           programId: up.programId,
           // Include localized program title if needed, based on lang
-          titleUz: up.program?.titleUz, // Example: use Uzbek title
-          // titleRu: up.program?.titleRu,
-          // titleEn: up.program?.titleEn,
+          titleUz: up.program?.titleUz,
+          titleRu: up.program?.titleRu,
+          titleEn: up.program?.titleEn,
           tuitionFee: up.tuitionFee,
           tuitionFeeCurrency: up.tuitionFeeCurrency,
           studyLevel: up.studyLevel,
