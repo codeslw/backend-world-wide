@@ -26,6 +26,9 @@ class MainUniversityProgramDto {
 }
 
 export class MainUniversityResponseDto {
+  @ApiProperty({description : 'Id of university'})
+  id: string;
+  
   @ApiProperty({ description: 'University name' })
   name: string;
 

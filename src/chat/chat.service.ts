@@ -594,6 +594,7 @@ export class ChatService {
       this.prisma.message.findMany({
         orderBy: { createdAt: 'asc' }, // Fetch oldest first for pagination
         skip,
+        where,
         take: limit,
         include: {
           sender: {

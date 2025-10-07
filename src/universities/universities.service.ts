@@ -861,6 +861,7 @@ export class UniversitiesService {
           university.city.descriptionUz;
 
         return {
+          id: university.id,
           name: university.name,
           country: {
             ...university.country,
