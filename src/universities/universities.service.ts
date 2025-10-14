@@ -701,6 +701,7 @@ export class UniversitiesService {
       established: university.established,
       type: university.type,
       avgApplicationFee: university.avgApplicationFee,
+      applicationFeeCurrency : university.applicationFeeCurrency,
       countryCode: university.countryCode,
       cityId: university.cityId,
       descriptionUz: university.descriptionUz,

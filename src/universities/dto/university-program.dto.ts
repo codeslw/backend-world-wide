@@ -53,11 +53,11 @@ export class UniversityProgramDto {
   studyLevel: StudyLevel;
 
   @ApiProperty({
-    description: 'The duration of the program in months.',
-    example: 24,
+    description: 'The duration of the program in months. Can accept decimal values like 1.5 or 2.5.',
+    example: 2.5,
     required: false,
   })
-  @IsNumber()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @IsOptional()
   duration?: number;
 

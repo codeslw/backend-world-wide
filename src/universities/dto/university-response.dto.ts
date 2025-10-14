@@ -23,7 +23,10 @@ class UniversityProgramResponseDto {
   @ApiProperty({ description: 'Program Title (e.g., in English)' })
   titleEn: string;
 
-  @ApiPropertyOptional({ description: 'Duration of the program in months' })
+  @ApiPropertyOptional({
+    description: 'Duration of the program in months. Can accept decimal values like 1.5 or 2.5.',
+    example: 2.5
+  })
   duration?: number;
 
   @ApiProperty({

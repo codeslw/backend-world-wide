@@ -134,7 +134,7 @@ model UniversityProgram {
   studyLevel         StudyLevel                    @default(BACHELOR)
   createdAt          DateTime                      @default(now())
   updatedAt          DateTime                      @updatedAt
-  duration           Int?
+  duration           Float?
   program            Program                       @relation(fields: [programId], references: [id])
   university         University                    @relation(fields: [universityId], references: [id], onDelete: Cascade)
   intakes            UniversityProgramIntake[]
