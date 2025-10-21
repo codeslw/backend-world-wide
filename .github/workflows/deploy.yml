@@ -89,6 +89,8 @@ jobs:
             DIGITAL_OCEAN_SECRET_KEY=${{ secrets.DIGITAL_OCEAN_SECRET_KEY }}
             DIGITAL_OCEAN_BUCKET=${{ secrets.DIGITAL_OCEAN_BUCKET }}
             DIGITAL_OCEAN_ENDPOINT=${{ secrets.DIGITAL_OCEAN_ENDPOINT }}
+            SWAGGER_USER=${{ secrets.SWAGGER_USER }}
+            SWAGGER_PASSWORD=${{ secrets.SWAGGER_PASSWORD }}
             EOF
             
             # Build new image
