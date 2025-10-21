@@ -5,11 +5,14 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as fs from 'fs';
 import { Request, Response } from 'express';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
+import { SwaggerAuthMiddleware } from './common/middleware/swagger-auth.middleware';
+import { ConfigService } from '@nestjs/config';
 
 //update migrations
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
 
   // Apply global validation pipe with detailed error messages
   app.useGlobalPipes(
@@ -79,6 +82,12 @@ async function bootstrap() {
     },
     customSiteTitle: 'EduWorldWide API Docs v2.0.1',
   };
+
+  // Apply Swagger authentication middleware
+  app.use('/api', (req, res, next) => {
+    const swaggerAuth = new SwaggerAuthMiddleware(configService);
+    swaggerAuth.use(req, res, next);
+  });
 
   SwaggerModule.setup('api', app, document, customOptions);
 
