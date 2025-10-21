@@ -84,8 +84,10 @@ async function bootstrap() {
   };
 
   // Apply Swagger authentication middleware
+  console.log('Setting up Swagger authentication middleware...');
+  const swaggerAuth = new SwaggerAuthMiddleware(configService);
   app.use('/api', (req, res, next) => {
-    const swaggerAuth = new SwaggerAuthMiddleware(configService);
+    console.log('Swagger auth middleware called for path:', req.path);
     swaggerAuth.use(req, res, next);
   });
 

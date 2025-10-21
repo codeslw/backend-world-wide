@@ -10,8 +10,13 @@ export class SwaggerAuthMiddleware implements NestMiddleware {
     const swaggerUser = this.configService.get<string>('SWAGGER_USER');
     const swaggerPassword = this.configService.get<string>('SWAGGER_PASSWORD');
 
+    // Debug logging
+    console.log('Swagger Auth Middleware - User:', swaggerUser ? 'SET' : 'NOT SET');
+    console.log('Swagger Auth Middleware - Password:', swaggerPassword ? 'SET' : 'NOT SET');
+
     // Skip authentication if credentials are not set
     if (!swaggerUser || !swaggerPassword) {
+      console.log('Swagger Auth Middleware - Skipping authentication (credentials not set)');
       return next();
     }
 
