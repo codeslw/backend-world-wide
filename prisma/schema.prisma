@@ -39,6 +39,7 @@ model Program {
   children           Program[]           @relation("ProgramToProgram")
   universityPrograms UniversityProgram[]
   applications       Application[]
+  scholarships       Scholarship[]
 
   @@map("programs")
 }
@@ -72,36 +73,39 @@ model City {
 }
 
 model University {
-  id                     String                  @id @default(uuid())
-  established            Int?
-  type                   String
-  descriptionUz          String?
-  descriptionRu          String?
-  descriptionEn          String?
-  website                String?
-  email                  String?
-  phone                  String?
-  address                String
-  winterIntakeDeadline   DateTime?
-  autumnIntakeDeadline   DateTime?
-  ranking                Int?
-  studentsCount          Int?
-  acceptanceRate         Float?
-  avgApplicationFee      Float?
-  applicationFeeCurrency String?
-  photoUrl               String?
-  additionalPhotoUrls    String[]                @default([])
-  isMain                 Boolean                 @default(false)
-  cityId                 String
-  countryCode            Int
-  createdAt              DateTime                @default(now())
-  updatedAt              DateTime                @updatedAt
-  name                   String
-  city                   City                    @relation(fields: [cityId], references: [id])
-  country                Country                 @relation(fields: [countryCode], references: [code])
-  universityPrograms     UniversityProgram[]
-  applications           Application[]
-  requirements           UniversityRequirements?
+  id                      String                  @id @default(uuid())
+  established             Int?
+  type                    String
+  descriptionUz           String?
+  descriptionRu           String?
+  descriptionEn           String?
+  website                 String?
+  email                   String?
+  phone                   String?
+  address                 String
+  winterIntakeDeadline    DateTime?
+  autumnIntakeDeadline    DateTime?
+  ranking                 Int?
+  studentsCount           Int?
+  acceptanceRate          Float?
+  avgApplicationFee       Float?
+  applicationFeeCurrency  String?
+  photoUrl                String?
+  additionalPhotoUrls     String[]                @default([])
+  isMain                  Boolean                 @default(false)
+  cityId                  String
+  countryCode             Int
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+  name                    String
+  city                    City                    @relation(fields: [cityId], references: [id])
+  country                 Country                 @relation(fields: [countryCode], references: [code])
+  universityPrograms      UniversityProgram[]
+  applications            Application[]
+  requirements            UniversityRequirements?
+  hasScholarship          Boolean                 @default(false)
+  scholarshipRequirements String[]                @default([])
+  scholarships            Scholarship[]
 
   @@map("universities")
 }
@@ -126,17 +130,17 @@ model UniversityRequirements {
 }
 
 model UniversityProgram {
-  id                 String                        @id @default(uuid())
+  id                 String                    @id @default(uuid())
   universityId       String
   programId          String
   tuitionFee         Float
-  tuitionFeeCurrency String                        @default("USD")
-  studyLevel         StudyLevel                    @default(BACHELOR)
-  createdAt          DateTime                      @default(now())
-  updatedAt          DateTime                      @updatedAt
+  tuitionFeeCurrency String                    @default("USD")
+  studyLevel         StudyLevel                @default(BACHELOR)
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
   duration           Float?
-  program            Program                       @relation(fields: [programId], references: [id])
-  university         University                    @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  program            Program                   @relation(fields: [programId], references: [id])
+  university         University                @relation(fields: [universityId], references: [id], onDelete: Cascade)
   intakes            UniversityProgramIntake[]
 
   @@unique([universityId, programId, studyLevel])
@@ -146,13 +150,13 @@ model UniversityProgram {
 }
 
 model Intake {
-  id                   String                    @id @default(uuid())
-  month                String
-  year                 Int
-  deadline             DateTime
-  createdAt            DateTime                  @default(now())
-  updatedAt            DateTime                  @updatedAt
-  universityPrograms   UniversityProgramIntake[]
+  id                 String                    @id @default(uuid())
+  month              String
+  year               Int
+  deadline           DateTime
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  universityPrograms UniversityProgramIntake[]
 
   @@map("intakes")
 }
@@ -421,4 +425,22 @@ enum StudyLevel {
   PHD
   LANGUAGE_COURSE
   FOUNDATION
+}
+
+model Scholarship {
+  id           String     @id @default(uuid())
+  name         String
+  description  String?
+  requirements String[]   @default([])
+  universityId String
+  programId    String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  program      Program    @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@unique([universityId, programId])
+  @@index([universityId])
+  @@index([programId])
+  @@map("scholarships")
 }

@@ -20,6 +20,7 @@ import { MiniApplicationsModule } from './modules/mini-applications.module';
 import { ValidityModule } from './validity/validity.module';
 import { StatisticsModule } from './statistics/statistics.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ScholarshipsModule } from './scholarships/scholarships.module';
 
 @Module({
   imports: [
@@ -41,9 +42,11 @@ import { NotificationsModule } from './notifications/notifications.module';
     ValidityModule,
     StatisticsModule,
     NotificationsModule,
+    NotificationsModule,
     IntakesModule,
+    ScholarshipsModule,
   ],
   providers: [PrismaService, DigitalOceanService],
   controllers: [],
 })
-export class AppModule {}
+export class AppModule { }

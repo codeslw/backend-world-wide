@@ -221,4 +221,23 @@ export class CreateUniversityDto {
   @ValidateNested()
   @Type(() => UniversityRequirementsDto)
   requirements?: UniversityRequirementsDto;
+
+  @ApiPropertyOptional({
+    description: 'Whether the university offers scholarships',
+    example: true,
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  hasScholarship?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'List of general scholarship requirements',
+    example: ['IELTS 7.0', 'GPA 3.5'],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  scholarshipRequirements?: string[];
 }
