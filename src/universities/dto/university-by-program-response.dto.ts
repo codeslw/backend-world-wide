@@ -7,7 +7,7 @@ import { Currency } from '../../common/enum/currency.enum';
 import { StudyLevel } from '../../common/enum/study-level.enum';
 
 // Program details within the university-by-program response
-class ProgramDetailsDto {
+export class ProgramDetailsDto {
   @ApiProperty({ description: 'Program ID' })
   programId: string;
 

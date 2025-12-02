@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../db/prisma.service';
 import { CreateUniversityDto } from './dto/create-university.dto';
@@ -18,13 +18,16 @@ import { UniversityResponseDto } from './dto/university-response.dto';
 import { UniversitiesByProgramsFilterDto } from './dto/universities-by-programs-filter.dto';
 import { UniversityByProgramResponseDto } from './dto/university-by-program-response.dto';
 import { MainUniversityResponseDto } from './dto/main-university-response.dto';
+import { title } from 'process';
+import { Currency } from 'src/common/enum/currency.enum';
+import { StudyLevel } from 'src/common/enum/study-level.enum';
 
 @Injectable()
 export class UniversitiesService {
   constructor(
     private prisma: PrismaService,
     private filterService: FilterService,
-  ) {}
+  ) { }
 
   async create(
     createUniversityDto: CreateUniversityDto,
@@ -55,45 +58,45 @@ export class UniversitiesService {
               duration: program.duration,
               intakes: program.intakes
                 ? {
-                    create: program.intakes.map((intakeId) => ({
-                      intake: { connect: { id: intakeId } },
-                    })),
-                  }
+                  create: program.intakes.map((intakeId) => ({
+                    intake: { connect: { id: intakeId } },
+                  })),
+                }
                 : undefined,
             })),
           },
           requirements: requirements
             ? {
-                create: (() => {
-                  const {
-                    minIeltsScore,
-                    minToeflScore,
-                    minDuolingoScore,
-                    requiredDegree,
-                    minGpa,
-                    minGmatScore,
-                    minCatScore,
-                    requiredRecommendationLetters,
-                    otherRequirements,
-                    ...rest
-                  } = requirements;
+              create: (() => {
+                const {
+                  minIeltsScore,
+                  minToeflScore,
+                  minDuolingoScore,
+                  requiredDegree,
+                  minGpa,
+                  minGmatScore,
+                  minCatScore,
+                  requiredRecommendationLetters,
+                  otherRequirements,
+                  ...rest
+                } = requirements;
 
-                  return {
-                    minIeltsScore,
-                    minToeflScore,
-                    minDuolingoScore,
-                    requiredDegree,
-                    minGpa,
-                    minGmatScore,
-                    minCatScore,
-                    requiredRecommendationLetters,
-                    otherRequirements: {
-                      ...(otherRequirements || {}),
-                      ...rest,
-                    },
-                  };
-                })(),
-              }
+                return {
+                  minIeltsScore,
+                  minToeflScore,
+                  minDuolingoScore,
+                  requiredDegree,
+                  minGpa,
+                  minGmatScore,
+                  minCatScore,
+                  requiredRecommendationLetters,
+                  otherRequirements: {
+                    ...(otherRequirements || {}),
+                    ...rest,
+                  },
+                };
+              })(),
+            }
             : undefined,
         },
         include: {
@@ -701,7 +704,7 @@ export class UniversitiesService {
       established: university.established,
       type: university.type,
       avgApplicationFee: university.avgApplicationFee,
-      applicationFeeCurrency : university.applicationFeeCurrency,
+      applicationFeeCurrency: university.applicationFeeCurrency,
       countryCode: university.countryCode,
       cityId: university.cityId,
       descriptionUz: university.descriptionUz,
@@ -812,12 +815,12 @@ export class UniversitiesService {
   private async validateIsMainLimit(entityType: 'university' | 'country'): Promise<void> {
     const table = entityType === 'university' ? 'university' : 'country';
     let count;
-    if(entityType == 'country') {
+    if (entityType == 'country') {
       count = await this.prisma.country.count({
         where: { isMain: true }
       });
     }
-    else if(entityType === 'university') {
+    else if (entityType === 'university') {
       count = await this.prisma.university.count({
         where: { isMain: true }
       });
@@ -1038,14 +1041,14 @@ export class UniversitiesService {
           // Localize country and city
           const countryName =
             university.country[
-              `name${lang.charAt(0).toUpperCase() + lang.slice(1)}`
+            `name${lang.charAt(0).toUpperCase() + lang.slice(1)}`
             ] || university.country.nameUz;
           const cityName =
             university.city[`name${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
             university.city.nameUz;
           const cityDescription =
             university.city[
-              `description${lang.charAt(0).toUpperCase() + lang.slice(1)}`
+            `description${lang.charAt(0).toUpperCase() + lang.slice(1)}`
             ] || university.city.descriptionUz;
 
           return {
@@ -1105,6 +1108,44 @@ export class UniversitiesService {
     } catch (error) {
       console.error('Error finding universities by programs:', error);
       throw error;
+    }
+  }
+
+  async findProgramsByUniversity(universityId: string, lang: string) {
+    if (!universityId) {
+      throw new BadRequestException('University ID is required');
+    }
+    const foundUniversity = await this.prisma.university.findUnique({
+      where: {
+        id: universityId,
+      },
+    })
+    if (!foundUniversity) {
+      throw new NotFoundException('University not found');
+    }
+    try {
+      const programsByUniversity = await this.prisma.universityProgram.findMany({
+        where: {
+          universityId
+        },
+        include: {
+          program: true
+        }
+      })
+      const programs = programsByUniversity.map((program) => ({
+        programId: program.program.id,
+        title: program.program[`title${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || program.program.titleUz,
+        description: program.program[`description${lang.charAt(0).toUpperCase() + lang.slice(1)}`] || program.program.descriptionUz,
+        tuitionFee: program.tuitionFee,
+        tuitionFeeCurrency: program.tuitionFeeCurrency as Currency,
+        studyLevel: program.studyLevel as StudyLevel,
+        duration: program.duration,
+      }))
+
+      return programs;
+
+    } catch (error) {
+      throw new BadRequestException('Error finding programs by university');
     }
   }
 

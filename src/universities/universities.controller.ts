@@ -45,13 +45,15 @@ import { UniversitiesByProgramsFilterDto } from './dto/universities-by-programs-
 import {
   UniversityByProgramResponseDto,
   PaginatedUniversityByProgramResponseDto,
+  ProgramDetailsDto,
 } from './dto/university-by-program-response.dto';
 import { MainUniversityResponseDto } from './dto/main-university-response.dto';
+import { ProgramResponseDto } from 'src/programs/dto/program-response.dto';
 
 @ApiTags('Universities')
 @Controller('universities')
 export class UniversitiesController {
-  constructor(private readonly universitiesService: UniversitiesService) {}
+  constructor(private readonly universitiesService: UniversitiesService) { }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -281,6 +283,51 @@ export class UniversitiesController {
       effectiveLang,
     );
   }
+
+  @Get('programs-by-university/:universityId')
+  @ApiOperation({
+    summary: 'Get programs by university ID',
+  })
+  @ApiParam({
+    name: 'universityId',
+    required: true,
+    type: String,
+    description: 'University ID',
+  })
+  @ApiHeader({
+    name: 'Accept-Language',
+    required: false,
+    enum: ['uz', 'ru', 'en'],
+    description: 'Language preference for localized fields (default: uz)',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Successfully retrieved list of programs by university',
+    type: [ProgramDetailsDto],
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Bad Request - Invalid query parameters',
+    type: ErrorResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Internal Server Error',
+    type: ErrorResponseDto,
+  })
+  async findProgramsByUniversity(
+    @Headers('Accept-Language') lang: string = 'uz',
+    @Param('universityId') universityId: string,
+  ): Promise<ProgramDetailsDto[]> {
+    const validLangs = ['uz', 'ru', 'en'];
+    const effectiveLang = validLangs.includes(lang) ? lang : 'uz';
+    return this.universitiesService.findProgramsByUniversity(
+      universityId,
+      effectiveLang,
+    );
+  }
+
+
 
   @Get()
   @ApiOperation({
