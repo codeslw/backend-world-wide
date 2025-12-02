@@ -1,14 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import * as fs from 'fs';
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { SwaggerAuthMiddleware } from './common/middleware/swagger-auth.middleware';
 import { ConfigService } from '@nestjs/config';
-
-//update migrations
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -34,14 +31,13 @@ async function bootstrap() {
 
         const formattedErrors = formatErrors(errors);
 
-        return new Error(
-          JSON.stringify({
-            statusCode: 400,
-            message: 'Validation failed',
-            error: 'Bad Request',
-            details: formattedErrors,
-          }),
-        );
+        // Return a proper NestJS exception instead of generic Error
+        return new BadRequestException({
+          statusCode: 400,
+          message: 'Validation failed',
+          error: 'Bad Request',
+          details: formattedErrors,
+        });
       },
     }),
   );
@@ -49,7 +45,7 @@ async function bootstrap() {
   // Apply global exception filter
   app.useGlobalFilters(new GlobalExceptionFilter());
 
-  //Apply base context for apis api/v1
+  // Apply base context for apis api/v1
   app.setGlobalPrefix('api/v1');
 
   // Configure Swagger
@@ -66,55 +62,59 @@ async function bootstrap() {
         description: 'Enter JWT token',
         in: 'header',
       },
-      'access-token', // This is the key used for @ApiBearerAuth() decorator
+      'access-token',
     )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
 
-  // Add Swagger UI options for auth persistence
   const customOptions = {
     swaggerOptions: {
-      persistAuthorization: true, // Keep authorization data between page refreshes
-      defaultModelsExpandDepth: 0, // Hide schemas section by default
-      tagsSorter: 'alpha', // Sort tags alphabetically
-      operationsSorter: 'alpha', // Sort operations alphabetically
+      persistAuthorization: true,
+      defaultModelsExpandDepth: 0,
+      tagsSorter: 'alpha',
+      operationsSorter: 'alpha',
     },
     customSiteTitle: 'EduWorldWide API Docs v2.0.1',
   };
 
-  // Apply Swagger authentication middleware
-  console.log('Setting up Swagger authentication middleware...');
+  // Apply Swagger authentication middleware to Swagger routes
   const swaggerAuth = new SwaggerAuthMiddleware(configService);
-  app.use('/api', (req, res, next) => {
-    console.log('Swagger auth middleware called for path:', req.path);
+  app.use('/api-docs', (req: Request, res: Response, next: NextFunction) => {
+    swaggerAuth.use(req, res, next);
+  });
+  app.use('/swagger-spec', (req: Request, res: Response, next: NextFunction) => {
     swaggerAuth.use(req, res, next);
   });
 
-  SwaggerModule.setup('api', app, document, customOptions);
+  // Setup Swagger at /api-docs to avoid conflict with /api/v1 prefix
+  SwaggerModule.setup('api-docs', app, document, customOptions);
 
   // Expose Swagger document at /swagger-spec endpoint
-  app.getHttpAdapter().get('/swagger-spec', (req, res) => {
+  app.getHttpAdapter().get('/swagger-spec', (req: Request, res: Response) => {
     res.json(document);
   });
 
   // Enable CORS
   app.enableCors({
-    origin: true, // Or specify your frontend domain
+    origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders: 'Content-Type, Accept, Authorization',
-    maxAge: 86400, // 24 hours
+    maxAge: 86400,
   });
 
-  // Basic health check endpoint
-  app.use('/api/v1/health', (req, res) => {
+  // Basic health check endpoint (only responds to GET)
+  app.getHttpAdapter().get('/api/v1/health', (req: Request, res: Response) => {
     res.status(200).json({
       status: 'ok',
       timestamp: new Date().toISOString(),
     });
   });
 
-  await app.listen(process.env.PORT || 3000);
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+  console.log(`Application is running on: http://localhost:${port}`);
 }
+
 bootstrap();
