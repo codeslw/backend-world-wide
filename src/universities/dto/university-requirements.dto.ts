@@ -7,6 +7,7 @@ import {
   Min,
   Max,
   IsInt,
+  IsArray,
 } from 'class-validator';
 import { DegreeType } from '@prisma/client';
 
@@ -93,6 +94,6 @@ export class UniversityRequirementsDto {
     example: { essay_required: true, interview: 'recommended' },
   })
   @IsOptional()
-  @IsObject()
-  otherRequirements?: any;
+  @IsArray()
+  otherRequirements?: string[];
 }

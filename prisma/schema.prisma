@@ -122,7 +122,7 @@ model UniversityRequirements {
   minGmatScore                  Int?
   minCatScore                   Int?
   requiredRecommendationLetters Int?        @default(0)
-  otherRequirements             Json?
+  otherRequirements             String[]    @default([])
   createdAt                     DateTime    @default(now())
   updatedAt                     DateTime    @updatedAt
 

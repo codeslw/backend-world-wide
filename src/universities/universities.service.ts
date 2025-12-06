@@ -78,7 +78,6 @@ export class UniversitiesService {
                   minCatScore,
                   requiredRecommendationLetters,
                   otherRequirements,
-                  ...rest
                 } = requirements;
 
                 return {
@@ -90,10 +89,9 @@ export class UniversitiesService {
                   minGmatScore,
                   minCatScore,
                   requiredRecommendationLetters,
-                  otherRequirements: {
-                    ...(otherRequirements || {}),
-                    ...rest,
-                  },
+                  otherRequirements: [
+                    ...(otherRequirements || []),
+                  ],
                 };
               })(),
             }
@@ -538,10 +536,7 @@ export class UniversitiesService {
             minGmatScore,
             minCatScore,
             requiredRecommendationLetters,
-            otherRequirements: {
-              ...(otherRequirements || {}),
-              ...rest,
-            },
+            otherRequirements: otherRequirements || [],
           };
 
           await tx.universityRequirements.upsert({
