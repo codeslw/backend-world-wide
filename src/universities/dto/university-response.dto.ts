@@ -149,6 +149,16 @@ export class UniversityResponseDto {
     description: 'Admission requirements for the university',
   })
   requirements?: UniversityRequirementsDto;
+
+  @ApiProperty({
+    description: 'Scholarship requirements for the university',
+  })
+  scholarshipRequirements?: string[];
+
+  @ApiProperty({
+    description: 'Whether this university has a scholarship',
+  })
+  hasScholarship?: boolean;
 }
 
 export class PaginatedUniversityResponseDto extends PaginatedResponseDto<UniversityResponseDto> {
