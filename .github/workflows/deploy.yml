@@ -95,24 +95,24 @@ jobs:
             
             # Build new image
             echo "Building Docker image..."
-            docker-compose build api
+            docker compose build api
             
             # Run migrations
             echo "Running database migrations..."
-            docker-compose run --rm api npx prisma migrate deploy || {
+            docker compose run --rm api npx prisma migrate deploy || {
                 echo "Migration failed or no new migrations to apply"
             }
             
             # Update containers
             echo "Updating containers..."
-            docker-compose stop api || true
-            docker-compose rm -f api || true
-            docker-compose up -d api
+            docker compose stop api || true
+            docker compose rm -f api || true
+            docker compose up -d api
             
             # Wait for API to be ready
             echo "Waiting for API to be ready..."
             for i in {1..30}; do
-                if docker-compose exec -T api curl -sf http://localhost:3000/api/v1/health 2>/dev/null; then
+                if docker compose exec -T api curl -sf http://localhost:3000/api/v1/health 2>/dev/null; then
                     echo "API is ready!"
                     break
                 fi
@@ -128,7 +128,7 @@ jobs:
             
             # Show status
             echo "=== Deployment Complete ==="
-            docker-compose ps
+            docker compose ps
 
       - name: Verify Deployment
         uses: appleboy/ssh-action@master
@@ -140,16 +140,16 @@ jobs:
             cd /home/${{ secrets.DROPLET_USER }}/backend-world-wide
             
             echo "=== Verification ==="
-            docker-compose ps
+            docker compose ps
             
             echo ""
-            if docker-compose exec -T api curl -sf http://localhost:3000/api/v1/health 2>/dev/null; then
+            if docker compose exec -T api curl -sf http://localhost:3000/api/v1/health 2>/dev/null; then
                 echo "✓ API is healthy"
             else
                 echo "✗ API health check failed"
             fi
             
-            if docker-compose exec -T postgres pg_isready -U postgres 2>/dev/null; then
+            if docker compose exec -T postgres pg_isready -U postgres 2>/dev/null; then
                 echo "✓ Database is ready"
             else
                 echo "✗ Database check failed"
