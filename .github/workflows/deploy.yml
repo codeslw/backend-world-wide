@@ -1,4 +1,3 @@
-# deploy.yml - Optimized version
 name: Deploy to Digital Ocean
 
 on:
@@ -6,27 +5,29 @@ on:
     branches: [master]
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
         with:
-          node-version: '20'
-          
-      - name: Install dependencies
-        run: npm install --legacy-peer-deps
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build application
-        run: npm run build
-
-      - name: Generate Prisma client
-        run: npx prisma generate
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/backend-world-wide:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend-world-wide:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/backend-world-wide:buildcache,mode=max
 
       - name: Deploy to Digital Ocean Droplet
         uses: appleboy/ssh-action@master
@@ -34,31 +35,27 @@ jobs:
           host: ${{ secrets.DROPLET_IP }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 20m  # ⭐ INCREASED TIMEOUT
+          command_timeout: 10m
           script: |
-            set -e  # Exit on error
+            set -e
             
             echo "=== Starting Deployment ==="
             echo "Timestamp: $(date)"
             
-            # Navigate to project directory
             cd /home/${{ secrets.DROPLET_USER }}/backend-world-wide
             
-            # Pull latest changes FIRST (before cleanup)
-            echo "=== Fetching Latest Changes ==="
+            # Pull latest code
+            echo "=== Fetching Latest Code ==="
             git -c safe.directory="$(pwd)" fetch --all
             git -c safe.directory="$(pwd)" reset --hard origin/master
             
-            # Verify latest commit
             echo "Latest commit:"
             git log -1 --pretty=format:"%h - %an, %ar : %s"
             echo ""
             
-            # Extract database credentials from DATABASE_URL
+            # Extract database credentials
             echo "=== Configuring Database ==="
             DATABASE_URL="${{ secrets.DATABASE_URL }}"
-            
-            # Parse the DATABASE_URL
             DB_STRING="${DATABASE_URL#postgresql://}"
             DB_MAIN="${DB_STRING%%\?*}"
             USER_PASS="${DB_MAIN%%@*}"
@@ -67,7 +64,6 @@ jobs:
             DB_PART="${DB_MAIN##*/}"
             POSTGRES_DB="${DB_PART}"
             
-            # Use defaults if extraction failed
             POSTGRES_USER="${POSTGRES_USER:-postgres}"
             POSTGRES_DB="${POSTGRES_DB:-world-wide-db}"
             if [ -z "$POSTGRES_PASSWORD" ]; then
@@ -93,10 +89,13 @@ jobs:
             EOF
             echo ".env file created"
             
-            # Build new image
-            echo "=== Building Docker Image ==="
-            docker compose build api --no-cache
-            echo "Build complete"
+            # Pull pre-built image from Docker Hub (FAST!)
+            echo "=== Pulling Pre-built Image ==="
+            docker pull ${{ secrets.DOCKER_USERNAME }}/backend-world-wide:latest
+            echo "Image pulled successfully"
+            
+            # Tag it with the name docker-compose expects when building
+            docker tag ${{ secrets.DOCKER_USERNAME }}/backend-world-wide:latest backend-world-wide-api:latest
             
             # Run migrations
             echo "=== Running Database Migrations ==="
@@ -105,15 +104,17 @@ jobs:
             }
             echo "Migrations complete"
             
-            # Update containers
-            echo "=== Updating Containers ==="
+            # Stop and remove old API container
+            echo "=== Updating API Container ==="
             docker compose stop api || true
             docker compose rm -f api || true
+            
+            # Start API with the new image (docker-compose will use the tagged image instead of building)
             docker compose up -d api
-            echo "Containers updated"
+            echo "API container started"
             
             # Wait for API to be ready
-            echo "=== Waiting for API ==="
+            echo "=== Waiting for API to be Ready ==="
             for i in {1..30}; do
                 if docker compose exec -T api curl -sf http://localhost:3000/api/v1/health 2>/dev/null; then
                     echo "✓ API is ready!"
@@ -126,14 +127,13 @@ jobs:
                 sleep 2
             done
             
-            # Cleanup AFTER deployment
-            echo "=== Cleaning Up ==="
+            # Cleanup old images
+            echo "=== Cleaning Up Old Images ==="
             docker image prune -af --filter "until=24h" || true
             docker container prune -f || true
-            sudo journalctl --vacuum-time=3d || true
             echo "Cleanup complete"
             
-            # Show status
+            # Show final status
             echo "=== Deployment Complete ==="
             echo "Timestamp: $(date)"
             docker compose ps
@@ -148,10 +148,11 @@ jobs:
           script: |
             cd /home/${{ secrets.DROPLET_USER }}/backend-world-wide
             
-            echo "=== Verification ==="
+            echo "=== Deployment Verification ==="
             docker compose ps
-            
             echo ""
+            
+            # Check API health
             if docker compose exec -T api curl -sf http://localhost:3000/api/v1/health 2>/dev/null; then
                 echo "✓ API is healthy"
             else
@@ -159,9 +160,13 @@ jobs:
                 exit 1
             fi
             
+            # Check database
             if docker compose exec -T postgres pg_isready -U postgres 2>/dev/null; then
                 echo "✓ Database is ready"
             else
                 echo "✗ Database check failed"
                 exit 1
             fi
+            
+            echo ""
+            echo "=== Deployment Verified Successfully ==="
