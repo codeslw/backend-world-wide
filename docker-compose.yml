@@ -12,14 +12,13 @@ volumes:
 
 services:
   api:
+    image: backend-world-wide-api:latest
     container_name: world-wide-api
-    build:
-      context: .
-      dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3000:3000"  # This allows access via http://YOUR_IP:3000
     environment:
       - NODE_ENV=production
+      # This relies on the internal Docker network name 'world-wide-postgres'
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@world-wide-postgres:5432/${POSTGRES_DB:-world-wide-db}?schema=public
       - SHADOW_DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@world-wide-postgres:5432/world-wide-shadow?schema=public
       - JWT_SECRET=${JWT_SECRET}
@@ -27,6 +26,8 @@ services:
       - DIGITAL_OCEAN_SECRET_KEY=${DIGITAL_OCEAN_SECRET_KEY}
       - DIGITAL_OCEAN_BUCKET=${DIGITAL_OCEAN_BUCKET}
       - DIGITAL_OCEAN_ENDPOINT=${DIGITAL_OCEAN_ENDPOINT}
+      - SWAGGER_USER=${SWAGGER_USER}
+      - SWAGGER_PASSWORD=${SWAGGER_PASSWORD}
     networks:
       - app-network
     depends_on:
@@ -51,8 +52,8 @@ services:
   postgres:
     container_name: world-wide-postgres
     image: postgres:15-alpine
-    # Remove external port exposure for security
-    # If needed for debugging, use: ports: ["127.0.0.1:5432:5432"]
+    # 🔒 SECURE: No 'ports' section. 
+    # The database is NOT accessible from the internet, only from the 'api' service.
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}

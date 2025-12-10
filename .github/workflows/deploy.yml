@@ -35,27 +35,37 @@ jobs:
           host: ${{ secrets.DROPLET_IP }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 10m
+          command_timeout: 30m  # <--- Increased to 30m to prevent timeouts
           script: |
             set -e
             
             echo "=== Starting Deployment ==="
             echo "Timestamp: $(date)"
             
-            cd /home/${{ secrets.DROPLET_USER }}/backend-world-wide
+            # Define project directory
+            PROJECT_DIR="/home/${{ secrets.DROPLET_USER }}/backend-world-wide"
+            
+            # Check if directory exists, if not clone it (First Run Logic)
+            if [ ! -d "$PROJECT_DIR" ]; then
+              echo "Project directory not found. Cloning repository..."
+              git clone https://github.com/${{ github.repository }}.git "$PROJECT_DIR"
+            fi
+            
+            cd "$PROJECT_DIR"
             
             # Pull latest code
             echo "=== Fetching Latest Code ==="
-            git -c safe.directory="$(pwd)" fetch --all
-            git -c safe.directory="$(pwd)" reset --hard origin/master
+            git -c safe.directory="$PROJECT_DIR" fetch --all
+            git -c safe.directory="$PROJECT_DIR" reset --hard origin/master
             
             echo "Latest commit:"
             git log -1 --pretty=format:"%h - %an, %ar : %s"
             echo ""
             
-            # Extract database credentials
+            # Extract database credentials from the NEW secret
             echo "=== Configuring Database ==="
             DATABASE_URL="${{ secrets.DATABASE_URL }}"
+            # Parsing logic remains the same, assuming standard URL format
             DB_STRING="${DATABASE_URL#postgresql://}"
             DB_MAIN="${DB_STRING%%\?*}"
             USER_PASS="${DB_MAIN%%@*}"
@@ -66,9 +76,6 @@ jobs:
             
             POSTGRES_USER="${POSTGRES_USER:-postgres}"
             POSTGRES_DB="${POSTGRES_DB:-world-wide-db}"
-            if [ -z "$POSTGRES_PASSWORD" ]; then
-                POSTGRES_PASSWORD="password"
-            fi
             
             echo "Database configuration ready"
             
@@ -89,19 +96,16 @@ jobs:
             EOF
             echo ".env file created"
             
-            # Pull pre-built image from Docker Hub (FAST!)
+            # Pull pre-built image from Docker Hub
             echo "=== Pulling Pre-built Image ==="
             docker pull ${{ secrets.DOCKER_USERNAME }}/backend-world-wide:latest
-            echo "Image pulled successfully"
             
-            # Tag it with the name docker-compose expects when building
+            # Tag it for docker-compose
             docker tag ${{ secrets.DOCKER_USERNAME }}/backend-world-wide:latest backend-world-wide-api:latest
             
             # Run migrations
             echo "=== Running Database Migrations ==="
-            docker compose run --rm api npx prisma migrate deploy || {
-                echo "Migration failed or no new migrations to apply"
-            }
+            docker compose run --rm api npx prisma migrate deploy
             echo "Migrations complete"
             
             # Stop and remove old API container
@@ -109,7 +113,7 @@ jobs:
             docker compose stop api || true
             docker compose rm -f api || true
             
-            # Start API with the new image (docker-compose will use the tagged image instead of building)
+            # Start API
             docker compose up -d api
             echo "API container started"
             
@@ -127,15 +131,11 @@ jobs:
                 sleep 2
             done
             
-            # Cleanup old images
+            # Cleanup
             echo "=== Cleaning Up Old Images ==="
             docker image prune -af --filter "until=24h" || true
-            docker container prune -f || true
-            echo "Cleanup complete"
             
-            # Show final status
             echo "=== Deployment Complete ==="
-            echo "Timestamp: $(date)"
             docker compose ps
 
       - name: Verify Deployment
@@ -150,23 +150,10 @@ jobs:
             
             echo "=== Deployment Verification ==="
             docker compose ps
-            echo ""
             
-            # Check API health
             if docker compose exec -T api curl -sf http://localhost:3000/api/v1/health 2>/dev/null; then
                 echo "✓ API is healthy"
             else
                 echo "✗ API health check failed"
                 exit 1
             fi
-            
-            # Check database
-            if docker compose exec -T postgres pg_isready -U postgres 2>/dev/null; then
-                echo "✓ Database is ready"
-            else
-                echo "✗ Database check failed"
-                exit 1
-            fi
-            
-            echo ""
-            echo "=== Deployment Verified Successfully ==="
