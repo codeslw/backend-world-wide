@@ -37,6 +37,10 @@ COPY --from=builder /app/prisma ./prisma
 # Set production environment
 ENV NODE_ENV=production
 
+# Install curl for health checks
+USER root
+RUN apk add --no-cache curl
+
 # Ensure correct permissions
 RUN chown -R node:node /app
 
