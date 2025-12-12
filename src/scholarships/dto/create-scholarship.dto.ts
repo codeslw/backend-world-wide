@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateScholarshipDto {
     @ApiProperty({
@@ -35,6 +35,22 @@ export class CreateScholarshipDto {
     @IsUUID()
     @IsNotEmpty()
     universityId: string;
+
+    @ApiProperty({
+        description: 'Amount of the scholarship',
+        example: 1000,
+    })
+    @IsNumber()
+    @IsOptional()
+    amount?: number;
+
+    @ApiProperty({
+        description: 'Currency of the scholarship',
+        example: 'USD',
+    })
+    @IsString()
+    @IsOptional()
+    amountCurrency?: string;
 
     @ApiProperty({
         description: 'ID of the program the scholarship applies to',

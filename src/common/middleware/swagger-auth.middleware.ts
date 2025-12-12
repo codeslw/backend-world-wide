@@ -4,15 +4,12 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class SwaggerAuthMiddleware implements NestMiddleware {
-  constructor(private configService: ConfigService) {}
+  constructor(private configService: ConfigService) { }
 
   use(req: Request, res: Response, next: NextFunction) {
     const swaggerUser = this.configService.get<string>('SWAGGER_USER');
     const swaggerPassword = this.configService.get<string>('SWAGGER_PASSWORD');
 
-    // Debug logging
-    console.log('Swagger Auth Middleware - User:', swaggerUser ? 'SET' : 'NOT SET');
-    console.log('Swagger Auth Middleware - Password:', swaggerPassword ? 'SET' : 'NOT SET');
 
     // Skip authentication if credentials are not set
     if (!swaggerUser || !swaggerPassword) {

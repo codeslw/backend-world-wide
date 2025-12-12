@@ -428,16 +428,18 @@ enum StudyLevel {
 }
 
 model Scholarship {
-  id           String     @id @default(uuid())
-  name         String
-  description  String?
-  requirements String[]   @default([])
-  universityId String
-  programId    String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  program      Program    @relation(fields: [programId], references: [id], onDelete: Cascade)
+  id             String     @id @default(uuid())
+  name           String
+  description    String?
+  requirements   String[]   @default([])
+  universityId   String
+  amount         BigInt?
+  amountCurrency String?    @default("USD")
+  programId      String
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  university     University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  program        Program    @relation(fields: [programId], references: [id], onDelete: Cascade)
 
   @@unique([universityId, programId])
   @@index([universityId])

@@ -12,6 +12,7 @@ volumes:
 
 services:
   api:
+    build: .
     image: backend-world-wide-api:latest
     container_name: world-wide-api
     ports:

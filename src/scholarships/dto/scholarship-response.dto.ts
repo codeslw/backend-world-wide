@@ -20,6 +20,12 @@ export class ScholarshipResponseDto {
     programId: string;
 
     @ApiProperty()
+    amount: number;
+
+    @ApiProperty()
+    amountCurrency: string;
+
+    @ApiProperty()
     createdAt: Date;
 
     @ApiProperty()
