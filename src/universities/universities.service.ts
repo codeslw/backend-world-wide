@@ -5,14 +5,7 @@ import { CreateUniversityDto } from './dto/create-university.dto';
 import { UpdateUniversityDto } from './dto/update-university.dto';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { FilterService } from '../common/filters/filter.service';
-import {
-  FilterOptions,
-  PaginationOptions,
-} from '../common/filters/filter.interface';
-import {
-  EntityNotFoundException,
-  InvalidDataException,
-} from '../common/exceptions/app.exceptions';
+import { EntityNotFoundException, InvalidDataException } from '../common/exceptions/app.exceptions';
 import { UniversityFilterDto } from './dto/university-filter.dto';
 import { UniversityResponseDto } from './dto/university-response.dto';
 import { UniversitiesByProgramsFilterDto } from './dto/universities-by-programs-filter.dto';
@@ -26,7 +19,6 @@ import { StudyLevel } from 'src/common/enum/study-level.enum';
 export class UniversitiesService {
   constructor(
     private prisma: PrismaService,
-    private filterService: FilterService,
   ) { }
 
   async create(
@@ -137,14 +129,6 @@ export class UniversitiesService {
   async createMany(
     createManyUniversitiesDto: CreateUniversityDto[],
   ): Promise<UniversityResponseDto[]> {
-    // Implementation pending:
-    // - Iterate through createManyUniversitiesDto array
-    // - Validate each DTO (perhaps using validateProgramIds for all programs first)
-    // - Use Prisma's createMany or transaction for batch insertion
-    // - Map results to UniversityResponseDto array
-    // - Handle potential errors for individual or batch operations
-    console.log('createMany called with:', createManyUniversitiesDto);
-    // Placeholder implementation - replace with actual logic
     const createdUniversities = await Promise.all(
       createManyUniversitiesDto.map((dto) => this.create(dto)),
     );
@@ -377,6 +361,7 @@ export class UniversitiesService {
           universityPrograms: {
             include: {
               program: true,
+              scholarships: true,
               intakes: {
                 include: {
                   intake: true,
@@ -385,6 +370,7 @@ export class UniversitiesService {
             },
           },
           requirements: true,
+          scholarships: true,
         },
       });
 
@@ -741,7 +727,13 @@ export class UniversitiesService {
           })) || [],
         })) || [],
       country: university.country,
+      scholarships: university.scholarships?.map((s) => ({
+        ...s,
+        amountFrom: s.amountFrom ? Number(s.amountFrom) : null,
+        amountTo: s.amountTo ? Number(s.amountTo) : null,
+      })) || [],
       city: university.city,
+      hasScholarship: university.hasScholarship ?? false,
       requirements: university.requirements,
     };
   }
@@ -1124,7 +1116,9 @@ export class UniversitiesService {
           universityId
         },
         include: {
-          program: true
+          program: true,
+          university: true,
+          scholarships: true,
         }
       })
       const programs = programsByUniversity.map((program) => ({
@@ -1135,6 +1129,11 @@ export class UniversitiesService {
         tuitionFeeCurrency: program.tuitionFeeCurrency as Currency,
         studyLevel: program.studyLevel as StudyLevel,
         duration: program.duration,
+        scholarships: program.scholarships?.map((s) => ({
+          ...s,
+          amountFrom: s.amountFrom ? Number(s.amountFrom) : null,
+          amountTo: s.amountTo ? Number(s.amountTo) : null,
+        })) || [],
       }))
 
       return programs;

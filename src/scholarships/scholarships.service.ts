@@ -60,8 +60,12 @@ export class ScholarshipsService {
         ])
     }
 
-    async findAll() {
+    async findAll(query: { programId?: string, universityId?: string }) {
         return this.prisma.scholarship.findMany({
+            where: {
+                programId: query.programId,
+                universityId: query.universityId,
+            },
             include: {
                 university: true,
                 program: true,

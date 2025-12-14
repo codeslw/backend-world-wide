@@ -19,11 +19,29 @@ export class ScholarshipResponseDto {
     @ApiProperty()
     programId: string;
 
-    @ApiProperty()
-    amount: number;
+    @ApiProperty({ required: false })
+    amount?: number;
+
+    @ApiProperty({ required: false })
+    amountCurrency?: string;
+
+    @ApiProperty({ required: false })
+    percentage?: number;
+
+    @ApiProperty({ required: false })
+    percentageInfo?: string;
 
     @ApiProperty()
-    amountCurrency: string;
+    isAutoApplied: boolean;
+
+    @ApiProperty({ required: false })
+    amountFrom?: number;
+
+    @ApiProperty({ required: false })
+    amountTo?: number;
+
+    @ApiProperty({ type: [String], required: false })
+    amountInfo?: string[];
 
     @ApiProperty()
     createdAt: Date;

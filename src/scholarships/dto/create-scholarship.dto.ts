@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateScholarshipDto {
     @ApiProperty({
@@ -45,12 +45,59 @@ export class CreateScholarshipDto {
     amount?: number;
 
     @ApiProperty({
+        description: 'Amount from of the scholarship',
+        example: 1000,
+    })
+    @IsNumber()
+    @IsOptional()
+    amountFrom?: number;
+
+    @ApiProperty({
+        description: 'Amount to of the scholarship',
+        example: 1000,
+    })
+    @IsNumber()
+    @IsOptional()
+    amountTo?: number;
+
+    @ApiProperty({
+        description: 'Amount information of the scholarship',
+        example: ['This value will be applied to the total tuition fee'],
+    })
+    @IsString()
+    @IsOptional()
+    amountInfo?: string[];
+
+    @ApiProperty({
         description: 'Currency of the scholarship',
         example: 'USD',
     })
     @IsString()
     @IsOptional()
     amountCurrency?: string;
+
+    @ApiPropertyOptional({
+        description: 'Percentage of the scholarship',
+        example: 10,
+    })
+    @IsNumber()
+    @IsOptional()
+    percentage?: number;
+
+    @ApiPropertyOptional({
+        description: 'Percentage information of the scholarship',
+        example: 'Percentage of the scholarship',
+    })
+    @IsString()
+    @IsOptional()
+    percentageInfo?: string;
+
+    @ApiPropertyOptional({
+        description: 'Is the scholarship automatically applied?',
+        example: false,
+    })
+    @IsBoolean()
+    isAutoApplied: boolean;
 
     @ApiProperty({
         description: 'ID of the program the scholarship applies to',

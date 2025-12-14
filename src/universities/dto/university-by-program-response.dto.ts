@@ -5,6 +5,7 @@ import { CityResponseDto } from '../../cities/dto/city-response.dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination-response.dto';
 import { Currency } from '../../common/enum/currency.enum';
 import { StudyLevel } from '../../common/enum/study-level.enum';
+import { ScholarshipResponseDto } from '../../scholarships/dto/scholarship-response.dto';
 
 // Program details within the university-by-program response
 export class ProgramDetailsDto {
@@ -31,6 +32,12 @@ export class ProgramDetailsDto {
     example: 2.5
   })
   duration?: number;
+
+  @ApiPropertyOptional({
+    description: 'Scholarships available for this program',
+    type: [ScholarshipResponseDto]
+  })
+  scholarships?: ScholarshipResponseDto[];
 }
 
 // Response DTO for each university-program combination

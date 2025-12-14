@@ -21,6 +21,7 @@ import {
     ApiResponse,
     ApiBearerAuth,
     ApiQuery,
+    ApiParam,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -49,8 +50,20 @@ export class ScholarshipsController {
 
     @Get()
     @ApiOperation({ summary: 'Get all scholarships' })
-    findAll() {
-        return this.scholarshipsService.findAll();
+    @ApiQuery({
+        name: "programId",
+        required: false,
+        type: String,
+        description: "Program ID (UUID)",
+    })
+    @ApiQuery({
+        name: "universityId",
+        required: false,
+        type: String,
+        description: "University ID (UUID)",
+    })
+    findAll(@Query() query: { programId?: string, universityId?: string }) {
+        return this.scholarshipsService.findAll(query);
     }
 
     @Get('programs')

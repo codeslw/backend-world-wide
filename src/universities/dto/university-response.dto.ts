@@ -8,6 +8,7 @@ import { UniversityRequirementsDto } from './university-requirements.dto';
 import { Currency } from '../../common/enum/currency.enum';
 import { StudyLevel } from '../../common/enum/study-level.enum';
 import { IntakeResponseDto } from './intake-response.dto';
+import { ScholarshipResponseDto } from 'src/scholarships/dto/scholarship-response.dto';
 
 // DTO for representing program details within the university response
 class UniversityProgramResponseDto {
@@ -159,6 +160,13 @@ export class UniversityResponseDto {
     description: 'Whether this university has a scholarship',
   })
   hasScholarship?: boolean;
+
+  @ApiProperty({
+    description: 'Scholarships for this university',
+    type: [ScholarshipResponseDto],
+  })
+  @Type(() => ScholarshipResponseDto)
+  scholarships: ScholarshipResponseDto[];
 }
 
 export class PaginatedUniversityResponseDto extends PaginatedResponseDto<UniversityResponseDto> {
