@@ -26,6 +26,7 @@ import {
   UniversityResponseDto,
   PaginatedUniversityResponseDto,
 } from './dto/university-response.dto';
+import { PaginatedUniversityListItemResponseDto } from './dto/university-list-item.dto';
 import { UniversityFilterDto } from './dto/university-filter.dto';
 import { CreateManyUniversitiesDto } from './dto/create-many-universities.dto';
 import { UniversitiesByProgramsFilterDto } from './dto/universities-by-programs-filter.dto';
@@ -118,7 +119,7 @@ export class UniversitiesController {
   async findAll(
     @Headers('Accept-Language') lang: string = 'uz',
     @Query() filterDto: UniversityFilterDto,
-  ): Promise<PaginatedUniversityResponseDto> {
+  ): Promise<PaginatedUniversityListItemResponseDto> {
     const validLangs = ['uz', 'ru', 'en'];
     const effectiveLang = validLangs.includes(lang) ? lang : 'uz';
     return this.universitiesService.findAll(filterDto, effectiveLang);

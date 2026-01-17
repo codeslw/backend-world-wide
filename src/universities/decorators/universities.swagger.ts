@@ -5,7 +5,7 @@ import { Currency } from "../../common/enum/currency.enum";
 import { StudyLevel } from "../../common/enum/study-level.enum";
 import { HttpStatus } from "@nestjs/common";
 import { ErrorResponseDto } from "../../common/dto/error-response.dto";
-import { PaginatedUniversityResponseDto } from "../dto/university-response.dto";
+import { PaginatedUniversityListItemResponseDto } from "../dto/university-list-item.dto";
 
 export function ApiUniversities() {
     return applyDecorators(
@@ -155,7 +155,7 @@ export function ApiUniversities() {
         ApiResponse({
             status: HttpStatus.OK,
             description: 'Successfully retrieved list of universities',
-            type: PaginatedUniversityResponseDto,
+            type: PaginatedUniversityListItemResponseDto,
         }),
         ApiResponse({
             status: HttpStatus.BAD_REQUEST,
