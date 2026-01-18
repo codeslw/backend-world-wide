@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ScholarshipType, StudyLevel } from '@prisma/client';
 
 export class ScholarshipResponseDto {
     @ApiProperty()
@@ -16,8 +17,23 @@ export class ScholarshipResponseDto {
     @ApiProperty()
     universityId: string;
 
-    @ApiProperty()
-    programId: string;
+    @ApiProperty({ required: false })
+    programId?: string;
+
+    @ApiProperty({ required: false })
+    deadline?: Date;
+
+    @ApiProperty({ enum: ScholarshipType })
+    type: ScholarshipType;
+
+    @ApiProperty({ required: false })
+    minGpa?: number;
+
+    @ApiProperty({ type: [String] })
+    eligibleNationalities: string[];
+
+    @ApiProperty({ enum: StudyLevel, isArray: true })
+    studyLevels: StudyLevel[];
 
     @ApiProperty({ required: false })
     amount?: number;

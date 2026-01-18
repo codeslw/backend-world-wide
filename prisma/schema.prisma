@@ -352,28 +352,48 @@ model RefreshToken {
 }
 
 model Scholarship {
-  id             String             @id @default(uuid())
-  name           String
-  description    String?
-  requirements   String[]           @default([])
-  universityId   String
-  amountFrom     Decimal?           @db.Decimal(12, 2)
-  amountTo       Decimal?           @db.Decimal(12, 2)
-  amountInfo     String[]           @default([])
+  id           String  @id @default(uuid())
+  name         String
+  description  String?
+  universityId String
+
+  // Financial details
+  amountFrom     Decimal? @db.Decimal(12, 2)
+  amountTo       Decimal? @db.Decimal(12, 2)
+  amountInfo     String[] @default([])
   amountCurrency String?
   percentageInfo String?
   percentage     Int?
-  isAutoApplied  Boolean            @default(false)
-  programId      String?
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  university     University         @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  program        UniversityProgram? @relation(fields: [programId], references: [id], onDelete: Cascade)
 
-  @@unique([universityId, programId])
+  // Application details
+  isAutoApplied Boolean         @default(false)
+  deadline      DateTime?
+  type          ScholarshipType @default(OTHER)
+
+  // Requirements
+  requirements          String[]     @default([]) // Legacy unstructured requirements
+  minGpa                Float?
+  eligibleNationalities String[]     @default([])
+  studyLevels           StudyLevel[] @default([])
+
+  programId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  university University         @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  program    UniversityProgram? @relation(fields: [programId], references: [id], onDelete: Cascade)
+
   @@index([universityId])
   @@index([programId])
   @@map("scholarships")
+}
+
+enum ScholarshipType {
+  MERIT
+  ENTRANCE
+  ATHLETIC
+  COMMUNITY
+  OTHER
 }
 
 enum Role {

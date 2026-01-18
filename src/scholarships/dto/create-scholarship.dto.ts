@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsArray, IsBoolean, IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
+import { ScholarshipType, StudyLevel } from '@prisma/client';
 
 export class CreateScholarshipDto {
     @ApiProperty({
@@ -36,6 +37,14 @@ export class CreateScholarshipDto {
     @IsNotEmpty()
     universityId: string;
 
+    @ApiPropertyOptional({
+        description: 'ID of the program the scholarship applies to',
+        example: '123e4567-e89b-12d3-a456-426614174001',
+    })
+    @IsUUID()
+    @IsOptional()
+    programId?: string;
+
     @ApiProperty({
         description: 'Amount of the scholarship',
         example: 1000,
@@ -64,7 +73,7 @@ export class CreateScholarshipDto {
         description: 'Amount information of the scholarship',
         example: ['This value will be applied to the total tuition fee'],
     })
-    @IsString()
+    @IsString({ each: true })
     @IsOptional()
     amountInfo?: string[];
 
@@ -97,13 +106,52 @@ export class CreateScholarshipDto {
         example: false,
     })
     @IsBoolean()
+    @IsOptional()
     isAutoApplied: boolean;
 
-    @ApiProperty({
-        description: 'ID of the program the scholarship applies to',
-        example: '123e4567-e89b-12d3-a456-426614174001',
+    @ApiPropertyOptional({
+        description: 'Application deadline',
+        example: '2026-12-31T23:59:59Z',
     })
-    @IsUUID()
-    @IsNotEmpty()
-    programId: string;
+    @IsDateString()
+    @IsOptional()
+    deadline?: string;
+
+    @ApiPropertyOptional({
+        description: 'Type of scholarship',
+        enum: ScholarshipType,
+        example: ScholarshipType.MERIT,
+    })
+    @IsEnum(ScholarshipType)
+    @IsOptional()
+    type?: ScholarshipType;
+
+    @ApiPropertyOptional({
+        description: 'Minimum GPA required',
+        example: 3.5,
+    })
+    @IsNumber()
+    @IsOptional()
+    minGpa?: number;
+
+    @ApiPropertyOptional({
+        description: 'Eligible nationalities (country codes)',
+        example: ['UZ', 'RU'],
+        type: [String],
+    })
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    eligibleNationalities?: string[];
+
+    @ApiPropertyOptional({
+        description: 'Eligible study levels',
+        enum: StudyLevel,
+        isArray: true,
+        example: [StudyLevel.BACHELOR],
+    })
+    @IsArray()
+    @IsEnum(StudyLevel, { each: true })
+    @IsOptional()
+    studyLevels?: StudyLevel[];
 }

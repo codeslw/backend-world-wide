@@ -1,7 +1,6 @@
 import {
     Injectable,
     NotFoundException,
-    ConflictException,
     BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../db/prisma.service';
@@ -16,7 +15,7 @@ export class ScholarshipsService {
     async create(createScholarshipDto: CreateScholarshipDto) {
         const { universityId, programId } = createScholarshipDto;
 
-        // Check if university and program exist
+        // Check if university exists
         const university = await this.prisma.university.findUnique({
             where: { id: universityId },
         });
@@ -24,40 +23,22 @@ export class ScholarshipsService {
             throw new NotFoundException(`University with ID ${universityId} not found`);
         }
 
-        const program = await this.prisma.program.findUnique({
-            where: { id: programId },
-        });
-        if (!program) {
-            throw new NotFoundException(`Program with ID ${programId} not found`);
+        if (programId) {
+            const program = await this.prisma.program.findUnique({
+                where: { id: programId },
+            });
+            if (!program) {
+                throw new NotFoundException(`Program with ID ${programId} not found`);
+            }
         }
 
-        // Check if scholarship already exists for this university and program
-        const existingScholarship = await this.prisma.scholarship.findUnique({
-            where: {
-                universityId_programId: {
-                    universityId,
-                    programId,
-                },
-            },
+        const scholarship = await this.prisma.scholarship.create({
+            data: createScholarshipDto,
         });
 
-        if (existingScholarship) {
-            throw new ConflictException(
-                'Scholarship for this university and program already exists',
-            );
-        }
-        return this.prisma.$transaction([
-            this.prisma.scholarship.create({
-                data: createScholarshipDto,
-            }),
-            this.prisma.university.update({
-                where: { id: universityId },
-                data: {
-                    hasScholarship: true,
-                    scholarshipRequirements: createScholarshipDto.requirements
-                }
-            })
-        ])
+        await this.updateUniversityScholarshipStatus(universityId);
+
+        return scholarship;
     }
 
     async findAll(query: { programId?: string, universityId?: string }) {
@@ -90,54 +71,32 @@ export class ScholarshipsService {
     }
 
     async update(id: string, updateScholarshipDto: UpdateScholarshipDto) {
-        await this.findOne(id); // Ensure exists
+        const scholarship = await this.findOne(id);
 
-        if (!updateScholarshipDto.universityId) throw new BadRequestException('University ID is required');
+        const updatedScholarship = await this.prisma.scholarship.update({
+            where: { id },
+            data: updateScholarshipDto,
+        });
 
-        const otherScholarships = await this.prisma.scholarship.findMany({
-            where: {
-                universityId: updateScholarshipDto.universityId,
-                id: { not: id }
-            }
-        })
-        const otherRequirements = otherScholarships?.flatMap(scholarship => scholarship.requirements) ?? []
+        // If universityId changed, update both old and new universities
+        if (updateScholarshipDto.universityId && updateScholarshipDto.universityId !== scholarship.universityId) {
+            await this.updateUniversityScholarshipStatus(scholarship.universityId);
+        }
+        await this.updateUniversityScholarshipStatus(updatedScholarship.universityId);
 
-        return this.prisma.$transaction([
-            this.prisma.scholarship.update({
-                where: { id },
-                data: updateScholarshipDto,
-            }),
-            this.prisma.university.update({
-                where: { id: updateScholarshipDto.universityId },
-                data: {
-                    hasScholarship: true,
-                    scholarshipRequirements: [...otherRequirements, ...updateScholarshipDto.requirements]
-                }
-            })
-        ])
+        return updatedScholarship;
     }
 
     async remove(id: string) {
         const scholarship = await this.findOne(id);
-        const otherScholarships = await this.prisma.scholarship.count({
-            where: {
-                universityId: scholarship.universityId,
-                id: { not: id }
-            }
+
+        await this.prisma.scholarship.delete({
+            where: { id },
         });
 
-        return this.prisma.$transaction([
-            this.prisma.scholarship.delete({
-                where: { id },
-            }),
-            this.prisma.university.update({
-                where: { id: scholarship.universityId },
-                data: {
-                    hasScholarship: otherScholarships > 0,
-                    scholarshipRequirements: otherScholarships > 0 ? undefined : []
-                }
-            })
-        ])
+        await this.updateUniversityScholarshipStatus(scholarship.universityId);
+
+        return { message: 'Scholarship deleted successfully' };
     }
 
     async findProgramsWithScholarships(filterDto: ScholarshipProgramFilterDto) {
@@ -156,19 +115,32 @@ export class ScholarshipsService {
             ];
         }
 
-        // We want to return university programs that have scholarships.
-        // The Scholarship model links University and Program.
-        // So we can query Scholarships and include the related University and Program data.
-        // Or we can query UniversityProgram if we had a direct link, but we linked Scholarship to University and Program directly.
-        // The user asked for "university programs that have scolarships".
-        // I'll return the Scholarships with their associated University and Program.
-
         return this.prisma.scholarship.findMany({
             where,
             include: {
                 university: true,
                 program: true,
             },
+        });
+    }
+
+    private async updateUniversityScholarshipStatus(universityId: string) {
+        const scholarships = await this.prisma.scholarship.findMany({
+            where: { universityId },
+            select: { requirements: true }
+        });
+
+        const hasScholarship = scholarships.length > 0;
+        // Flatten and deduplicate requirements
+        const allRequirements = scholarships.flatMap(s => s.requirements);
+        const uniqueRequirements = [...new Set(allRequirements)];
+
+        await this.prisma.university.update({
+            where: { id: universityId },
+            data: {
+                hasScholarship,
+                scholarshipRequirements: uniqueRequirements
+            }
         });
     }
 }
