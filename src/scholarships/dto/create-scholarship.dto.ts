@@ -1,33 +1,90 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsBoolean, IsDateString, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from 'class-validator';
-import { ScholarshipType, StudyLevel } from '@prisma/client';
+import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, ValidateNested, IsObject } from 'class-validator';
+import { Type } from 'class-transformer';
 
-export class CreateScholarshipDto {
-    @ApiProperty({
-        description: 'Name of the scholarship',
-        example: 'Merit-based Scholarship',
-    })
+export class ScholarshipLevelDto {
+    @ApiProperty({ example: 'Gold' })
     @IsString()
     @IsNotEmpty()
     name: string;
 
+    @ApiProperty({ example: '$5,000' })
+    @IsString()
+    @IsNotEmpty()
+    value: string;
+
+    @ApiProperty({ example: 3.5 })
+    @IsNumber()
+    @IsNotEmpty()
+    minGpa: number;
+}
+
+export class RenewalConditionsDto {
+    @ApiProperty({ example: '4 years' })
+    @IsString()
+    @IsNotEmpty()
+    duration: string;
+
+    @ApiProperty({ example: 3.0 })
+    @IsNumber()
+    @IsNotEmpty()
+    minGpa: number;
+
+    @ApiProperty({ example: 30 })
+    @IsNumber()
+    @IsNotEmpty()
+    minCredits: number;
+}
+
+export class EligibilityDto {
+    @ApiProperty({ example: ['UZ', 'US'] })
+    @IsArray()
+    @IsString({ each: true })
+    nationalities: string[];
+
+    @ApiProperty({ example: ['Bachelor', 'Master'] })
+    @IsArray()
+    @IsString({ each: true })
+    programLevels: string[];
+
+    @ApiProperty({ example: ['Freshman', 'Transfer'] })
+    @IsArray()
+    @IsString({ each: true })
+    studentTypes: string[];
+}
+
+export class CreateScholarshipDto {
+    @ApiProperty({
+        description: 'Title of the scholarship',
+        example: 'Merit-based Scholarship',
+    })
+    @IsString()
+    @IsNotEmpty()
+    title: string; // Renamed from name
+
+    @ApiProperty({
+        description: 'Description of the scholarship (Markdown/Text)',
+        example: 'Scholarship for *outstanding* students.',
+    })
+    @IsString()
+    @IsNotEmpty()
+    description: string; // Made required per "required fields akin to title/institutionName" - or maybe description is optional? Prompt says "required fields like title and institutionName". I will assume description is mandatory or at least recommended. I'll keep it NotEmpty to be safe, or Optional if logical. Let's make it NotEmpty as it's a main field.
+
+    @ApiProperty({
+        description: 'Name of the institution',
+        example: 'Harvard University',
+    })
+    @IsString()
+    @IsNotEmpty()
+    institutionName: string;
+
     @ApiPropertyOptional({
-        description: 'Description of the scholarship',
-        example: 'Scholarship for outstanding students.',
+        description: 'Source URL',
+        example: 'https://harvard.edu/scholarships',
     })
     @IsString()
     @IsOptional()
-    description?: string;
-
-    @ApiPropertyOptional({
-        description: 'List of requirements for the scholarship',
-        example: ['GPA > 3.5', 'IELTS > 7.0'],
-        type: [String],
-    })
-    @IsArray()
-    @IsString({ each: true })
-    @IsOptional()
-    requirements?: string[];
+    sourceUrl?: string;
 
     @ApiProperty({
         description: 'ID of the university offering the scholarship',
@@ -38,71 +95,32 @@ export class CreateScholarshipDto {
     universityId: string;
 
     @ApiPropertyOptional({
-        description: 'ID of the program the scholarship applies to',
-        example: '123e4567-e89b-12d3-a456-426614174001',
+        description: 'IDs of the programs the scholarship applies to',
+        example: ['123e4567-e89b-12d3-a456-426614174001'],
     })
-    @IsUUID()
+    @IsArray()
+    @IsUUID('4', { each: true })
     @IsOptional()
-    programId?: string;
+    programIds?: string[];
 
-    @ApiProperty({
-        description: 'Amount of the scholarship',
-        example: 1000,
+    @ApiPropertyOptional({
+        description: 'Amount string (ranges supported)',
+        example: '$2,000 - $4,000',
     })
-    @IsNumber()
+    @IsString()
     @IsOptional()
-    amount?: number;
+    amount?: string;
 
-    @ApiProperty({
-        description: 'Amount from of the scholarship',
-        example: 1000,
-    })
-    @IsNumber()
-    @IsOptional()
-    amountFrom?: number;
-
-    @ApiProperty({
-        description: 'Amount to of the scholarship',
-        example: 1000,
-    })
-    @IsNumber()
-    @IsOptional()
-    amountTo?: number;
-
-    @ApiProperty({
-        description: 'Amount information of the scholarship',
-        example: ['This value will be applied to the total tuition fee'],
-    })
-    @IsString({ each: true })
-    @IsOptional()
-    amountInfo?: string[];
-
-    @ApiProperty({
-        description: 'Currency of the scholarship',
+    @ApiPropertyOptional({
+        description: 'Currency code',
         example: 'USD',
     })
     @IsString()
     @IsOptional()
-    amountCurrency?: string;
+    currency?: string;
 
     @ApiPropertyOptional({
-        description: 'Percentage of the scholarship',
-        example: 10,
-    })
-    @IsNumber()
-    @IsOptional()
-    percentage?: number;
-
-    @ApiPropertyOptional({
-        description: 'Percentage information of the scholarship',
-        example: 'Percentage of the scholarship',
-    })
-    @IsString()
-    @IsOptional()
-    percentageInfo?: string;
-
-    @ApiPropertyOptional({
-        description: 'Is the scholarship automatically applied?',
+        description: 'Is automatically applied?',
         example: false,
     })
     @IsBoolean()
@@ -110,48 +128,30 @@ export class CreateScholarshipDto {
     isAutoApplied: boolean;
 
     @ApiPropertyOptional({
-        description: 'Application deadline',
-        example: '2026-12-31T23:59:59Z',
-    })
-    @IsDateString()
-    @IsOptional()
-    deadline?: string;
-
-    @ApiPropertyOptional({
-        description: 'Type of scholarship',
-        enum: ScholarshipType,
-        example: ScholarshipType.MERIT,
-    })
-    @IsEnum(ScholarshipType)
-    @IsOptional()
-    type?: ScholarshipType;
-
-    @ApiPropertyOptional({
-        description: 'Minimum GPA required',
-        example: 3.5,
-    })
-    @IsNumber()
-    @IsOptional()
-    minGpa?: number;
-
-    @ApiPropertyOptional({
-        description: 'Eligible nationalities (country codes)',
-        example: ['UZ', 'RU'],
-        type: [String],
+        description: 'Scholarship Levels',
+        type: [ScholarshipLevelDto],
     })
     @IsArray()
-    @IsString({ each: true })
+    @ValidateNested({ each: true })
+    @Type(() => ScholarshipLevelDto)
     @IsOptional()
-    eligibleNationalities?: string[];
+    levels?: ScholarshipLevelDto[];
 
     @ApiPropertyOptional({
-        description: 'Eligible study levels',
-        enum: StudyLevel,
-        isArray: true,
-        example: [StudyLevel.BACHELOR],
+        description: 'Renewal Conditions',
+        type: RenewalConditionsDto,
     })
-    @IsArray()
-    @IsEnum(StudyLevel, { each: true })
+    @ValidateNested()
+    @Type(() => RenewalConditionsDto)
     @IsOptional()
-    studyLevels?: StudyLevel[];
+    renewalConditions?: RenewalConditionsDto;
+
+    @ApiPropertyOptional({
+        description: 'Eligibility Criteria',
+        type: EligibilityDto,
+    })
+    @ValidateNested()
+    @Type(() => EligibilityDto)
+    @IsOptional()
+    eligibility?: EligibilityDto;
 }

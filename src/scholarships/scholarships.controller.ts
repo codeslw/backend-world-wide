@@ -14,14 +14,13 @@ import {
 import { ScholarshipsService } from './scholarships.service';
 import { CreateScholarshipDto } from './dto/create-scholarship.dto';
 import { UpdateScholarshipDto } from './dto/update-scholarship.dto';
-import { ScholarshipProgramFilterDto } from './dto/scholarship-program-filter.dto';
+import { MatchScholarshipsDto } from './dto/match-scholarships.dto';
 import {
     ApiTags,
     ApiOperation,
     ApiResponse,
     ApiBearerAuth,
     ApiQuery,
-    ApiParam,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -66,13 +65,15 @@ export class ScholarshipsController {
         return this.scholarshipsService.findAll(query);
     }
 
-    @Get('programs')
-    @ApiOperation({ summary: 'Get university programs that have scholarships' })
-    @ApiQuery({ type: ScholarshipProgramFilterDto })
-    findProgramsWithScholarships(
-        @Query() filterDto: ScholarshipProgramFilterDto,
-    ) {
-        return this.scholarshipsService.findProgramsWithScholarships(filterDto);
+    @Post('match')
+    @ApiOperation({ summary: 'Match scholarships based on student profile' })
+    @ApiResponse({
+        status: HttpStatus.OK,
+        description: 'Matching scholarships',
+        type: [ScholarshipResponseDto],
+    })
+    match(@Body() matchDto: MatchScholarshipsDto) {
+        return this.scholarshipsService.matchScholarships(matchDto);
     }
 
     @Get(':id')

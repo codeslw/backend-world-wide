@@ -1,67 +1,46 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ScholarshipType, StudyLevel } from '@prisma/client';
+import { ScholarshipLevelDto, RenewalConditionsDto, EligibilityDto } from './create-scholarship.dto';
 
 export class ScholarshipResponseDto {
     @ApiProperty()
     id: string;
 
     @ApiProperty()
-    name: string;
-
-    @ApiProperty({ required: false })
-    description?: string;
-
-    @ApiProperty({ type: [String] })
-    requirements: string[];
+    title: string;
 
     @ApiProperty()
-    universityId: string;
+    description: string;
+
+    @ApiProperty()
+    institutionName: string;
 
     @ApiProperty({ required: false })
-    programId?: string;
+    sourceUrl?: string;
 
     @ApiProperty({ required: false })
-    deadline?: Date;
-
-    @ApiProperty({ enum: ScholarshipType })
-    type: ScholarshipType;
+    amount?: string;
 
     @ApiProperty({ required: false })
-    minGpa?: number;
-
-    @ApiProperty({ type: [String] })
-    eligibleNationalities: string[];
-
-    @ApiProperty({ enum: StudyLevel, isArray: true })
-    studyLevels: StudyLevel[];
-
-    @ApiProperty({ required: false })
-    amount?: number;
-
-    @ApiProperty({ required: false })
-    amountCurrency?: string;
-
-    @ApiProperty({ required: false })
-    percentage?: number;
-
-    @ApiProperty({ required: false })
-    percentageInfo?: string;
+    currency?: string;
 
     @ApiProperty()
     isAutoApplied: boolean;
 
-    @ApiProperty({ required: false })
-    amountFrom?: number;
+    @ApiProperty({ type: [ScholarshipLevelDto], required: false })
+    levels?: ScholarshipLevelDto[];
 
-    @ApiProperty({ required: false })
-    amountTo?: number;
+    @ApiProperty({ type: RenewalConditionsDto, required: false })
+    renewalConditions?: RenewalConditionsDto;
 
-    @ApiProperty({ type: [String], required: false })
-    amountInfo?: string[];
+    @ApiProperty({ type: EligibilityDto, required: false })
+    eligibility?: EligibilityDto;
+
+    @ApiProperty()
+    universityId: string;
 
     @ApiProperty()
     createdAt: Date;
 
     @ApiProperty()
-    updatedAt: Date;
+    lastUpdated: Date;
 }
