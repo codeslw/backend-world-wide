@@ -4,112 +4,134 @@ This document outlines the necessary changes and implementation details for the 
 
 ## 1. Backend API Changes Summary
 
-The Scholarship entity has been significantly enhanced to support more structured data, effectively mirroring platforms like ApplyBoard.
+The Scholarship entity has been completely refactored to support complex, rule-based logic and rich content, including "Level-based" amounts and granular eligibility rules.
 
-### Key Changes
-- **New Fields:**
-  - `type`: Enum (`MERIT`, `ENTRANCE`, `ATHLETIC`, `COMMUNITY`, `OTHER`).
-  - `deadline`: Date (ISO 8601 string).
-  - `minGpa`: Number (Float).
-  - `eligibleNationalities`: Array of strings (Country codes, e.g., `['UZ', 'US']`).
-  - `studyLevels`: Array of enums (`BACHELOR`, `MASTER`, `PHD`, `LANGUAGE_COURSE`, `FOUNDATION`).
-- **Logic Updates:**
-  - `programId` is now **optional**. You can create scholarships linked directly to a University without a specific Program (University-wide scholarships).
-  - Unique constraint on `[universityId, programId]` has been **removed**. Multiple scholarships can now exist for the same university/program scope.
+### Key Conceptual Changes
+- **Complex Rules (JSONB):** Instead of flat fields, we now use structured JSON objects for:
+  - **`levels`**: Defines multiple tiers (e.g., Gold: $5k, Silver: $2k) based on GPA.
+  - **`eligibility`**: Rules for Nationalities, Program Levels, and Student Types (Freshman vs Transfer).
+  - **`renewalConditions`**: Rules for maintaining the scholarship (e.g., maintain 3.0 GPA).
+- **Textual Amounts:** The `amount` field is now a string to support ranges (e.g., "$2,000 - $5,000") or specifics like "Full Tuition".
+- **Many-to-Many Programs:** A scholarship can now apply to **multiple** specific programs via `programIds`.
 
-### Enums
-Ensure your frontend applications have matching enums/constants for:
-
-**ScholarshipType:**
-- `MERIT`
-- `ENTRANCE`
-- `ATHLETIC`
-- `COMMUNITY`
-- `OTHER`
-
-**StudyLevel:**
-- `BACHELOR`
-- `MASTER`
-- `PHD`
-- `LANGUAGE_COURSE`
-- `FOUNDATION`
+### New Data Model Fields
+- **`title`**: Scholarship Name (replaces `name`).
+- **`institutionName`**: Name of the University/Provider.
+- **`sourceUrl`**: Link to the official source.
+- **`isAutoApplied`**: Boolean indicating if no separate application is needed.
+- **`levels`** (Array): `{ name: string, value: string, minGpa: number }`.
+- **`eligibility`** (Object): `{ nationalities: string[], programLevels: string[], studentTypes: string[] }`.
+- **`renewalConditions`** (Object): `{ duration: string, minGpa: number, minCredits: number }`.
 
 ---
 
 ## 2. Admin Frontend Implementation
 
 ### Objective
-Update the Scholarship Management interface to allow creating and editing the new sophisticated scholarship structures.
+Update the Scholarship Management interface to support the new "Rule-Builder" style forms.
 
 ### Tasks
 
-#### A. Update Scholarship Forms (Create & Edit)
-1.  **Type Selection:**
-    -   Add a dropdown/select for `type`.
-    -   *Default:* `OTHER` or empty.
-2.  **Deadline Picker:**
-    -   Add a date picker for `deadline`.
-3.  **Academic Requirements:**
-    -   Add a number input for `minGpa`.
-    -   Add a multi-select dropdown for `studyLevels`.
-4.  **Nationality Eligibility:**
-    -   Add a multi-select component for `eligibleNationalities` (fetching the list of Countries from your system).
-5.  **Program Selection (Optionality):**
-    -   Make the "Program" field **optional**.
-    -   Add a clear visual indication (e.g., "Leave empty for University-wide Scholarship").
-6.  **Constraint Removal:**
-    -   Remove any frontend validation preventing creating a second scholarship for the same University/Program pair.
+#### A. Create/Edit Scholarship Form (Complex)
+1.  **Basic Info:**
+    -   Inputs for `title`, `description` (Markdown editor recommended), `institutionName`, `sourceUrl`.
+    -   `amount` (Text input), `currency` (Text input), `isAutoApplied` (Toggle).
+2.  **University & Program Linking:**
+    -   **University:** Single Select.
+    -   **Programs:** Multi-Select (pass `programIds` array).
+3.  **Levels Builder (Dynamic List):**
+    -   Allow adding multiple levels.
+    -   Fields per level: `Name` (e.g., "Presidential"), `Value` (e.g., "$10,000"), `Min GPA`.
+4.  **Eligibility Rules (Grouped Inputs):**
+    -   **Nationalities:** Multi-select country picker.
+    -   **Student Type:** Multi-select (Enum: `Freshman`, `Transfer`, `Graduate`).
+    -   **Program Levels:** Multi-select (Enum: `Bachelor`, `Master`).
+5.  **Renewal Conditions:**
+    -   Inputs for `Duration` (text), `Min GPA` (number), `Min Credits` (number).
 
-#### B. Update Scholarship List/Table
-1.  **Columns:** Add new columns for `Type`, `Deadline`, and `Amount`.
-2.  **Filtering:** Allow admins to filter scholarships by `Type` and `University`.
+#### B. API Payload (Create/Update)
+```json
+{
+  "title": "International Excellence Award",
+  "description": "A prestigious award...",
+  "institutionName": "Harvard University",
+  "universityId": "uuid...",
+  "programIds": ["uuid-1...", "uuid-2..."], 
+  "amount": "$5,000 - $10,000",
+  "currency": "USD",
+  "isAutoApplied": false,
+  "levels": [
+    { "name": "Gold", "value": "$10,000", "minGpa": 3.8 },
+    { "name": "Silver", "value": "$5,000", "minGpa": 3.5 }
+  ],
+  "eligibility": {
+    "nationalities": ["UZ", "CN"],
+    "studentTypes": ["Freshman"],
+    "programLevels": ["Bachelor"]
+  },
+  "renewalConditions": {
+    "duration": "4 years",
+    "minGpa": 3.0,
+    "minCredits": 30
+  }
+}
+```
 
 ---
 
 ## 3. Client Frontend Implementation
 
 ### Objective
-Enhance the student experience by allowing them to find scholarships they are actually eligible for and view detailed requirements.
+Implement a smart matching engine and detailed view for students.
 
 ### Tasks
 
-#### A. Scholarship Discovery (Search & Filter)
-1.  **New Filters:**
-    -   **Scholarship Type:** Allow students to filter by Merit, Athletic, etc.
-    -   **Study Level:** Filter based on what they want to study (e.g., only show Bachelor scholarships).
-    -   **GPA:** (Optional) "Show scholarships matching my GPA".
-2.  **Display Cards:**
-    -   Show tags for `type` (e.g., a "Merit" badge).
-    -   Show the `deadline` clearly (e.g., "Expires in 10 days").
+#### A. Smart Matching (New Endpoint)
+Use the new **Match Endpoint** to find scholarships relevant to the user.
 
-#### B. Scholarship Details Page
-1.  **Requirements Section:**
-    -   Display `minGpa` if set.
-    -   List `eligibleNationalities` if restricted.
-    -   Show flexible `studyLevels`.
-2.  **General Info:**
-    -   Show whether it is "University-wide" or specific to a "Program".
+- **Endpoint:** `POST /scholarships/match`
+- **Payload:**
+  ```json
+  {
+    "gpa": 3.6,
+    "nationality": "UZ",
+    "studentType": "Freshman"
+  }
+  ```
+- **Response:** List of `ScholarshipResponseDto` that match the criteria.
+- **Usage:** Call this when a student visits the "Scholarships" tab to show "Recommended for You".
 
-#### C. Student Profile Matching (Advanced)
-1.  **Eligibility Check:**
-    -   On the scholarship detail page, compare the student's profile (GPA, Nationality, desired Degree) against the scholarship's `minGpa`, `eligibleNationalities`, and `studyLevels`.
-    -   *Visuals:* Show a "You are eligible!" checkmark or a "Requirements not met" warning.
+#### B. Scholarship Detail Page
+Render the complex objects clearly:
+1.  **Hero Section:** Title, Institution name, Amount Range.
+2.  **Levels Table:** If `levels` exist, show a table: | Level Name | GPA Req | Amount |.
+3.  **Eligibility Sidebar:**
+    -   "Who can apply?": List nationalities and student types.
+4.  **Renewal Info:** "To keep this scholarship: Maintain [minGpa] GPA for [duration]".
+5.  **CTA:** If `sourceUrl` exists, button "Visit Official Site".
 
-### API Reference (DTOs)
+#### C. Filtering
+-   **Endpoint:** `GET /scholarships` (Standard list)
+-   **Query Params:** `universityId` and `programId`.
+-   *Note:* Client-side filtering might be needed for deep JSON fields if not using the Match endpoint.
 
-**CreateScholarshipDto / UpdateScholarshipDto Payload:**
+---
+
+## 4. API Reference Updates
+
+### Response Object (`ScholarshipResponseDto`)
 ```json
 {
-  "name": "Merit Excellence Award",
-  "universityId": "uuid...",
-  "programId": "uuid..." | null,  // Now optional
-  "type": "MERIT",
-  "deadline": "2026-12-31T23:59:59Z",
-  "minGpa": 3.5,
-  "eligibleNationalities": ["UZ", "KZ"],
-  "studyLevels": ["BACHELOR"],
-  "amount": 5000,
-  "requirements": ["Essay required"] // Legacy unstructured requirements still supported
+  "id": "uuid...",
+  "title": "...",
+  "description": "...",
+  "institutionName": "...",
+  "sourceUrl": "...",
+  "amount": "$2,000",
+  "levels": [...], // Array of objects
+  "eligibility": { ... }, // Object
+  "renewalConditions": { ... }, // Object
+  "lastUpdated": "2026-01-18T..."
 }
 ```
 
