@@ -19,4 +19,12 @@ ALTER COLUMN "amountCurrency" DROP DEFAULT;
 CREATE INDEX "universities_name_idx" ON "universities"("name");
 
 -- AddForeignKey
+-- Update invalid programIds to NULL
+UPDATE "scholarships"
+SET "programId" = NULL
+WHERE "programId" IS NOT NULL
+AND NOT EXISTS (
+    SELECT 1 FROM "university_programs" WHERE "university_programs"."id" = "scholarships"."programId"
+);
+
 ALTER TABLE "scholarships" ADD CONSTRAINT "scholarships_programId_fkey" FOREIGN KEY ("programId") REFERENCES "university_programs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
