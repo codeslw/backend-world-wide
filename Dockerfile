@@ -50,5 +50,5 @@ USER node
 # Expose port
 EXPOSE 3000
 
-# Default command - Updated to use the correct path to main.js
-CMD ["sh", "-c", "node dist/main.js"]
+# Default command - Use npm run start:prod for consistency
+CMD ["npm", "run", "start:prod"]
