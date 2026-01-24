@@ -34,6 +34,11 @@ export class RenewalConditionsDto {
     @IsNumber()
     @IsNotEmpty()
     minCredits: number;
+
+    @ApiPropertyOptional({ example: 'Must maintain a 3.0 GPA...' })
+    @IsString()
+    @IsOptional()
+    description?: string;
 }
 
 export class EligibilityDto {
@@ -51,6 +56,11 @@ export class EligibilityDto {
     @IsArray()
     @IsString({ each: true })
     studentTypes: string[];
+
+    @ApiPropertyOptional({ example: 'Freshman Awards: Available to students...' })
+    @IsString()
+    @IsOptional()
+    criteria?: string;
 }
 
 export class CreateScholarshipDto {
