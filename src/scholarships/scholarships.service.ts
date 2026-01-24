@@ -169,19 +169,15 @@ export class ScholarshipsService {
             const levels = scholarship.levels as unknown as ScholarshipLevelDto[];
 
             // 1. Nationality Check
-            if (eligibility?.nationalities?.length > 0) {
-                // If the list is present and not empty, student must match one
-                if (!eligibility.nationalities.some(n => n.toLowerCase() === studentProfile.nationality.toLowerCase())) {
+            if (eligibility?.nationalities) {
+                const allowedNationalities = eligibility.nationalities.split(',').map(n => n.trim().toLowerCase());
+                if (!allowedNationalities.includes(studentProfile.nationality.toLowerCase())) {
                     return false;
                 }
             }
 
-            // 2. Student Type Check
-            if (eligibility?.studentTypes?.length > 0) {
-                if (!eligibility.studentTypes.some(t => t.toLowerCase() === studentProfile.studentType.toLowerCase())) {
-                    return false;
-                }
-            }
+            // 2. Student Type Check - Removed as per requirements
+
 
             // 3. GPA Check (against Levels)
             // If levels exist, student must meet minGpa of at least one level

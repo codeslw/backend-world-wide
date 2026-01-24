@@ -42,20 +42,15 @@ export class RenewalConditionsDto {
 }
 
 export class EligibilityDto {
-    @ApiProperty({ example: ['UZ', 'US'] })
-    @IsArray()
-    @IsString({ each: true })
-    nationalities: string[];
+    @ApiPropertyOptional({ example: 'UZ, US' })
+    @IsString()
+    @IsOptional()
+    nationalities?: string;
 
-    @ApiProperty({ example: ['Bachelor', 'Master'] })
+    @ApiProperty({ example: ['BACHELOR', 'MASTER'] })
     @IsArray()
     @IsString({ each: true })
     programLevels: string[];
-
-    @ApiProperty({ example: ['Freshman', 'Transfer'] })
-    @IsArray()
-    @IsString({ each: true })
-    studentTypes: string[];
 
     @ApiPropertyOptional({ example: 'Freshman Awards: Available to students...' })
     @IsString()
