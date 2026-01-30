@@ -6,6 +6,7 @@ import { PaginatedResponseDto } from '../../common/dto/pagination-response.dto';
 import { Currency } from '../../common/enum/currency.enum';
 import { StudyLevel } from '../../common/enum/study-level.enum';
 import { ScholarshipResponseDto } from '../../scholarships/dto/scholarship-response.dto';
+import { IntakeResponseDto } from './intake-response.dto';
 
 // Program details within the university-by-program response
 export class ProgramDetailsDto {
@@ -38,6 +39,12 @@ export class ProgramDetailsDto {
     type: [ScholarshipResponseDto]
   })
   scholarships?: ScholarshipResponseDto[];
+
+  @ApiPropertyOptional({
+    description: 'Intakes available for this program',
+    type: [IntakeResponseDto]
+  })
+  intakes?: IntakeResponseDto[];
 }
 
 // Response DTO for each university-program combination

@@ -1,4 +1,4 @@
-version: '3.8'
+# Docker Compose file for EduWorldWide Backend
 
 networks:
   app-network:
@@ -8,7 +8,7 @@ volumes:
   postgres-data:
     name: world-wide-postgres-data
     labels:
-      keep: "true"
+      keep: 'true'
 
 services:
   api:
@@ -16,7 +16,7 @@ services:
     image: backend-world-wide-api:latest
     container_name: world-wide-api
     ports:
-      - "3000:3000"  # This allows access via http://YOUR_IP:3000
+      - '3000:3000' # This allows access via http://YOUR_IP:3000
     environment:
       - NODE_ENV=production
       # This relies on the internal Docker network name 'world-wide-postgres'
@@ -36,7 +36,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/api/v1/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -53,7 +53,7 @@ services:
   postgres:
     container_name: world-wide-postgres
     image: postgres:15-alpine
-    # 🔒 SECURE: No 'ports' section. 
+    # 🔒 SECURE: No 'ports' section.
     # The database is NOT accessible from the internet, only from the 'api' service.
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-postgres}
@@ -65,7 +65,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres}']
       interval: 10s
       timeout: 5s
       retries: 5

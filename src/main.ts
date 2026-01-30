@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+// Rebuild trigger 1
 import { AppModule } from './app.module';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -83,9 +84,12 @@ async function bootstrap() {
   app.use('/api-docs', (req: Request, res: Response, next: NextFunction) => {
     swaggerAuth.use(req, res, next);
   });
-  app.use('/swagger-spec', (req: Request, res: Response, next: NextFunction) => {
-    swaggerAuth.use(req, res, next);
-  });
+  app.use(
+    '/swagger-spec',
+    (req: Request, res: Response, next: NextFunction) => {
+      swaggerAuth.use(req, res, next);
+    },
+  );
 
   // Setup Swagger at /api-docs to avoid conflict with /api/v1 prefix
   SwaggerModule.setup('api-docs', app, document, customOptions);

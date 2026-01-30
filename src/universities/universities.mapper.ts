@@ -30,6 +30,7 @@ type UniversityProgramWithRelations = UniversityProgram & {
         city: City;
     };
     program: Program;
+    intakes?: { intake: Intake }[];
 };
 
 @Injectable()
@@ -185,7 +186,7 @@ export class UniversitiesMapper {
             universityId: university.id,
             universityName: university.name,
             established: university.established,
-            type: university.type as any, // Cast to avoid same enum issue if DTO uses specific enum
+            type: university.type as any,
             descriptionUz: university.descriptionUz,
             descriptionRu: university.descriptionRu,
             descriptionEn: university.descriptionEn,
@@ -209,6 +210,12 @@ export class UniversitiesMapper {
                 tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
                 studyLevel: up.studyLevel as StudyLevel,
                 duration: up.duration,
+                intakes: up.intakes?.map((api) => ({
+                    id: api.intake.id,
+                    month: api.intake.month,
+                    year: api.intake.year,
+                    deadline: api.intake.deadline.toISOString(),
+                })) || [],
             },
             createdAt: university.createdAt.toISOString(),
             updatedAt: university.updatedAt.toISOString(),

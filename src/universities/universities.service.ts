@@ -399,6 +399,10 @@ export class UniversitiesService {
         this.prisma.universityProgram.count({ where }),
       ]);
 
+      if (universityPrograms.length > 0) {
+        console.log('First UP intakes:', JSON.stringify(universityPrograms[0].intakes, null, 2));
+      }
+
       const data = universityPrograms.map((up) => this.mapper.toUniversityByProgramDto(up as any, lang));
       const totalPages = Math.ceil(total / Number(limit));
 
