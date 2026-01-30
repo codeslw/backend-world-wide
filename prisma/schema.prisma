@@ -50,6 +50,52 @@ model Country {
   nameEn       String
   isMain       Boolean      @default(false)
   photoUrl     String?
+  
+  // General Info
+  overviewEn   String?
+  overviewRu   String?
+  overviewUz   String?
+  images       String[]     @default([])
+
+  // Financial Requirements
+  proofOfFundsAmount String? 
+  tuitionMin   Float?
+  tuitionMax   Float?
+  tuitionCurrency String?
+  costOfLivingMin Float?
+  costOfLivingMax Float?
+  costOfLivingCurrency String?
+  scholarshipAvailability String?
+
+  // Visa & Immigration
+  visaAcceptanceRate String?
+  visaProcessingTime String?
+  visaInterviewRequired Boolean  @default(false)
+  dependentVisaAvailable Boolean @default(false)
+
+  // Work Rights
+  partTimeWorkHours String?
+  postStudyWorkDuration String?
+  prPathwayAvailable Boolean     @default(false)
+
+  // Academic & Logistical
+  majorIntakes String[]          @default([])
+  applicationTimeline String?
+  acceptedLanguageTests String[] @default([])
+  standardizedTestsRequired String?
+  gapAcceptance String?
+
+  // Life & Experience
+  accommodationTypes String[]    @default([])
+  averageRentMin Float?
+  averageRentMax Float?
+  rentCurrency String?
+  safetyIndex String?
+  healthcareDetails String?
+  internationalStudentPopulation String?
+  hasHalalFood Boolean           @default(false)
+  hasVegetarianFood Boolean      @default(false)
+
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
   cities       City[]
