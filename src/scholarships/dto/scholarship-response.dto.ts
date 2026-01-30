@@ -1,46 +1,54 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { ScholarshipLevelDto, RenewalConditionsDto, EligibilityDto } from './create-scholarship.dto';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ScholarshipResponseDto {
-    @ApiProperty()
-    id: string;
+  @ApiProperty()
+  id: string;
 
-    @ApiProperty()
-    title: string;
+  @ApiProperty()
+  title: string;
 
-    @ApiProperty()
-    description: string;
+  @ApiProperty()
+  amount: string;
 
-    @ApiProperty()
-    institutionName: string;
+  @ApiProperty()
+  isAutoApplied: boolean;
 
-    @ApiProperty({ required: false })
-    sourceUrl?: string;
+  @ApiProperty()
+  nationalities: string[];
 
-    @ApiProperty({ required: false })
-    amount?: string;
+  @ApiProperty()
+  programLevels: string[];
 
-    @ApiProperty({ required: false })
-    currency?: string;
+  @ApiProperty()
+  overview: string;
 
-    @ApiProperty()
-    isAutoApplied: boolean;
+  @ApiPropertyOptional()
+  howItWorks?: string;
 
-    @ApiProperty({ type: [ScholarshipLevelDto], required: false })
-    levels?: ScholarshipLevelDto[];
+  @ApiPropertyOptional()
+  scholarshipValue?: string;
 
-    @ApiProperty({ type: RenewalConditionsDto, required: false })
-    renewalConditions?: RenewalConditionsDto;
+  @ApiPropertyOptional()
+  importantNotes?: string;
 
-    @ApiProperty({ type: EligibilityDto, required: false })
-    eligibility?: EligibilityDto;
+  @ApiProperty()
+  eligibilityCriteria: string;
 
-    @ApiProperty()
-    universityId: string;
+  @ApiPropertyOptional()
+  sourceUrl?: string;
 
-    @ApiProperty()
-    createdAt: Date;
+  @ApiProperty()
+  universityId: string;
 
-    @ApiProperty()
-    lastUpdated: Date;
+  @ApiProperty()
+  lastUpdated: Date;
+
+  @ApiProperty()
+  createdAt: Date;
+
+  @ApiPropertyOptional()
+  university?: any;
+
+  @ApiPropertyOptional()
+  programs?: any[];
 }

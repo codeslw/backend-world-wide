@@ -352,24 +352,34 @@ model RefreshToken {
 }
 
 model Scholarship {
-  id              String  @id @default(uuid())
-  title           String
-  description     String?
-  institutionName String
-  sourceUrl       String?
+  id    String @id @default(uuid())
+  title String
 
-  amount        String?
-  currency      String?
+  // Amount as string to support ranges and percentages (e.g. "£1,000 - £2,500 GBP" or "15%")
+  amount String
+
+  // Auto-application flag
   isAutoApplied Boolean @default(false)
 
-  // Complex Rules (JSONB)
-  levels            Json?
-  renewalConditions Json?
-  eligibility       Json?
+  // Eligibility arrays
+  nationalities String[] @default([])
+  programLevels String[] @default([])
 
+  // Rich text content fields
+  overview            String  @db.Text
+  howItWorks          String? @db.Text
+  scholarshipValue    String? @db.Text
+  importantNotes      String? @db.Text
+  eligibilityCriteria String  @db.Text
+
+  // Optional source URL
+  sourceUrl String?
+
+  // Timestamps
   lastUpdated DateTime @updatedAt
   createdAt   DateTime @default(now())
 
+  // Relations
   universityId String
   university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
 

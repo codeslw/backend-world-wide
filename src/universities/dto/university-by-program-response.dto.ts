@@ -10,13 +10,19 @@ import { IntakeResponseDto } from './intake-response.dto';
 
 // Program details within the university-by-program response
 export class ProgramDetailsDto {
+  @ApiProperty({ description: 'University Program ID' })
+  id: string;
+
   @ApiProperty({ description: 'Program ID' })
   programId: string;
 
   @ApiProperty({ description: 'Localized program title' })
   title: string;
 
-  @ApiProperty({ description: 'Localized program description', required: false })
+  @ApiProperty({
+    description: 'Localized program description',
+    required: false,
+  })
   description?: string;
 
   @ApiProperty({ description: 'Tuition fee for this program' })
@@ -29,20 +35,21 @@ export class ProgramDetailsDto {
   studyLevel: StudyLevel;
 
   @ApiPropertyOptional({
-    description: 'Duration of the program in months. Can accept decimal values like 1.5 or 2.5.',
-    example: 2.5
+    description:
+      'Duration of the program in months. Can accept decimal values like 1.5 or 2.5.',
+    example: 2.5,
   })
   duration?: number;
 
   @ApiPropertyOptional({
     description: 'Scholarships available for this program',
-    type: [ScholarshipResponseDto]
+    type: [ScholarshipResponseDto],
   })
   scholarships?: ScholarshipResponseDto[];
 
   @ApiPropertyOptional({
     description: 'Intakes available for this program',
-    type: [IntakeResponseDto]
+    type: [IntakeResponseDto],
   })
   intakes?: IntakeResponseDto[];
 }
