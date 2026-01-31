@@ -52,6 +52,11 @@ export class ProgramDetailsDto {
     type: [IntakeResponseDto],
   })
   intakes?: IntakeResponseDto[];
+
+  @ApiPropertyOptional({
+    description: 'Whether this program has a scholarship',
+  })
+  hasScholarship?: boolean;
 }
 
 // Response DTO for each university-program combination

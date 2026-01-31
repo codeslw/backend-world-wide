@@ -40,6 +40,7 @@ type UniversityProgramWithRelations = UniversityProgram & {
   };
   program: Program;
   intakes?: { intake: Intake }[];
+  scholarships?: Scholarship[];
 };
 
 @Injectable()
@@ -93,6 +94,7 @@ export class UniversitiesMapper {
               year: api.intake.year,
               deadline: api.intake.deadline.toISOString(),
             })) || [],
+          hasScholarship: up.scholarships && up.scholarships.length > 0,
         })) || [],
       country: this.localizeCountry(university.country, langSuffix),
       city: this.localizeCity(university.city, langSuffix),
@@ -259,6 +261,7 @@ export class UniversitiesMapper {
             year: api.intake.year,
             deadline: api.intake.deadline.toISOString(),
           })) || [],
+        hasScholarship: up.scholarships && up.scholarships.length > 0,
       },
       createdAt: university.createdAt.toISOString(),
       updatedAt: university.updatedAt.toISOString(),
@@ -299,6 +302,7 @@ export class UniversitiesMapper {
           createdAt: s.createdAt,
           lastUpdated: s.lastUpdated,
         })) || [],
+      hasScholarship: up.scholarships && up.scholarships.length > 0,
     };
   }
 

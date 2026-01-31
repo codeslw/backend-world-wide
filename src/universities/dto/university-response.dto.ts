@@ -25,8 +25,9 @@ class UniversityProgramResponseDto {
   titleEn: string;
 
   @ApiPropertyOptional({
-    description: 'Duration of the program in months. Can accept decimal values like 1.5 or 2.5.',
-    example: 2.5
+    description:
+      'Duration of the program in months. Can accept decimal values like 1.5 or 2.5.',
+    example: 2.5,
   })
   duration?: number;
 
@@ -43,6 +44,11 @@ class UniversityProgramResponseDto {
 
   @ApiProperty({ description: 'Available intakes', type: [IntakeResponseDto] })
   intakes: IntakeResponseDto[];
+
+  @ApiPropertyOptional({
+    description: 'Whether this program has a scholarship',
+  })
+  hasScholarship?: boolean;
 }
 
 export class UniversityResponseDto {
