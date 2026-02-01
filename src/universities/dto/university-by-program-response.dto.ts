@@ -57,6 +57,16 @@ export class ProgramDetailsDto {
     description: 'Whether this program has a scholarship',
   })
   hasScholarship?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Logo URL for the program',
+  })
+  logo?: string;
+
+  @ApiPropertyOptional({
+    description: 'Study language for the program',
+  })
+  studyLanguage?: string;
 }
 
 // Response DTO for each university-program combination

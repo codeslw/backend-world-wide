@@ -32,6 +32,11 @@ export class UniversityFilterDto {
   @IsString()
   cityId?: string;
 
+  @ApiProperty({ description: 'University ID', required: false })
+  @IsOptional()
+  @IsString()
+  universityId?: string;
+
   @ApiProperty({
     description: 'University type',
     required: false,

@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../db/prisma.service';
 import { CreateUniversityDto } from './dto/create-university.dto';
@@ -7,7 +11,10 @@ import { UniversityFilterDto } from './dto/university-filter.dto';
 import { UniversityResponseDto } from './dto/university-response.dto';
 import { UniversitiesByProgramsFilterDto } from './dto/universities-by-programs-filter.dto';
 import { PaginatedUniversityListItemResponseDto } from './dto/university-list-item.dto';
-import { EntityNotFoundException, InvalidDataException } from '../common/exceptions/app.exceptions';
+import {
+  EntityNotFoundException,
+  InvalidDataException,
+} from '../common/exceptions/app.exceptions';
 import { UniversitiesMapper } from './universities.mapper';
 import { UniversitiesRepository } from './universities.repository';
 import { MainUniversityResponseDto } from './dto/main-university-response.dto';
@@ -18,7 +25,7 @@ export class UniversitiesService {
     private readonly prisma: PrismaService,
     private readonly mapper: UniversitiesMapper,
     private readonly repository: UniversitiesRepository,
-  ) { }
+  ) {}
 
   async create(
     createUniversityDto: CreateUniversityDto,
@@ -47,20 +54,20 @@ export class UniversitiesService {
               duration: program.duration,
               intakes: program.intakes
                 ? {
-                  create: program.intakes.map((intakeId) => ({
-                    intake: { connect: { id: intakeId } },
-                  })),
-                }
+                    create: program.intakes.map((intakeId) => ({
+                      intake: { connect: { id: intakeId } },
+                    })),
+                  }
                 : undefined,
             })),
           },
           requirements: requirements
             ? {
-              create: {
-                ...requirements,
-                otherRequirements: requirements.otherRequirements || [],
-              },
-            }
+                create: {
+                  ...requirements,
+                  otherRequirements: requirements.otherRequirements || [],
+                },
+              }
             : undefined,
         },
         include: {
@@ -95,9 +102,17 @@ export class UniversitiesService {
     return createdUniversities;
   }
 
-  async findAll(filterDto: UniversityFilterDto, lang: string = 'uz'): Promise<PaginatedUniversityListItemResponseDto> {
+  async findAll(
+    filterDto: UniversityFilterDto,
+    lang: string = 'uz',
+  ): Promise<PaginatedUniversityListItemResponseDto> {
     try {
-      const { page = 1, limit = 10, sortBy = 'ranking', sortDirection = 'asc' } = filterDto;
+      const {
+        page = 1,
+        limit = 10,
+        sortBy = 'ranking',
+        sortDirection = 'asc',
+      } = filterDto;
 
       const where = this.repository.buildUniversityWhereClause(filterDto);
       const orderBy = this.repository.getSortConfig(sortBy, sortDirection);
@@ -126,7 +141,9 @@ export class UniversitiesService {
         this.prisma.university.count({ where }),
       ]);
 
-      const data = universities.map((uni) => this.mapper.toListItemDto(uni as any, lang));
+      const data = universities.map((uni) =>
+        this.mapper.toListItemDto(uni as any, lang),
+      );
       const totalPages = Math.ceil(total / Number(limit));
 
       return {
@@ -223,7 +240,12 @@ export class UniversitiesService {
         });
 
         if (programs) {
-          await this.updateUniversityPrograms(tx, id, programs, existingUniversity.universityPrograms);
+          await this.updateUniversityPrograms(
+            tx,
+            id,
+            programs,
+            existingUniversity.universityPrograms,
+          );
         }
 
         if (requirements) {
@@ -333,7 +355,9 @@ export class UniversitiesService {
     }
   }
 
-  async findMainUniversities(lang: string = 'uz'): Promise<MainUniversityResponseDto[]> {
+  async findMainUniversities(
+    lang: string = 'uz',
+  ): Promise<MainUniversityResponseDto[]> {
     try {
       const universities = await this.prisma.university.findMany({
         where: { isMain: true },
@@ -355,7 +379,9 @@ export class UniversitiesService {
         orderBy: { ranking: 'asc' },
       });
 
-      return universities.map(uni => this.mapper.toMainUniversityDto(uni as any, lang));
+      return universities.map((uni) =>
+        this.mapper.toMainUniversityDto(uni as any, lang),
+      );
     } catch (error) {
       console.error('Error finding main universities:', error);
       throw error;
@@ -367,10 +393,19 @@ export class UniversitiesService {
     lang: string = 'uz',
   ) {
     try {
-      const { page = 1, limit = 10, sortBy = 'ranking', sortDirection = 'asc' } = filterDto;
+      const {
+        page = 1,
+        limit = 10,
+        sortBy = 'ranking',
+        sortDirection = 'asc',
+      } = filterDto;
 
-      const where = this.repository.buildUniversityProgramWhereClause(filterDto);
-      const orderBy = this.repository.getUniversityProgramSortConfig(sortBy, sortDirection);
+      const where =
+        this.repository.buildUniversityProgramWhereClause(filterDto);
+      const orderBy = this.repository.getUniversityProgramSortConfig(
+        sortBy,
+        sortDirection,
+      );
 
       const skip = (Number(page) - 1) * Number(limit);
       const take = Number(limit);
@@ -400,10 +435,15 @@ export class UniversitiesService {
       ]);
 
       if (universityPrograms.length > 0) {
-        console.log('First UP intakes:', JSON.stringify(universityPrograms[0].intakes, null, 2));
+        console.log(
+          'First UP intakes:',
+          JSON.stringify(universityPrograms[0].intakes, null, 2),
+        );
       }
 
-      const data = universityPrograms.map((up) => this.mapper.toUniversityByProgramDto(up as any, lang));
+      const data = universityPrograms.map((up) =>
+        this.mapper.toUniversityByProgramDto(up as any, lang),
+      );
       const totalPages = Math.ceil(total / Number(limit));
 
       return {
@@ -434,25 +474,33 @@ export class UniversitiesService {
       throw new NotFoundException('University not found');
     }
     try {
-      const programsByUniversity = await this.prisma.universityProgram.findMany({
-        where: {
-          universityId
+      const programsByUniversity = await this.prisma.universityProgram.findMany(
+        {
+          where: {
+            universityId,
+          },
+          include: {
+            program: true,
+            university: true,
+            scholarships: true,
+          },
         },
-        include: {
-          program: true,
-          university: true,
-          scholarships: true,
-        }
-      });
+      );
 
-      return programsByUniversity.map(up => this.mapper.toProgramDetailsDto(up as any, lang));
-
+      return programsByUniversity.map((up) =>
+        this.mapper.toProgramDetailsDto(up as any, lang),
+      );
     } catch (error) {
       throw new BadRequestException('Error finding programs by university');
     }
   }
 
-  private async updateUniversityPrograms(tx: Prisma.TransactionClient, universityId: string, programs: any[], existingPrograms: any[]) {
+  private async updateUniversityPrograms(
+    tx: Prisma.TransactionClient,
+    universityId: string,
+    programs: any[],
+    existingPrograms: any[],
+  ) {
     const incomingProgramIds = new Set(programs.map((p) => p.programId));
     const programsToDelete = existingPrograms
       .filter((up) => !incomingProgramIds.has(up.programId))
@@ -507,16 +555,32 @@ export class UniversitiesService {
     }
   }
 
-  private async updateUniversityRequirements(tx: Prisma.TransactionClient, universityId: string, requirements: any) {
+  private async updateUniversityRequirements(
+    tx: Prisma.TransactionClient,
+    universityId: string,
+    requirements: any,
+  ) {
     const {
-      minIeltsScore, minToeflScore, minDuolingoScore, requiredDegree,
-      minGpa, minGmatScore, minCatScore, requiredRecommendationLetters,
-      otherRequirements
+      minIeltsScore,
+      minToeflScore,
+      minDuolingoScore,
+      requiredDegree,
+      minGpa,
+      minGmatScore,
+      minCatScore,
+      requiredRecommendationLetters,
+      otherRequirements,
     } = requirements;
 
     const requirementsData = {
-      minIeltsScore, minToeflScore, minDuolingoScore, requiredDegree,
-      minGpa, minGmatScore, minCatScore, requiredRecommendationLetters,
+      minIeltsScore,
+      minToeflScore,
+      minDuolingoScore,
+      requiredDegree,
+      minGpa,
+      minGmatScore,
+      minCatScore,
+      requiredRecommendationLetters,
       otherRequirements: otherRequirements || [],
     };
 
@@ -546,24 +610,32 @@ export class UniversitiesService {
     }
   }
 
-  private async validateIsMainLimit(entityType: 'university' | 'country'): Promise<void> {
+  private async validateIsMainLimit(
+    entityType: 'university' | 'country',
+  ): Promise<void> {
     let count: number;
     if (entityType === 'university') {
       count = await this.prisma.university.count({
-        where: { isMain: true }
+        where: { isMain: true },
       });
     } else {
       count = await this.prisma.country.count({
-        where: { isMain: true }
+        where: { isMain: true },
       });
     }
 
     if (count >= 3) {
-      throw new InvalidDataException(`Cannot set as main: maximum of 3 ${entityType === 'university' ? 'universities' : 'countries'} can be marked as main`);
+      throw new InvalidDataException(
+        `Cannot set as main: maximum of 3 ${entityType === 'university' ? 'universities' : 'countries'} can be marked as main`,
+      );
     }
   }
 
-  private handlePrismaError(error: any, countryCode?: number | string, cityId?: string) {
+  private handlePrismaError(
+    error: any,
+    countryCode?: number | string,
+    cityId?: string,
+  ) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
         throw new InvalidDataException(

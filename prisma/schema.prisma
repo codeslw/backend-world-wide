@@ -185,6 +185,8 @@ model UniversityProgram {
   createdAt          DateTime                  @default(now())
   updatedAt          DateTime                  @updatedAt
   duration           Float?
+  logo               String?
+  studyLanguage      String?
   program            Program                   @relation(fields: [programId], references: [id])
   university         University                @relation(fields: [universityId], references: [id], onDelete: Cascade)
   scholarships       Scholarship[]

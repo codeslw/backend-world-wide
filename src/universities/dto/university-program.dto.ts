@@ -53,7 +53,8 @@ export class UniversityProgramDto {
   studyLevel: StudyLevel;
 
   @ApiProperty({
-    description: 'The duration of the program in months. Can accept decimal values like 1.5 or 2.5.',
+    description:
+      'The duration of the program in months. Can accept decimal values like 1.5 or 2.5.',
     example: 2.5,
     required: false,
   })
@@ -70,4 +71,22 @@ export class UniversityProgramDto {
   @IsUUID('4', { each: true })
   @IsOptional()
   intakes?: string[];
+
+  @ApiProperty({
+    description: 'Logo URL for the program',
+    example: 'https://example.com/logo.png',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  logo?: string;
+
+  @ApiProperty({
+    description: 'Study language for the program',
+    example: 'English',
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  studyLanguage?: string;
 }

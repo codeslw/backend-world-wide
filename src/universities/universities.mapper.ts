@@ -41,6 +41,8 @@ type UniversityProgramWithRelations = UniversityProgram & {
   program: Program;
   intakes?: { intake: Intake }[];
   scholarships?: Scholarship[];
+  logo?: string;
+  studyLanguage?: string;
 };
 
 @Injectable()
@@ -254,6 +256,8 @@ export class UniversitiesMapper {
         tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
         studyLevel: up.studyLevel as StudyLevel,
         duration: up.duration,
+        logo: up.logo,
+        studyLanguage: up.studyLanguage,
         intakes:
           up.intakes?.map((api) => ({
             id: api.intake.id,
