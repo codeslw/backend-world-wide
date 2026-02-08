@@ -8,6 +8,7 @@ import {
   Intake,
   UniversityRequirements,
   Scholarship,
+  AdmissionRequirement,
 } from '@prisma/client';
 import { UniversityResponseDto } from './dto/university-response.dto';
 import { UniversityListItemDto } from './dto/university-list-item.dto';
@@ -17,6 +18,7 @@ import { ProgramDetailsDto } from './dto/university-by-program-response.dto';
 import { Currency } from 'src/common/enum/currency.enum';
 import { StudyLevel } from 'src/common/enum/study-level.enum';
 import { UniversityType } from 'src/common/enum/university-type.enum';
+import { LanguageRequirementsDto } from 'src/admission-requirements/dto/language-requirements.dto';
 
 type UniversityWithRelations = University & {
   country?: Country;
@@ -27,6 +29,7 @@ type UniversityWithRelations = University & {
     scholarships?: Scholarship[];
   })[];
   requirements?: UniversityRequirements | null;
+  admissionRequirements?: AdmissionRequirement[];
   scholarships?: Scholarship[];
   _count?: {
     universityPrograms: number;
@@ -120,6 +123,11 @@ export class UniversitiesMapper {
         })) || [],
       hasScholarship: university.hasScholarship ?? false,
       requirements: university.requirements,
+      admissionRequirements: university.admissionRequirements?.map((req) => ({
+        ...req,
+        languageRequirements:
+          req.languageRequirements as unknown as LanguageRequirementsDto,
+      })),
       scholarshipRequirements: [],
     };
   }

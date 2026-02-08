@@ -21,6 +21,7 @@ import { ValidityModule } from './validity/validity.module';
 import { StatisticsModule } from './statistics/statistics.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ScholarshipsModule } from './scholarships/scholarships.module';
+import { AdmissionRequirementsModule } from './admission-requirements/admission-requirements.module';
 
 @Module({
   imports: [
@@ -45,8 +46,9 @@ import { ScholarshipsModule } from './scholarships/scholarships.module';
     NotificationsModule,
     IntakesModule,
     ScholarshipsModule,
+    AdmissionRequirementsModule,
   ],
   providers: [PrismaService, DigitalOceanService],
   controllers: [],
 })
-export class AppModule { }
+export class AppModule {}

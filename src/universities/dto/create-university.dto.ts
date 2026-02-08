@@ -24,6 +24,7 @@ import { UniversityProgramDto } from './university-program.dto';
 import { Type } from 'class-transformer';
 import { UniversityRequirementsDto } from './university-requirements.dto';
 import { Currency } from '../../common/enum/currency.enum';
+import { CreateAdmissionRequirementNestedDto } from '../../admission-requirements/dto/create-admission-requirement.dto';
 
 export class CreateUniversityDto {
   @ApiProperty({
@@ -240,4 +241,14 @@ export class CreateUniversityDto {
   @IsArray()
   @IsString({ each: true })
   scholarshipRequirements?: string[];
+
+  @ApiPropertyOptional({
+    description: 'List of admission requirements per program level',
+    type: [CreateAdmissionRequirementNestedDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateAdmissionRequirementNestedDto)
+  admissionRequirements?: CreateAdmissionRequirementNestedDto[];
 }

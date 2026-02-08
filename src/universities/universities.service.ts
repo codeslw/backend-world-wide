@@ -30,8 +30,14 @@ export class UniversitiesService {
   async create(
     createUniversityDto: CreateUniversityDto,
   ): Promise<UniversityResponseDto> {
-    const { programs, countryCode, cityId, requirements, ...universityData } =
-      createUniversityDto;
+    const {
+      programs,
+      countryCode,
+      cityId,
+      requirements,
+      admissionRequirements,
+      ...universityData
+    } = createUniversityDto;
 
     if (universityData.isMain) {
       await this.validateIsMainLimit('university');
@@ -69,6 +75,14 @@ export class UniversitiesService {
                 },
               }
             : undefined,
+          admissionRequirements: admissionRequirements
+            ? {
+                create: admissionRequirements.map((req) => ({
+                  ...req,
+                  languageRequirements: req.languageRequirements as any,
+                })),
+              }
+            : undefined,
         },
         include: {
           country: true,
@@ -84,6 +98,7 @@ export class UniversitiesService {
             },
           },
           requirements: true,
+          admissionRequirements: true,
         },
       });
       return this.mapper.toResponseDto(createdUniversity as any, 'uz');
@@ -184,6 +199,7 @@ export class UniversitiesService {
           },
           requirements: true,
           scholarships: true,
+          admissionRequirements: true,
         },
       });
 
@@ -205,8 +221,14 @@ export class UniversitiesService {
     id: string,
     updateUniversityDto: UpdateUniversityDto,
   ): Promise<UniversityResponseDto> {
-    const { programs, countryCode, cityId, requirements, ...otherFields } =
-      updateUniversityDto;
+    const {
+      programs,
+      countryCode,
+      cityId,
+      requirements,
+      admissionRequirements,
+      ...otherFields
+    } = updateUniversityDto;
 
     const existingUniversity = await this.prisma.university.findUnique({
       where: { id },
@@ -252,6 +274,21 @@ export class UniversitiesService {
           await this.updateUniversityRequirements(tx, id, requirements);
         }
 
+        if (admissionRequirements) {
+          await tx.admissionRequirement.deleteMany({
+            where: { universityId: id },
+          });
+          if (admissionRequirements.length > 0) {
+            await tx.admissionRequirement.createMany({
+              data: admissionRequirements.map((req) => ({
+                ...req,
+                universityId: id,
+                languageRequirements: req.languageRequirements as any,
+              })),
+            });
+          }
+        }
+
         return tx.university.findUnique({
           where: { id },
           include: {
@@ -268,6 +305,7 @@ export class UniversitiesService {
               },
             },
             requirements: true,
+            admissionRequirements: true,
           },
         });
       });
