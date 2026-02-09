@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { CreateAdmissionRequirementDto } from './dto/create-admission-requirement.dto';
 import { UpdateAdmissionRequirementDto } from './dto/update-admission-requirement.dto';
 import { PrismaService } from '../db/prisma.service';
@@ -32,7 +36,7 @@ export class AdmissionRequirementsService {
       // Since it's create, let's throw conflict or just update.
       // The user wants CRUD. Let's start with proper Create behavior (fail if exists).
       // Or we can use upsert logic if we want idempotency.
-      throw new Error(
+      throw new ConflictException(
         `Admission requirement for this university and level already exists. Use update.`,
       );
     }
