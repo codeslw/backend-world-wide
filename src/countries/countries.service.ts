@@ -41,6 +41,51 @@ export class CountriesService {
           nameEn: createCountryDto.nameEn,
           isMain: createCountryDto.isMain || false,
           photoUrl: createCountryDto.photoUrl,
+
+          // General Info
+          overviewEn: createCountryDto.overviewEn,
+          overviewRu: createCountryDto.overviewRu,
+          overviewUz: createCountryDto.overviewUz,
+          images: createCountryDto.images || [],
+
+          // Financial Requirements
+          proofOfFundsAmount: createCountryDto.proofOfFundsAmount,
+          tuitionMin: createCountryDto.tuitionMin,
+          tuitionMax: createCountryDto.tuitionMax,
+          tuitionCurrency: createCountryDto.tuitionCurrency,
+          costOfLivingMin: createCountryDto.costOfLivingMin,
+          costOfLivingMax: createCountryDto.costOfLivingMax,
+          costOfLivingCurrency: createCountryDto.costOfLivingCurrency,
+          scholarshipAvailability: createCountryDto.scholarshipAvailability,
+
+          // Visa & Immigration
+          visaAcceptanceRate: createCountryDto.visaAcceptanceRate,
+          visaProcessingTime: createCountryDto.visaProcessingTime,
+          visaInterviewRequired: createCountryDto.visaInterviewRequired || false,
+          dependentVisaAvailable: createCountryDto.dependentVisaAvailable || false,
+
+          // Work Rights
+          partTimeWorkHours: createCountryDto.partTimeWorkHours,
+          postStudyWorkDuration: createCountryDto.postStudyWorkDuration,
+          prPathwayAvailable: createCountryDto.prPathwayAvailable || false,
+
+          // Academic & Logistical
+          majorIntakes: createCountryDto.majorIntakes || [],
+          applicationTimeline: createCountryDto.applicationTimeline,
+          acceptedLanguageTests: createCountryDto.acceptedLanguageTests || [],
+          standardizedTestsRequired: createCountryDto.standardizedTestsRequired,
+          gapAcceptance: createCountryDto.gapAcceptance,
+
+          // Life & Experience
+          accommodationTypes: createCountryDto.accommodationTypes || [],
+          averageRentMin: createCountryDto.averageRentMin,
+          averageRentMax: createCountryDto.averageRentMax,
+          rentCurrency: createCountryDto.rentCurrency,
+          safetyIndex: createCountryDto.safetyIndex,
+          healthcareDetails: createCountryDto.healthcareDetails,
+          internationalStudentPopulation: createCountryDto.internationalStudentPopulation,
+          hasHalalFood: createCountryDto.hasHalalFood || false,
+          hasVegetarianFood: createCountryDto.hasVegetarianFood || false,
         },
       });
     } catch (error) {
@@ -270,10 +315,65 @@ export class CountriesService {
         throw new InvalidDataException('photoUrl is required when isMain is true');
       }
 
+      // Build update data object, only including fields that are provided
+      const updateData: any = {};
+
+      // Basic fields
+      if (updateCountryDto.nameUz !== undefined) updateData.nameUz = updateCountryDto.nameUz;
+      if (updateCountryDto.nameRu !== undefined) updateData.nameRu = updateCountryDto.nameRu;
+      if (updateCountryDto.nameEn !== undefined) updateData.nameEn = updateCountryDto.nameEn;
+      if (updateCountryDto.isMain !== undefined) updateData.isMain = updateCountryDto.isMain;
+      if (updateCountryDto.photoUrl !== undefined) updateData.photoUrl = updateCountryDto.photoUrl;
+
+      // General Info
+      if (updateCountryDto.overviewEn !== undefined) updateData.overviewEn = updateCountryDto.overviewEn;
+      if (updateCountryDto.overviewRu !== undefined) updateData.overviewRu = updateCountryDto.overviewRu;
+      if (updateCountryDto.overviewUz !== undefined) updateData.overviewUz = updateCountryDto.overviewUz;
+      if (updateCountryDto.images !== undefined) updateData.images = updateCountryDto.images;
+
+      // Financial Requirements
+      if (updateCountryDto.proofOfFundsAmount !== undefined) updateData.proofOfFundsAmount = updateCountryDto.proofOfFundsAmount;
+      if (updateCountryDto.tuitionMin !== undefined) updateData.tuitionMin = updateCountryDto.tuitionMin;
+      if (updateCountryDto.tuitionMax !== undefined) updateData.tuitionMax = updateCountryDto.tuitionMax;
+      if (updateCountryDto.tuitionCurrency !== undefined) updateData.tuitionCurrency = updateCountryDto.tuitionCurrency;
+      if (updateCountryDto.costOfLivingMin !== undefined) updateData.costOfLivingMin = updateCountryDto.costOfLivingMin;
+      if (updateCountryDto.costOfLivingMax !== undefined) updateData.costOfLivingMax = updateCountryDto.costOfLivingMax;
+      if (updateCountryDto.costOfLivingCurrency !== undefined) updateData.costOfLivingCurrency = updateCountryDto.costOfLivingCurrency;
+      if (updateCountryDto.scholarshipAvailability !== undefined) updateData.scholarshipAvailability = updateCountryDto.scholarshipAvailability;
+
+      // Visa & Immigration
+      if (updateCountryDto.visaAcceptanceRate !== undefined) updateData.visaAcceptanceRate = updateCountryDto.visaAcceptanceRate;
+      if (updateCountryDto.visaProcessingTime !== undefined) updateData.visaProcessingTime = updateCountryDto.visaProcessingTime;
+      if (updateCountryDto.visaInterviewRequired !== undefined) updateData.visaInterviewRequired = updateCountryDto.visaInterviewRequired;
+      if (updateCountryDto.dependentVisaAvailable !== undefined) updateData.dependentVisaAvailable = updateCountryDto.dependentVisaAvailable;
+
+      // Work Rights
+      if (updateCountryDto.partTimeWorkHours !== undefined) updateData.partTimeWorkHours = updateCountryDto.partTimeWorkHours;
+      if (updateCountryDto.postStudyWorkDuration !== undefined) updateData.postStudyWorkDuration = updateCountryDto.postStudyWorkDuration;
+      if (updateCountryDto.prPathwayAvailable !== undefined) updateData.prPathwayAvailable = updateCountryDto.prPathwayAvailable;
+
+      // Academic & Logistical
+      if (updateCountryDto.majorIntakes !== undefined) updateData.majorIntakes = updateCountryDto.majorIntakes;
+      if (updateCountryDto.applicationTimeline !== undefined) updateData.applicationTimeline = updateCountryDto.applicationTimeline;
+      if (updateCountryDto.acceptedLanguageTests !== undefined) updateData.acceptedLanguageTests = updateCountryDto.acceptedLanguageTests;
+      if (updateCountryDto.standardizedTestsRequired !== undefined) updateData.standardizedTestsRequired = updateCountryDto.standardizedTestsRequired;
+      if (updateCountryDto.gapAcceptance !== undefined) updateData.gapAcceptance = updateCountryDto.gapAcceptance;
+
+      // Life & Experience
+      if (updateCountryDto.accommodationTypes !== undefined) updateData.accommodationTypes = updateCountryDto.accommodationTypes;
+      if (updateCountryDto.averageRentMin !== undefined) updateData.averageRentMin = updateCountryDto.averageRentMin;
+      if (updateCountryDto.averageRentMax !== undefined) updateData.averageRentMax = updateCountryDto.averageRentMax;
+      if (updateCountryDto.rentCurrency !== undefined) updateData.rentCurrency = updateCountryDto.rentCurrency;
+      if (updateCountryDto.safetyIndex !== undefined) updateData.safetyIndex = updateCountryDto.safetyIndex;
+      if (updateCountryDto.healthcareDetails !== undefined) updateData.healthcareDetails = updateCountryDto.healthcareDetails;
+      if (updateCountryDto.internationalStudentPopulation !== undefined) updateData.internationalStudentPopulation = updateCountryDto.internationalStudentPopulation;
+      if (updateCountryDto.hasHalalFood !== undefined) updateData.hasHalalFood = updateCountryDto.hasHalalFood;
+      if (updateCountryDto.hasVegetarianFood !== undefined) updateData.hasVegetarianFood = updateCountryDto.hasVegetarianFood;
+
       // Proceed with update
       return await this.prisma.country.update({
         where: { code },
-        data: updateCountryDto,
+        data: updateData,
       });
     } catch (error) {
       // If it's already our custom exception, just rethrow it
