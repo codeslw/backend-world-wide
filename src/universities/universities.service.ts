@@ -58,6 +58,11 @@ export class UniversitiesService {
               tuitionFeeCurrency: program.tuitionFeeCurrency || 'USD',
               studyLevel: program.studyLevel,
               duration: program.duration,
+              logo: program.logo,
+              studyLanguage: program.studyLanguage,
+              campuses: program.campusIds
+                ? { connect: program.campusIds.map((id) => ({ id })) }
+                : undefined,
               intakes: program.intakes
                 ? {
                     create: program.intakes.map((intakeId) => ({
@@ -95,6 +100,7 @@ export class UniversitiesService {
                   intake: true,
                 },
               },
+              campuses: true,
             },
           },
           requirements: true,
@@ -190,6 +196,7 @@ export class UniversitiesService {
             include: {
               program: true,
               scholarships: true,
+              campuses: true,
               intakes: {
                 include: {
                   intake: true,
@@ -297,6 +304,7 @@ export class UniversitiesService {
             universityPrograms: {
               include: {
                 program: true,
+                campuses: true,
                 intakes: {
                   include: {
                     intake: true,
@@ -569,12 +577,22 @@ export class UniversitiesService {
           tuitionFeeCurrency: programData.tuitionFeeCurrency,
           studyLevel: programData.studyLevel,
           duration: programData.duration,
+          logo: programData.logo,
+          studyLanguage: programData.studyLanguage,
+          campuses: programData.campusIds
+            ? { connect: programData.campusIds.map((id: string) => ({ id })) }
+            : undefined,
         },
         update: {
           tuitionFee: programData.tuitionFee,
           tuitionFeeCurrency: programData.tuitionFeeCurrency,
           studyLevel: programData.studyLevel,
           duration: programData.duration,
+          logo: programData.logo,
+          studyLanguage: programData.studyLanguage,
+          campuses: programData.campusIds
+            ? { set: programData.campusIds.map((id: string) => ({ id })) }
+            : undefined,
         },
       });
 

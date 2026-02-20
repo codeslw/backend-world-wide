@@ -5,12 +5,15 @@ import { AppModule } from '../src/app.module';
 
 // Mock Prisma
 jest.mock('@prisma/client', () => {
+  const originalModule = jest.requireActual('@prisma/client');
   const mockPrismaClient = {
     $connect: jest.fn(),
     $disconnect: jest.fn(),
   };
 
   return {
+    __esModule: true,
+    ...originalModule,
     PrismaClient: jest.fn(() => mockPrismaClient),
   };
 });

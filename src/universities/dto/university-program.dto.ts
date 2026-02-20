@@ -89,4 +89,14 @@ export class UniversityProgramDto {
   @IsString()
   @IsOptional()
   studyLanguage?: string;
+
+  @ApiProperty({
+    description: 'List of campus IDs this program is attached to',
+    example: ['d290f1ee-6c54-4b01-90e6-d701748f0851'],
+    required: false,
+  })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  @IsOptional()
+  campusIds?: string[];
 }

@@ -22,6 +22,7 @@ import { StatisticsModule } from './statistics/statistics.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ScholarshipsModule } from './scholarships/scholarships.module';
 import { AdmissionRequirementsModule } from './admission-requirements/admission-requirements.module';
+import { CampusesModule } from './campuses/campuses.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { AdmissionRequirementsModule } from './admission-requirements/admission-
     IntakesModule,
     ScholarshipsModule,
     AdmissionRequirementsModule,
+    CampusesModule,
   ],
   providers: [PrismaService, DigitalOceanService],
   controllers: [],

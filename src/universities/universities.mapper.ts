@@ -9,6 +9,7 @@ import {
   UniversityRequirements,
   Scholarship,
   AdmissionRequirement,
+  Campus,
 } from '@prisma/client';
 import { UniversityResponseDto } from './dto/university-response.dto';
 import { UniversityListItemDto } from './dto/university-list-item.dto';
@@ -27,10 +28,12 @@ type UniversityWithRelations = University & {
     program?: Program;
     intakes?: { intake: Intake }[];
     scholarships?: Scholarship[];
+    campuses?: Campus[];
   })[];
   requirements?: UniversityRequirements | null;
   admissionRequirements?: AdmissionRequirement[];
   scholarships?: Scholarship[];
+  campuses?: Campus[];
   _count?: {
     universityPrograms: number;
   };
@@ -100,6 +103,7 @@ export class UniversitiesMapper {
               deadline: api.intake.deadline.toISOString(),
             })) || [],
           hasScholarship: up.scholarships && up.scholarships.length > 0,
+          campuses: (up.campuses as any) || [],
         })) || [],
       country: this.localizeCountry(university.country, langSuffix),
       city: this.localizeCity(university.city, langSuffix),
@@ -129,6 +133,7 @@ export class UniversitiesMapper {
           req.languageRequirements as unknown as LanguageRequirementsDto,
       })),
       scholarshipRequirements: [],
+      campuses: (university.campuses as any) || [],
     };
   }
 

@@ -10,6 +10,7 @@ import { StudyLevel } from '../../common/enum/study-level.enum';
 import { IntakeResponseDto } from './intake-response.dto';
 import { ScholarshipResponseDto } from 'src/scholarships/dto/scholarship-response.dto';
 import { AdmissionRequirementResponseDto } from 'src/admission-requirements/dto/admission-requirement-response.dto';
+import { CampusResponseDto } from 'src/campuses/dto/campus-response.dto';
 
 // DTO for representing program details within the university response
 class UniversityProgramResponseDto {
@@ -50,6 +51,13 @@ class UniversityProgramResponseDto {
     description: 'Whether this program has a scholarship',
   })
   hasScholarship?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Campuses associated with this program',
+    type: [CampusResponseDto],
+  })
+  @Type(() => CampusResponseDto)
+  campuses?: CampusResponseDto[];
 }
 
 export class UniversityResponseDto {
@@ -181,6 +189,13 @@ export class UniversityResponseDto {
   })
   @Type(() => ScholarshipResponseDto)
   scholarships: ScholarshipResponseDto[];
+
+  @ApiPropertyOptional({
+    description: 'Campuses for this university',
+    type: [CampusResponseDto],
+  })
+  @Type(() => CampusResponseDto)
+  campuses?: CampusResponseDto[];
 }
 
 export class PaginatedUniversityResponseDto extends PaginatedResponseDto<UniversityResponseDto> {

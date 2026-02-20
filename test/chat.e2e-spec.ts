@@ -37,6 +37,7 @@ jest.mock('socket.io-client', () => {
 
 // Mock Prisma
 jest.mock('@prisma/client', () => {
+  const originalModule = jest.requireActual('@prisma/client');
   const mockPrismaClient = {
     user: {
       create: jest.fn().mockResolvedValue({
@@ -70,6 +71,8 @@ jest.mock('@prisma/client', () => {
   };
 
   return {
+    __esModule: true,
+    ...originalModule,
     PrismaClient: jest.fn(() => mockPrismaClient),
   };
 });
