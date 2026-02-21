@@ -105,6 +105,7 @@ export class UniversitiesService {
           },
           requirements: true,
           admissionRequirements: true,
+          campuses: true,
         },
       });
       return this.mapper.toResponseDto(createdUniversity as any, 'uz');
@@ -207,6 +208,7 @@ export class UniversitiesService {
           requirements: true,
           scholarships: true,
           admissionRequirements: true,
+          campuses: true,
         },
       });
 
@@ -314,6 +316,7 @@ export class UniversitiesService {
             },
             requirements: true,
             admissionRequirements: true,
+            campuses: true,
           },
         });
       });
