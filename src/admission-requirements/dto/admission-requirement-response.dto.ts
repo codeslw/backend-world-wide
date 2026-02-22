@@ -29,24 +29,6 @@ export class AdmissionRequirementResponseDto {
   @ApiProperty()
   entryRequirements: string;
 
-  @ApiProperty({ required: false, nullable: true })
-  visaFee: number | null;
-
-  @ApiProperty({ required: false, nullable: true })
-  visaFeeCurrency: string | null;
-
-  @ApiProperty({ required: false, nullable: true })
-  insuranceFee: number | null;
-
-  @ApiProperty({ required: false, nullable: true })
-  bankStatement: number | null;
-
-  @ApiProperty({ type: [String] })
-  otherExpenses: string[];
-
-  @ApiProperty({ required: false, nullable: true })
-  visaRequiredDocuments: string | null;
-
   @ApiProperty()
   createdAt: Date;
 

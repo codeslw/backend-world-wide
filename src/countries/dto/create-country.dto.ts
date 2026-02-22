@@ -158,6 +158,44 @@ export class CreateCountryDto {
   @IsBoolean()
   dependentVisaAvailable?: boolean;
 
+  @ApiPropertyOptional({ description: 'Visa fee amount', example: 160 })
+  @IsOptional()
+  @IsNumber()
+  visaFee?: number;
+
+  @ApiPropertyOptional({ description: 'Visa fee currency', example: 'USD' })
+  @IsOptional()
+  @IsString()
+  visaFeeCurrency?: string;
+
+  @ApiPropertyOptional({ description: 'Insurance fee amount', example: 500 })
+  @IsOptional()
+  @IsNumber()
+  insuranceFee?: number;
+
+  @ApiPropertyOptional({ description: 'Bank statement amount required', example: 10000 })
+  @IsOptional()
+  @IsNumber()
+  bankStatement?: number;
+
+  @ApiPropertyOptional({
+    description: 'Other visa-related expenses',
+    type: [String],
+    example: ['Translation fee - $50', 'Notary fee - $30'],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  otherExpenses?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Required documents for visa (rich text HTML)',
+    example: '<p>Passport, financial proof, acceptance letter</p>',
+  })
+  @IsOptional()
+  @IsString()
+  visaRequiredDocuments?: string;
+
   // Work Rights
   @ApiPropertyOptional({
     description: 'Part-time work hours allowed',

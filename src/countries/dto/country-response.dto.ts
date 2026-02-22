@@ -76,6 +76,24 @@ export class CountryResponseDto {
   @ApiPropertyOptional({ description: 'Are dependent visas available?' })
   dependentVisaAvailable?: boolean;
 
+  @ApiPropertyOptional({ description: 'Visa fee amount' })
+  visaFee?: number;
+
+  @ApiPropertyOptional({ description: 'Visa fee currency' })
+  visaFeeCurrency?: string;
+
+  @ApiPropertyOptional({ description: 'Insurance fee amount' })
+  insuranceFee?: number;
+
+  @ApiPropertyOptional({ description: 'Bank statement amount required' })
+  bankStatement?: number;
+
+  @ApiPropertyOptional({ description: 'Other visa-related expenses', type: [String] })
+  otherExpenses?: string[];
+
+  @ApiPropertyOptional({ description: 'Required documents for visa (rich text HTML)' })
+  visaRequiredDocuments?: string;
+
   // Work Rights
   @ApiPropertyOptional({ description: 'Part-time work hours allowed' })
   partTimeWorkHours?: string;

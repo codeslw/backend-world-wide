@@ -72,6 +72,12 @@ model Country {
   visaProcessingTime     String?
   visaInterviewRequired  Boolean @default(false)
   dependentVisaAvailable Boolean @default(false)
+  visaFee                Float?
+  visaFeeCurrency        String?
+  insuranceFee           Float?
+  bankStatement          Float?
+  otherExpenses          String[] @default([])
+  visaRequiredDocuments  String?  @db.Text
 
   // Work Rights
   partTimeWorkHours     String?
@@ -535,15 +541,6 @@ model AdmissionRequirement {
   languageRequirements Json
   notes                String[]
   entryRequirements    String     @db.Text
-
-  // Visa section
-  visaFee              Float?
-  visaFeeCurrency      String?
-  insuranceFee         Float?
-  bankStatement        Float?
-  otherExpenses        String[]
-  visaRequiredDocuments String?    @db.Text
-
   createdAt            DateTime   @default(now())
   updatedAt            DateTime   @updatedAt
 

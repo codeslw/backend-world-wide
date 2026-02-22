@@ -7,7 +7,6 @@ import {
   IsOptional,
   IsArray,
   IsObject,
-  IsNumber,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -49,40 +48,6 @@ export class CreateAdmissionRequirementDto {
   @IsString()
   @IsNotEmpty()
   entryRequirements: string;
-
-  @ApiProperty({ example: 100, required: false })
-  @IsNumber()
-  @IsOptional()
-  @Type(() => Number)
-  visaFee?: number;
-
-  @ApiProperty({ example: 'USD', required: false })
-  @IsString()
-  @IsOptional()
-  visaFeeCurrency?: string;
-
-  @ApiProperty({ example: 200, required: false })
-  @IsNumber()
-  @IsOptional()
-  @Type(() => Number)
-  insuranceFee?: number;
-
-  @ApiProperty({ example: 5000, required: false })
-  @IsNumber()
-  @IsOptional()
-  @Type(() => Number)
-  bankStatement?: number;
-
-  @ApiProperty({ example: ['Translation fee', 'Notary fee'], required: false })
-  @IsArray()
-  @IsOptional()
-  @IsString({ each: true })
-  otherExpenses?: string[];
-
-  @ApiProperty({ example: '<p>Required documents for visa</p>', required: false })
-  @IsString()
-  @IsOptional()
-  visaRequiredDocuments?: string;
 }
 
 export class CreateAdmissionRequirementNestedDto {
@@ -116,38 +81,4 @@ export class CreateAdmissionRequirementNestedDto {
   @IsString()
   @IsNotEmpty()
   entryRequirements: string;
-
-  @ApiProperty({ example: 100, required: false })
-  @IsNumber()
-  @IsOptional()
-  @Type(() => Number)
-  visaFee?: number;
-
-  @ApiProperty({ example: 'USD', required: false })
-  @IsString()
-  @IsOptional()
-  visaFeeCurrency?: string;
-
-  @ApiProperty({ example: 200, required: false })
-  @IsNumber()
-  @IsOptional()
-  @Type(() => Number)
-  insuranceFee?: number;
-
-  @ApiProperty({ example: 5000, required: false })
-  @IsNumber()
-  @IsOptional()
-  @Type(() => Number)
-  bankStatement?: number;
-
-  @ApiProperty({ example: ['Translation fee', 'Notary fee'], required: false })
-  @IsArray()
-  @IsOptional()
-  @IsString({ each: true })
-  otherExpenses?: string[];
-
-  @ApiProperty({ example: '<p>Required documents for visa</p>', required: false })
-  @IsString()
-  @IsOptional()
-  visaRequiredDocuments?: string;
 }
