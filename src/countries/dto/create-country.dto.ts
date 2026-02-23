@@ -173,7 +173,10 @@ export class CreateCountryDto {
   @IsNumber()
   insuranceFee?: number;
 
-  @ApiPropertyOptional({ description: 'Bank statement amount required', example: 10000 })
+  @ApiPropertyOptional({
+    description: 'Bank statement amount required',
+    example: 10000,
+  })
   @IsOptional()
   @IsNumber()
   bankStatement?: number;

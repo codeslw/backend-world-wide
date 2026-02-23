@@ -73,6 +73,14 @@ export class UniversitiesByProgramsFilterDto {
   @IsUUID()
   universityId?: string;
 
+  @ApiProperty({
+    description: 'Filter by campus ID',
+    required: false,
+  })
+  @IsOptional()
+  @IsUUID()
+  campusId?: string;
+
   @ApiProperty({ description: 'Minimum university ranking', required: false })
   @IsOptional()
   @IsInt()

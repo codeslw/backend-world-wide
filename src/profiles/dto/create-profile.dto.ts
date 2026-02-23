@@ -103,7 +103,10 @@ export class CreateProfileDto {
 
   @ApiPropertyOptional({
     type: [String],
-    example: ['550e8400-e29b-41d4-a716-446655440002', '550e8400-e29b-41d4-a716-446655440003'],
+    example: [
+      '550e8400-e29b-41d4-a716-446655440002',
+      '550e8400-e29b-41d4-a716-446655440003',
+    ],
     description: 'File GUIDs for recommendation letters',
   })
   @IsOptional()

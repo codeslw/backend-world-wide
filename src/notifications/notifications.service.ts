@@ -16,10 +16,7 @@ export class NotificationsService {
    * Counts unread chat messages for the current user.
    * Admins additionally see messages from unassigned chats so they can react.
    */
-  async getUnreadMessagesCount(
-    userId: string,
-    role: AppRole,
-  ): Promise<number> {
+  async getUnreadMessagesCount(userId: string, role: AppRole): Promise<number> {
     const prismaRole = role as PrismaRole;
     const isClient = prismaRole === PrismaRole.CLIENT;
     const isAdmin = prismaRole === PrismaRole.ADMIN;
@@ -27,10 +24,7 @@ export class NotificationsService {
     const chatFilter: Prisma.ChatWhereInput = isClient
       ? { clientId: userId }
       : {
-          OR: [
-            { adminId: userId },
-            ...(isAdmin ? [{ adminId: null }] : []),
-          ],
+          OR: [{ adminId: userId }, ...(isAdmin ? [{ adminId: null }] : [])],
         };
 
     const messageWhere: Prisma.MessageWhereInput = {
@@ -83,7 +77,10 @@ export class NotificationsService {
   /**
    * Convenience helper that resolves both counts in parallel.
    */
-  async getSummary(userId: string, role: AppRole): Promise<NotificationSummary> {
+  async getSummary(
+    userId: string,
+    role: AppRole,
+  ): Promise<NotificationSummary> {
     const [unreadMessages, pendingApplications] = await Promise.all([
       this.getUnreadMessagesCount(userId, role),
       this.getPendingApplicationsCount(userId, role),

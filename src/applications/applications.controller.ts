@@ -321,7 +321,11 @@ export class ApplicationsController {
     @Param('id') id: string,
     @Body() updateStatusDto: UpdateApplicationStatusDto,
   ) {
-    return this.applicationsService.updateStatus(id, updateStatusDto.status, updateStatusDto.reason);
+    return this.applicationsService.updateStatus(
+      id,
+      updateStatusDto.status,
+      updateStatusDto.reason,
+    );
   }
 
   @Patch(':id/submit')

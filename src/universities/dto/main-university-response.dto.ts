@@ -26,9 +26,9 @@ class MainUniversityProgramDto {
 }
 
 export class MainUniversityResponseDto {
-  @ApiProperty({description : 'Id of university'})
+  @ApiProperty({ description: 'Id of university' })
   id: string;
-  
+
   @ApiProperty({ description: 'University name' })
   name: string;
 
@@ -38,7 +38,10 @@ export class MainUniversityResponseDto {
   @ApiProperty({ description: 'City details' })
   city: CityResponseDto;
 
-  @ApiProperty({ description: 'Programs offered', type: [MainUniversityProgramDto] })
+  @ApiProperty({
+    description: 'Programs offered',
+    type: [MainUniversityProgramDto],
+  })
   programs: MainUniversityProgramDto[];
 
   @ApiProperty({ description: 'University ranking' })

@@ -88,10 +88,15 @@ export class CountryResponseDto {
   @ApiPropertyOptional({ description: 'Bank statement amount required' })
   bankStatement?: number;
 
-  @ApiPropertyOptional({ description: 'Other visa-related expenses', type: [String] })
+  @ApiPropertyOptional({
+    description: 'Other visa-related expenses',
+    type: [String],
+  })
   otherExpenses?: string[];
 
-  @ApiPropertyOptional({ description: 'Required documents for visa (rich text HTML)' })
+  @ApiPropertyOptional({
+    description: 'Required documents for visa (rich text HTML)',
+  })
   visaRequiredDocuments?: string;
 
   // Work Rights

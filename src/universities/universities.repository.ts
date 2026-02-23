@@ -136,11 +136,13 @@ export class UniversitiesRepository {
       search,
       intake,
       universityId,
+      campusId,
     } = filterDto;
 
     const where: Prisma.UniversityProgramWhereInput = {};
 
     if (universityId) where.universityId = universityId;
+    if (campusId) where.campuses = { some: { id: campusId } };
 
     const universityWhere: any = {};
     if (countryCode) universityWhere.countryCode = Number(countryCode);

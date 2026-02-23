@@ -6,7 +6,7 @@ import { PrismaService } from '../src/db/prisma.service';
 
 describe('CampusesController (e2e)', () => {
   let app: INestApplication;
-  let prismaService = {
+  const prismaService = {
     campus: {
       findMany: jest.fn().mockResolvedValue([]),
       findUnique: jest.fn().mockResolvedValue(null),

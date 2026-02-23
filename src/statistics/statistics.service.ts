@@ -13,7 +13,12 @@ import {
   UserEngagementStatsDto,
   ApplicationTrendDto,
 } from './dto/statistics-response.dto';
-import { StatisticsQueryDto, TrendQueryDto, TimePeriod, GroupBy } from './dto/statistics-query.dto';
+import {
+  StatisticsQueryDto,
+  TrendQueryDto,
+  TimePeriod,
+  GroupBy,
+} from './dto/statistics-query.dto';
 import { Prisma, ApplicationStatus, IntakeSeason } from '@prisma/client';
 
 @Injectable()
@@ -23,8 +28,14 @@ export class StatisticsService {
   /**
    * Get comprehensive dashboard statistics including all key metrics
    */
-  async getDashboardStats(query?: StatisticsQueryDto): Promise<DashboardStatsResponseDto> {
-    const dateFilter = this.buildDateFilter(query?.period, query?.startDate, query?.endDate);
+  async getDashboardStats(
+    query?: StatisticsQueryDto,
+  ): Promise<DashboardStatsResponseDto> {
+    const dateFilter = this.buildDateFilter(
+      query?.period,
+      query?.startDate,
+      query?.endDate,
+    );
 
     // Execute all queries in parallel for better performance
     const [
@@ -92,7 +103,9 @@ export class StatisticsService {
   /**
    * Get application statistics grouped by status
    */
-  async getApplicationStatsByStatus(dateFilter?: Prisma.ApplicationWhereInput): Promise<ApplicationStatusStatsDto> {
+  async getApplicationStatsByStatus(
+    dateFilter?: Prisma.ApplicationWhereInput,
+  ): Promise<ApplicationStatusStatsDto> {
     const whereClause = dateFilter || {};
 
     const statusStats = await this.prisma.application.groupBy({
@@ -114,7 +127,8 @@ export class StatisticsService {
 
     // Populate actual counts
     statusStats.forEach((stat) => {
-      result[stat.applicationStatus as keyof ApplicationStatusStatsDto] = stat._count.applicationStatus;
+      result[stat.applicationStatus as keyof ApplicationStatusStatsDto] =
+        stat._count.applicationStatus;
     });
 
     return result;
@@ -123,7 +137,9 @@ export class StatisticsService {
   /**
    * Get geographic distribution of students and universities
    */
-  async getGeographicDistribution(limit: number = 10): Promise<GeographicDistributionDto[]> {
+  async getGeographicDistribution(
+    limit: number = 10,
+  ): Promise<GeographicDistributionDto[]> {
     const countryStats = await this.prisma.country.findMany({
       select: {
         code: true,
@@ -144,7 +160,7 @@ export class StatisticsService {
 
     // Get application counts and student counts for each country
     const result: GeographicDistributionDto[] = [];
-    
+
     for (const country of countryStats) {
       const [applicationsCount, studentsCount] = await Promise.all([
         this.prisma.application.count({
@@ -204,7 +220,7 @@ export class StatisticsService {
 
     // Get average tuition fee for each program
     const result: PopularProgramDto[] = [];
-    
+
     for (const program of popularPrograms) {
       const avgTuitionResult = await this.prisma.universityProgram.aggregate({
         where: {
@@ -321,13 +337,20 @@ export class StatisticsService {
     ]);
 
     // Group by month
-    const monthlyData = new Map<string, { newProfiles: number; newApplications: number; messagesCount: number }>();
+    const monthlyData = new Map<
+      string,
+      { newProfiles: number; newApplications: number; messagesCount: number }
+    >();
 
     // Process profiles
     profiles.forEach((profile) => {
       const month = profile.createdAt.toISOString().substring(0, 7); // YYYY-MM format
       if (!monthlyData.has(month)) {
-        monthlyData.set(month, { newProfiles: 0, newApplications: 0, messagesCount: 0 });
+        monthlyData.set(month, {
+          newProfiles: 0,
+          newApplications: 0,
+          messagesCount: 0,
+        });
       }
       monthlyData.get(month)!.newProfiles++;
     });
@@ -336,7 +359,11 @@ export class StatisticsService {
     applications.forEach((application) => {
       const month = application.createdAt.toISOString().substring(0, 7); // YYYY-MM format
       if (!monthlyData.has(month)) {
-        monthlyData.set(month, { newProfiles: 0, newApplications: 0, messagesCount: 0 });
+        monthlyData.set(month, {
+          newProfiles: 0,
+          newApplications: 0,
+          messagesCount: 0,
+        });
       }
       monthlyData.get(month)!.newApplications++;
     });
@@ -345,7 +372,11 @@ export class StatisticsService {
     messages.forEach((message) => {
       const month = message.createdAt.toISOString().substring(0, 7); // YYYY-MM format
       if (!monthlyData.has(month)) {
-        monthlyData.set(month, { newProfiles: 0, newApplications: 0, messagesCount: 0 });
+        monthlyData.set(month, {
+          newProfiles: 0,
+          newApplications: 0,
+          messagesCount: 0,
+        });
       }
       monthlyData.get(month)!.messagesCount++;
     });
@@ -357,8 +388,12 @@ export class StatisticsService {
 
     while (currentDate <= endDate) {
       const month = currentDate.toISOString().substring(0, 7); // YYYY-MM format
-      const data = monthlyData.get(month) || { newProfiles: 0, newApplications: 0, messagesCount: 0 };
-      
+      const data = monthlyData.get(month) || {
+        newProfiles: 0,
+        newApplications: 0,
+        messagesCount: 0,
+      };
+
       result.push({
         period: month,
         newProfiles: data.newProfiles,
@@ -427,18 +462,23 @@ export class StatisticsService {
       }),
     ]);
 
-    const monthOverMonthGrowth = lastMonthApplications > 0 
-      ? ((thisMonthApplications - lastMonthApplications) / lastMonthApplications) * 100 
-      : 0;
+    const monthOverMonthGrowth =
+      lastMonthApplications > 0
+        ? ((thisMonthApplications - lastMonthApplications) /
+            lastMonthApplications) *
+          100
+        : 0;
 
-    const averageApplicationsPerUser = activeUsers > 0 ? totalApplications / activeUsers : 0;
+    const averageApplicationsPerUser =
+      activeUsers > 0 ? totalApplications / activeUsers : 0;
 
     return {
       activeUsers,
       thisMonthApplications,
       lastMonthApplications,
       monthOverMonthGrowth: Math.round(monthOverMonthGrowth * 100) / 100,
-      averageApplicationsPerUser: Math.round(averageApplicationsPerUser * 100) / 100,
+      averageApplicationsPerUser:
+        Math.round(averageApplicationsPerUser * 100) / 100,
       popularIntakeSeason: popularSeason[0]?.intakeSeason || 'FALL',
     };
   }
@@ -446,16 +486,23 @@ export class StatisticsService {
   /**
    * Get detailed application statistics with multiple groupings
    */
-  async getDetailedApplicationStats(query?: StatisticsQueryDto): Promise<DetailedApplicationStatsDto> {
-    const dateFilter = this.buildDateFilter(query?.period, query?.startDate, query?.endDate);
+  async getDetailedApplicationStats(
+    query?: StatisticsQueryDto,
+  ): Promise<DetailedApplicationStatsDto> {
+    const dateFilter = this.buildDateFilter(
+      query?.period,
+      query?.startDate,
+      query?.endDate,
+    );
 
-    const [byStatus, byCountry, byIntakeSeason, byIntakeYear, trends] = await Promise.all([
-      this.getApplicationStatsByStatus(dateFilter),
-      this.getApplicationsByCountry(dateFilter, query?.limit || 10),
-      this.getApplicationsByIntakeSeason(dateFilter),
-      this.getApplicationsByIntakeYear(dateFilter),
-      this.getApplicationTrends(30), // Last 30 days
-    ]);
+    const [byStatus, byCountry, byIntakeSeason, byIntakeYear, trends] =
+      await Promise.all([
+        this.getApplicationStatsByStatus(dateFilter),
+        this.getApplicationsByCountry(dateFilter, query?.limit || 10),
+        this.getApplicationsByIntakeSeason(dateFilter),
+        this.getApplicationsByIntakeYear(dateFilter),
+        this.getApplicationTrends(30), // Last 30 days
+      ]);
 
     return {
       byStatus,
@@ -496,9 +543,14 @@ export class StatisticsService {
       this.prisma.message.count(),
     ]);
 
-    const profileCompletionRate = totalUsers > 0 ? (usersWithProfiles / totalUsers) * 100 : 0;
-    const applicationConversionRate = usersWithProfiles > 0 ? (usersWithApplications / usersWithProfiles) * 100 : 0;
-    const averageMessagesPerUser = totalUsers > 0 ? totalMessages / totalUsers : 0;
+    const profileCompletionRate =
+      totalUsers > 0 ? (usersWithProfiles / totalUsers) * 100 : 0;
+    const applicationConversionRate =
+      usersWithProfiles > 0
+        ? (usersWithApplications / usersWithProfiles) * 100
+        : 0;
+    const averageMessagesPerUser =
+      totalUsers > 0 ? totalMessages / totalUsers : 0;
 
     return {
       totalUsers,
@@ -506,14 +558,17 @@ export class StatisticsService {
       usersWithApplications,
       averageMessagesPerUser: Math.round(averageMessagesPerUser * 100) / 100,
       profileCompletionRate: Math.round(profileCompletionRate * 100) / 100,
-      applicationConversionRate: Math.round(applicationConversionRate * 100) / 100,
+      applicationConversionRate:
+        Math.round(applicationConversionRate * 100) / 100,
     };
   }
 
   /**
    * Get application trends over time
    */
-  async getApplicationTrends(days: number = 30): Promise<ApplicationTrendDto[]> {
+  async getApplicationTrends(
+    days: number = 30,
+  ): Promise<ApplicationTrendDto[]> {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
@@ -535,7 +590,7 @@ export class StatisticsService {
 
     // Group by date (day) manually since Prisma doesn't support date truncation in groupBy
     const dailyGroups = new Map<string, number>();
-    
+
     trends.forEach((trend) => {
       const date = trend.createdAt.toISOString().split('T')[0]; // Get YYYY-MM-DD format
       dailyGroups.set(date, (dailyGroups.get(date) || 0) + trend._count._all);
@@ -555,7 +610,7 @@ export class StatisticsService {
   private buildDateFilter(
     period?: TimePeriod,
     startDate?: string,
-    endDate?: string
+    endDate?: string,
   ): Prisma.ApplicationWhereInput | undefined {
     if (startDate && endDate) {
       return {
@@ -578,13 +633,25 @@ export class StatisticsService {
           start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
           break;
         case TimePeriod.LAST_3_MONTHS:
-          start = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+          start = new Date(
+            now.getFullYear(),
+            now.getMonth() - 3,
+            now.getDate(),
+          );
           break;
         case TimePeriod.LAST_6_MONTHS:
-          start = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+          start = new Date(
+            now.getFullYear(),
+            now.getMonth() - 6,
+            now.getDate(),
+          );
           break;
         case TimePeriod.LAST_YEAR:
-          start = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+          start = new Date(
+            now.getFullYear() - 1,
+            now.getMonth(),
+            now.getDate(),
+          );
           break;
         default:
           return undefined;
@@ -605,7 +672,7 @@ export class StatisticsService {
    */
   private async getApplicationsByCountry(
     dateFilter?: Prisma.ApplicationWhereInput,
-    limit: number = 10
+    limit: number = 10,
   ) {
     const applications = await this.prisma.application.groupBy({
       by: ['preferredCountry'],
@@ -649,7 +716,9 @@ export class StatisticsService {
   /**
    * Get applications grouped by intake season
    */
-  private async getApplicationsByIntakeSeason(dateFilter?: Prisma.ApplicationWhereInput) {
+  private async getApplicationsByIntakeSeason(
+    dateFilter?: Prisma.ApplicationWhereInput,
+  ) {
     const seasons = await this.prisma.application.groupBy({
       by: ['intakeSeason'],
       where: dateFilter,
@@ -672,7 +741,9 @@ export class StatisticsService {
   /**
    * Get applications grouped by intake year
    */
-  private async getApplicationsByIntakeYear(dateFilter?: Prisma.ApplicationWhereInput) {
+  private async getApplicationsByIntakeYear(
+    dateFilter?: Prisma.ApplicationWhereInput,
+  ) {
     const years = await this.prisma.application.groupBy({
       by: ['intakeYear'],
       where: dateFilter,

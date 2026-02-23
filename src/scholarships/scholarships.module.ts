@@ -4,7 +4,7 @@ import { ScholarshipsController } from './scholarships.controller';
 import { PrismaService } from '../db/prisma.service';
 
 @Module({
-    controllers: [ScholarshipsController],
-    providers: [ScholarshipsService, PrismaService],
+  controllers: [ScholarshipsController],
+  providers: [ScholarshipsService, PrismaService],
 })
-export class ScholarshipsModule { }
+export class ScholarshipsModule {}

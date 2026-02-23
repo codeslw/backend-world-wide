@@ -7,7 +7,12 @@ import { UniversitiesRepository } from './universities.repository';
 
 @Module({
   controllers: [UniversitiesController],
-  providers: [UniversitiesService, PrismaService, UniversitiesMapper, UniversitiesRepository],
+  providers: [
+    UniversitiesService,
+    PrismaService,
+    UniversitiesMapper,
+    UniversitiesRepository,
+  ],
   exports: [UniversitiesService],
 })
-export class UniversitiesModule { }
+export class UniversitiesModule {}

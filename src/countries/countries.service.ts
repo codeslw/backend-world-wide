@@ -30,7 +30,9 @@ export class CountriesService {
 
       // Validate photoUrl is required when isMain is true
       if (createCountryDto.isMain && !createCountryDto.photoUrl) {
-        throw new InvalidDataException('photoUrl is required when isMain is true');
+        throw new InvalidDataException(
+          'photoUrl is required when isMain is true',
+        );
       }
 
       return this.prisma.country.create({
@@ -61,8 +63,10 @@ export class CountriesService {
           // Visa & Immigration
           visaAcceptanceRate: createCountryDto.visaAcceptanceRate,
           visaProcessingTime: createCountryDto.visaProcessingTime,
-          visaInterviewRequired: createCountryDto.visaInterviewRequired || false,
-          dependentVisaAvailable: createCountryDto.dependentVisaAvailable || false,
+          visaInterviewRequired:
+            createCountryDto.visaInterviewRequired || false,
+          dependentVisaAvailable:
+            createCountryDto.dependentVisaAvailable || false,
           visaFee: createCountryDto.visaFee,
           visaFeeCurrency: createCountryDto.visaFeeCurrency,
           insuranceFee: createCountryDto.insuranceFee,
@@ -89,7 +93,8 @@ export class CountriesService {
           rentCurrency: createCountryDto.rentCurrency,
           safetyIndex: createCountryDto.safetyIndex,
           healthcareDetails: createCountryDto.healthcareDetails,
-          internationalStudentPopulation: createCountryDto.internationalStudentPopulation,
+          internationalStudentPopulation:
+            createCountryDto.internationalStudentPopulation,
           hasHalalFood: createCountryDto.hasHalalFood || false,
           hasVegetarianFood: createCountryDto.hasVegetarianFood || false,
         },
@@ -317,70 +322,128 @@ export class CountriesService {
       }
 
       // Validate photoUrl is required when isMain is true
-      if (updateCountryDto.isMain && !updateCountryDto.photoUrl && !country.photoUrl) {
-        throw new InvalidDataException('photoUrl is required when isMain is true');
+      if (
+        updateCountryDto.isMain &&
+        !updateCountryDto.photoUrl &&
+        !country.photoUrl
+      ) {
+        throw new InvalidDataException(
+          'photoUrl is required when isMain is true',
+        );
       }
 
       // Build update data object, only including fields that are provided
       const updateData: any = {};
 
       // Basic fields
-      if (updateCountryDto.nameUz !== undefined) updateData.nameUz = updateCountryDto.nameUz;
-      if (updateCountryDto.nameRu !== undefined) updateData.nameRu = updateCountryDto.nameRu;
-      if (updateCountryDto.nameEn !== undefined) updateData.nameEn = updateCountryDto.nameEn;
-      if (updateCountryDto.isMain !== undefined) updateData.isMain = updateCountryDto.isMain;
-      if (updateCountryDto.photoUrl !== undefined) updateData.photoUrl = updateCountryDto.photoUrl;
+      if (updateCountryDto.nameUz !== undefined)
+        updateData.nameUz = updateCountryDto.nameUz;
+      if (updateCountryDto.nameRu !== undefined)
+        updateData.nameRu = updateCountryDto.nameRu;
+      if (updateCountryDto.nameEn !== undefined)
+        updateData.nameEn = updateCountryDto.nameEn;
+      if (updateCountryDto.isMain !== undefined)
+        updateData.isMain = updateCountryDto.isMain;
+      if (updateCountryDto.photoUrl !== undefined)
+        updateData.photoUrl = updateCountryDto.photoUrl;
 
       // General Info
-      if (updateCountryDto.overviewEn !== undefined) updateData.overviewEn = updateCountryDto.overviewEn;
-      if (updateCountryDto.overviewRu !== undefined) updateData.overviewRu = updateCountryDto.overviewRu;
-      if (updateCountryDto.overviewUz !== undefined) updateData.overviewUz = updateCountryDto.overviewUz;
-      if (updateCountryDto.images !== undefined) updateData.images = updateCountryDto.images;
+      if (updateCountryDto.overviewEn !== undefined)
+        updateData.overviewEn = updateCountryDto.overviewEn;
+      if (updateCountryDto.overviewRu !== undefined)
+        updateData.overviewRu = updateCountryDto.overviewRu;
+      if (updateCountryDto.overviewUz !== undefined)
+        updateData.overviewUz = updateCountryDto.overviewUz;
+      if (updateCountryDto.images !== undefined)
+        updateData.images = updateCountryDto.images;
 
       // Financial Requirements
-      if (updateCountryDto.proofOfFundsAmount !== undefined) updateData.proofOfFundsAmount = updateCountryDto.proofOfFundsAmount;
-      if (updateCountryDto.tuitionMin !== undefined) updateData.tuitionMin = updateCountryDto.tuitionMin;
-      if (updateCountryDto.tuitionMax !== undefined) updateData.tuitionMax = updateCountryDto.tuitionMax;
-      if (updateCountryDto.tuitionCurrency !== undefined) updateData.tuitionCurrency = updateCountryDto.tuitionCurrency;
-      if (updateCountryDto.costOfLivingMin !== undefined) updateData.costOfLivingMin = updateCountryDto.costOfLivingMin;
-      if (updateCountryDto.costOfLivingMax !== undefined) updateData.costOfLivingMax = updateCountryDto.costOfLivingMax;
-      if (updateCountryDto.costOfLivingCurrency !== undefined) updateData.costOfLivingCurrency = updateCountryDto.costOfLivingCurrency;
-      if (updateCountryDto.scholarshipAvailability !== undefined) updateData.scholarshipAvailability = updateCountryDto.scholarshipAvailability;
+      if (updateCountryDto.proofOfFundsAmount !== undefined)
+        updateData.proofOfFundsAmount = updateCountryDto.proofOfFundsAmount;
+      if (updateCountryDto.tuitionMin !== undefined)
+        updateData.tuitionMin = updateCountryDto.tuitionMin;
+      if (updateCountryDto.tuitionMax !== undefined)
+        updateData.tuitionMax = updateCountryDto.tuitionMax;
+      if (updateCountryDto.tuitionCurrency !== undefined)
+        updateData.tuitionCurrency = updateCountryDto.tuitionCurrency;
+      if (updateCountryDto.costOfLivingMin !== undefined)
+        updateData.costOfLivingMin = updateCountryDto.costOfLivingMin;
+      if (updateCountryDto.costOfLivingMax !== undefined)
+        updateData.costOfLivingMax = updateCountryDto.costOfLivingMax;
+      if (updateCountryDto.costOfLivingCurrency !== undefined)
+        updateData.costOfLivingCurrency = updateCountryDto.costOfLivingCurrency;
+      if (updateCountryDto.scholarshipAvailability !== undefined)
+        updateData.scholarshipAvailability =
+          updateCountryDto.scholarshipAvailability;
 
       // Visa & Immigration
-      if (updateCountryDto.visaAcceptanceRate !== undefined) updateData.visaAcceptanceRate = updateCountryDto.visaAcceptanceRate;
-      if (updateCountryDto.visaProcessingTime !== undefined) updateData.visaProcessingTime = updateCountryDto.visaProcessingTime;
-      if (updateCountryDto.visaInterviewRequired !== undefined) updateData.visaInterviewRequired = updateCountryDto.visaInterviewRequired;
-      if (updateCountryDto.dependentVisaAvailable !== undefined) updateData.dependentVisaAvailable = updateCountryDto.dependentVisaAvailable;
-      if (updateCountryDto.visaFee !== undefined) updateData.visaFee = updateCountryDto.visaFee;
-      if (updateCountryDto.visaFeeCurrency !== undefined) updateData.visaFeeCurrency = updateCountryDto.visaFeeCurrency;
-      if (updateCountryDto.insuranceFee !== undefined) updateData.insuranceFee = updateCountryDto.insuranceFee;
-      if (updateCountryDto.bankStatement !== undefined) updateData.bankStatement = updateCountryDto.bankStatement;
-      if (updateCountryDto.otherExpenses !== undefined) updateData.otherExpenses = updateCountryDto.otherExpenses;
-      if (updateCountryDto.visaRequiredDocuments !== undefined) updateData.visaRequiredDocuments = updateCountryDto.visaRequiredDocuments;
+      if (updateCountryDto.visaAcceptanceRate !== undefined)
+        updateData.visaAcceptanceRate = updateCountryDto.visaAcceptanceRate;
+      if (updateCountryDto.visaProcessingTime !== undefined)
+        updateData.visaProcessingTime = updateCountryDto.visaProcessingTime;
+      if (updateCountryDto.visaInterviewRequired !== undefined)
+        updateData.visaInterviewRequired =
+          updateCountryDto.visaInterviewRequired;
+      if (updateCountryDto.dependentVisaAvailable !== undefined)
+        updateData.dependentVisaAvailable =
+          updateCountryDto.dependentVisaAvailable;
+      if (updateCountryDto.visaFee !== undefined)
+        updateData.visaFee = updateCountryDto.visaFee;
+      if (updateCountryDto.visaFeeCurrency !== undefined)
+        updateData.visaFeeCurrency = updateCountryDto.visaFeeCurrency;
+      if (updateCountryDto.insuranceFee !== undefined)
+        updateData.insuranceFee = updateCountryDto.insuranceFee;
+      if (updateCountryDto.bankStatement !== undefined)
+        updateData.bankStatement = updateCountryDto.bankStatement;
+      if (updateCountryDto.otherExpenses !== undefined)
+        updateData.otherExpenses = updateCountryDto.otherExpenses;
+      if (updateCountryDto.visaRequiredDocuments !== undefined)
+        updateData.visaRequiredDocuments =
+          updateCountryDto.visaRequiredDocuments;
 
       // Work Rights
-      if (updateCountryDto.partTimeWorkHours !== undefined) updateData.partTimeWorkHours = updateCountryDto.partTimeWorkHours;
-      if (updateCountryDto.postStudyWorkDuration !== undefined) updateData.postStudyWorkDuration = updateCountryDto.postStudyWorkDuration;
-      if (updateCountryDto.prPathwayAvailable !== undefined) updateData.prPathwayAvailable = updateCountryDto.prPathwayAvailable;
+      if (updateCountryDto.partTimeWorkHours !== undefined)
+        updateData.partTimeWorkHours = updateCountryDto.partTimeWorkHours;
+      if (updateCountryDto.postStudyWorkDuration !== undefined)
+        updateData.postStudyWorkDuration =
+          updateCountryDto.postStudyWorkDuration;
+      if (updateCountryDto.prPathwayAvailable !== undefined)
+        updateData.prPathwayAvailable = updateCountryDto.prPathwayAvailable;
 
       // Academic & Logistical
-      if (updateCountryDto.majorIntakes !== undefined) updateData.majorIntakes = updateCountryDto.majorIntakes;
-      if (updateCountryDto.applicationTimeline !== undefined) updateData.applicationTimeline = updateCountryDto.applicationTimeline;
-      if (updateCountryDto.acceptedLanguageTests !== undefined) updateData.acceptedLanguageTests = updateCountryDto.acceptedLanguageTests;
-      if (updateCountryDto.standardizedTestsRequired !== undefined) updateData.standardizedTestsRequired = updateCountryDto.standardizedTestsRequired;
-      if (updateCountryDto.gapAcceptance !== undefined) updateData.gapAcceptance = updateCountryDto.gapAcceptance;
+      if (updateCountryDto.majorIntakes !== undefined)
+        updateData.majorIntakes = updateCountryDto.majorIntakes;
+      if (updateCountryDto.applicationTimeline !== undefined)
+        updateData.applicationTimeline = updateCountryDto.applicationTimeline;
+      if (updateCountryDto.acceptedLanguageTests !== undefined)
+        updateData.acceptedLanguageTests =
+          updateCountryDto.acceptedLanguageTests;
+      if (updateCountryDto.standardizedTestsRequired !== undefined)
+        updateData.standardizedTestsRequired =
+          updateCountryDto.standardizedTestsRequired;
+      if (updateCountryDto.gapAcceptance !== undefined)
+        updateData.gapAcceptance = updateCountryDto.gapAcceptance;
 
       // Life & Experience
-      if (updateCountryDto.accommodationTypes !== undefined) updateData.accommodationTypes = updateCountryDto.accommodationTypes;
-      if (updateCountryDto.averageRentMin !== undefined) updateData.averageRentMin = updateCountryDto.averageRentMin;
-      if (updateCountryDto.averageRentMax !== undefined) updateData.averageRentMax = updateCountryDto.averageRentMax;
-      if (updateCountryDto.rentCurrency !== undefined) updateData.rentCurrency = updateCountryDto.rentCurrency;
-      if (updateCountryDto.safetyIndex !== undefined) updateData.safetyIndex = updateCountryDto.safetyIndex;
-      if (updateCountryDto.healthcareDetails !== undefined) updateData.healthcareDetails = updateCountryDto.healthcareDetails;
-      if (updateCountryDto.internationalStudentPopulation !== undefined) updateData.internationalStudentPopulation = updateCountryDto.internationalStudentPopulation;
-      if (updateCountryDto.hasHalalFood !== undefined) updateData.hasHalalFood = updateCountryDto.hasHalalFood;
-      if (updateCountryDto.hasVegetarianFood !== undefined) updateData.hasVegetarianFood = updateCountryDto.hasVegetarianFood;
+      if (updateCountryDto.accommodationTypes !== undefined)
+        updateData.accommodationTypes = updateCountryDto.accommodationTypes;
+      if (updateCountryDto.averageRentMin !== undefined)
+        updateData.averageRentMin = updateCountryDto.averageRentMin;
+      if (updateCountryDto.averageRentMax !== undefined)
+        updateData.averageRentMax = updateCountryDto.averageRentMax;
+      if (updateCountryDto.rentCurrency !== undefined)
+        updateData.rentCurrency = updateCountryDto.rentCurrency;
+      if (updateCountryDto.safetyIndex !== undefined)
+        updateData.safetyIndex = updateCountryDto.safetyIndex;
+      if (updateCountryDto.healthcareDetails !== undefined)
+        updateData.healthcareDetails = updateCountryDto.healthcareDetails;
+      if (updateCountryDto.internationalStudentPopulation !== undefined)
+        updateData.internationalStudentPopulation =
+          updateCountryDto.internationalStudentPopulation;
+      if (updateCountryDto.hasHalalFood !== undefined)
+        updateData.hasHalalFood = updateCountryDto.hasHalalFood;
+      if (updateCountryDto.hasVegetarianFood !== undefined)
+        updateData.hasVegetarianFood = updateCountryDto.hasVegetarianFood;
 
       // Proceed with update
       return await this.prisma.country.update({
@@ -456,11 +519,13 @@ export class CountriesService {
 
   private async validateIsMainLimit(): Promise<void> {
     const count = await this.prisma.country.count({
-      where: { isMain: true }
+      where: { isMain: true },
     });
 
     if (count >= 3) {
-      throw new InvalidDataException('Cannot set as main: maximum of 3 countries can be marked as main');
+      throw new InvalidDataException(
+        'Cannot set as main: maximum of 3 countries can be marked as main',
+      );
     }
   }
 

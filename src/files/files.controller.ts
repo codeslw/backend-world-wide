@@ -143,18 +143,15 @@ export class FilesController {
     return this.filesService.getAllFiles(pageNum, limitNum);
   }
 
-
-   // ADD THIS NEW ENDPOINT
-   @Get(':id/download')
-   @ApiOperation({ summary: 'Download a file by its ID' })
-   @ApiParam({ name: 'id', description: 'File ID' })
-   @ApiResponse({ status: 200, description: 'File stream for download' })
-   @ApiResponse({ status: 404, description: 'File not found' })
-   async downloadFileById(@Param('id') id: string, @Res() res: Response) {
-     return this.filesService.downloadFileById(id, res);
-   }
-
-
+  // ADD THIS NEW ENDPOINT
+  @Get(':id/download')
+  @ApiOperation({ summary: 'Download a file by its ID' })
+  @ApiParam({ name: 'id', description: 'File ID' })
+  @ApiResponse({ status: 200, description: 'File stream for download' })
+  @ApiResponse({ status: 404, description: 'File not found' })
+  async downloadFileById(@Param('id') id: string, @Res() res: Response) {
+    return this.filesService.downloadFileById(id, res);
+  }
 
   @Get('download-by-url')
   @ApiOperation({ summary: 'Download file by URL' })

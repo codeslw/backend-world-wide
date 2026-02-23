@@ -22,7 +22,9 @@ export class LanguageCertificateDto {
   @Min(0)
   score: number;
 
-  @ApiPropertyOptional({ description: 'File GUID for the language certificate' })
+  @ApiPropertyOptional({
+    description: 'File GUID for the language certificate',
+  })
   @IsOptional()
   @IsUUID()
   certificateGuid?: string;

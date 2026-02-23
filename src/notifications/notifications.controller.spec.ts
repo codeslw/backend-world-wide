@@ -20,9 +20,7 @@ describe('NotificationsController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [NotificationsController],
-      providers: [
-        { provide: NotificationsService, useValue: service },
-      ],
+      providers: [{ provide: NotificationsService, useValue: service }],
     }).compile();
 
     controller = module.get<NotificationsController>(NotificationsController);

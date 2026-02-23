@@ -49,7 +49,7 @@ import { ApiDeleteProgram } from './decorators/delete-program.swagger';
 @ApiTags('Universities')
 @Controller('universities')
 export class UniversitiesController {
-  constructor(private readonly universitiesService: UniversitiesService) { }
+  constructor(private readonly universitiesService: UniversitiesService) {}
 
   //POST /universities
   @Post()

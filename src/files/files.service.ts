@@ -236,21 +236,27 @@ export class FilesService {
       response.data.pipe(res);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
-        this.logger.error(`Failed to download from URL. Status: ${error.response.status}. URL: ${url}`);
+        this.logger.error(
+          `Failed to download from URL. Status: ${error.response.status}. URL: ${url}`,
+        );
         if (error.response.status === 403) {
-           throw new BadRequestException('Access to the file was denied. The temporary link may have expired or been altered.');
+          throw new BadRequestException(
+            'Access to the file was denied. The temporary link may have expired or been altered.',
+          );
         }
         if (error.response.status === 404) {
           throw new NotFoundException(`File not found at URL: ${url}`);
         }
       }
-      this.logger.error(`Generic error downloading file: ${error.message}`, error.stack);
+      this.logger.error(
+        `Generic error downloading file: ${error.message}`,
+        error.stack,
+      );
       throw new BadRequestException(
         `Error downloading file from URL: ${error.message}`,
       );
     }
   }
-
 
   async downloadFileById(id: string, res: Response): Promise<void> {
     // 1. Find the file record in the database
@@ -280,9 +286,9 @@ export class FilesService {
       response.data.pipe(res);
     } catch (error) {
       this.logger.error(`Failed to stream file for ID ${id}: ${error.message}`);
-      throw new InternalServerErrorException('Could not process file download.');
+      throw new InternalServerErrorException(
+        'Could not process file download.',
+      );
     }
   }
 }
-  
-

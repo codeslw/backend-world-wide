@@ -263,7 +263,9 @@ export class ApplicationsService {
 
       // Validate rejection reason is provided when status is REJECTED
       if (newStatus === ApplicationStatus.REJECTED && !rejectionReason) {
-        throw new InvalidDataException('Rejection reason is required when status is REJECTED');
+        throw new InvalidDataException(
+          'Rejection reason is required when status is REJECTED',
+        );
       }
 
       // Prepare the status update DTO
@@ -293,7 +295,10 @@ export class ApplicationsService {
       // Map the updated entity back to DTO
       return this.mapToResponseDto(updatedApplication);
     } catch (error) {
-      if (error instanceof EntityNotFoundException || error instanceof InvalidDataException) {
+      if (
+        error instanceof EntityNotFoundException ||
+        error instanceof InvalidDataException
+      ) {
         throw error;
       }
       throw new InvalidDataException(

@@ -55,6 +55,12 @@ export function ApiUniversitiesByPrograms() {
       description: 'Filter by university ID (UUID)',
     }),
     ApiQuery({
+      name: 'campusId',
+      required: false,
+      type: String,
+      description: 'Filter by campus ID (UUID)',
+    }),
+    ApiQuery({
       name: 'minTuitionFee',
       required: false,
       type: Number,

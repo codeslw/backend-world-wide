@@ -36,14 +36,14 @@ import { ErrorResponseDto } from '../common/dto/error-response.dto';
 /**
  * StatisticsController provides comprehensive analytics and statistics
  * across all modules of the EduWorldWide platform.
- * 
+ *
  * This controller aggregates data from:
  * - Universities and Programs
- * - Student Applications and Profiles  
+ * - Student Applications and Profiles
  * - Geographic Distribution (Countries/Cities)
  * - User Engagement and Growth Metrics
  * - Communication (Messages)
- * 
+ *
  * All endpoints are restricted to ADMIN users for data security.
  * The controller follows the established patterns for error handling,
  * response formatting, and Swagger documentation.
@@ -58,12 +58,12 @@ export class StatisticsController {
 
   /**
    * Get comprehensive dashboard statistics
-   * 
+   *
    * Frontend Usage:
    * - Main admin dashboard overview
    * - Real-time metrics display
    * - Executive summary reports
-   * 
+   *
    * @param query Optional filters for date range and limits
    * @returns Complete dashboard statistics with all key metrics
    */
@@ -106,12 +106,12 @@ export class StatisticsController {
 
   /**
    * Get total entity counts across the platform
-   * 
+   *
    * Frontend Usage:
    * - Dashboard summary cards
    * - Quick overview widgets
    * - System health monitoring
-   * 
+   *
    * @returns Total counts for all major entities
    */
   @Get('totals')
@@ -149,12 +149,12 @@ export class StatisticsController {
 
   /**
    * Get application statistics grouped by status
-   * 
+   *
    * Frontend Usage:
    * - Application pipeline visualization
    * - Status distribution charts (pie/donut charts)
    * - Workflow monitoring dashboards
-   * 
+   *
    * @param query Optional date filters
    * @returns Application counts for each status (DRAFT, SUBMITTED, etc.)
    */
@@ -192,18 +192,22 @@ export class StatisticsController {
     @Query() query?: StatisticsQueryDto,
   ): Promise<ApplicationStatusStatsDto> {
     return this.statisticsService.getApplicationStatsByStatus(
-      this.statisticsService['buildDateFilter'](query?.period, query?.startDate, query?.endDate)
+      this.statisticsService['buildDateFilter'](
+        query?.period,
+        query?.startDate,
+        query?.endDate,
+      ),
     );
   }
 
   /**
    * Get detailed application statistics with multiple groupings
-   * 
+   *
    * Frontend Usage:
    * - Comprehensive application analytics page
    * - Multi-dimensional analysis charts
    * - Application trends visualization
-   * 
+   *
    * @param query Filters for date range and result limits
    * @returns Detailed application statistics grouped by various dimensions
    */
@@ -245,12 +249,12 @@ export class StatisticsController {
 
   /**
    * Get application trends over time
-   * 
+   *
    * Frontend Usage:
    * - Line charts for trend visualization
    * - Time series analysis
    * - Application volume monitoring
-   * 
+   *
    * @param query Parameters for trend analysis (days, grouping)
    * @returns Daily application counts for the specified period
    */
@@ -297,12 +301,12 @@ export class StatisticsController {
 
   /**
    * Get geographic distribution of students and universities
-   * 
+   *
    * Frontend Usage:
    * - World map visualizations
    * - Geographic heat maps
    * - Regional analysis dashboards
-   * 
+   *
    * @param query Optional limit for number of countries
    * @returns Geographic distribution data by country
    */
@@ -349,12 +353,12 @@ export class StatisticsController {
 
   /**
    * Get most popular programs by application count
-   * 
+   *
    * Frontend Usage:
    * - Popular programs ranking lists
    * - Program demand analysis charts
    * - Market trend identification
-   * 
+   *
    * @param query Optional limit for number of programs
    * @returns Most popular programs with application counts and fees
    */
@@ -401,12 +405,12 @@ export class StatisticsController {
 
   /**
    * Get universities with highest application volumes
-   * 
+   *
    * Frontend Usage:
    * - University ranking displays
    * - Institution performance analysis
    * - Competitive analysis dashboards
-   * 
+   *
    * @param query Optional limit for number of universities
    * @returns Top universities by application count with location info
    */
@@ -453,12 +457,12 @@ export class StatisticsController {
 
   /**
    * Get growth statistics over time
-   * 
+   *
    * Frontend Usage:
    * - Growth trend charts
    * - Monthly/yearly comparison graphs
    * - Business performance dashboards
-   * 
+   *
    * @param query Optional number of months to include
    * @returns Monthly growth data for profiles, applications, and messages
    */
@@ -504,12 +508,12 @@ export class StatisticsController {
 
   /**
    * Get user engagement and conversion statistics
-   * 
+   *
    * Frontend Usage:
    * - User funnel analysis
    * - Engagement rate dashboards
    * - Conversion optimization metrics
-   * 
+   *
    * @returns User engagement metrics and conversion rates
    */
   @Get('engagement')
