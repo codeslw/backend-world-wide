@@ -65,6 +65,11 @@ export class UniversitiesByProgramsFilterDto {
   @IsUUID()
   intake?: string;
 
+  @ApiProperty({ description: 'Study language', required: false })
+  @IsOptional()
+  @IsString()
+  studyLanguage?: string;
+
   @ApiProperty({
     description: 'Filter by university ID',
     required: false,

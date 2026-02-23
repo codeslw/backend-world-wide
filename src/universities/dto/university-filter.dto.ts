@@ -159,6 +159,11 @@ export class UniversityFilterDto {
   @IsUUID()
   intake?: string;
 
+  @ApiProperty({ description: 'Study language', required: false })
+  @IsOptional()
+  @IsString()
+  studyLanguage?: string;
+
   @ApiProperty({ description: 'Field to sort by', required: false })
   @IsOptional()
   @IsString()

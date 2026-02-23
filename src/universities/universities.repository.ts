@@ -29,6 +29,7 @@ export class UniversitiesRepository {
       programs,
       search,
       intake,
+      studyLanguage,
     } = filterDto;
 
     const where: Prisma.UniversityWhereInput = {};
@@ -77,6 +78,7 @@ export class UniversitiesRepository {
       maxTuitionFee !== undefined ||
       tuitionFeeCurrency ||
       studyLevel ||
+      studyLanguage ||
       intake;
     const hasProgramIdsFilter = programIds.length > 0;
 
@@ -100,6 +102,8 @@ export class UniversitiesRepository {
         if (tuitionFeeCurrency)
           universityProgramFilter.some.tuitionFeeCurrency = tuitionFeeCurrency;
         if (studyLevel) universityProgramFilter.some.studyLevel = studyLevel;
+        if (studyLanguage)
+          universityProgramFilter.some.studyLanguage = studyLanguage;
         if (intake) {
           universityProgramFilter.some.intakes = { some: { intakeId: intake } };
         }
@@ -137,6 +141,7 @@ export class UniversitiesRepository {
       intake,
       universityId,
       campusId,
+      studyLanguage,
     } = filterDto;
 
     const where: Prisma.UniversityProgramWhereInput = {};
@@ -168,6 +173,7 @@ export class UniversitiesRepository {
 
     if (tuitionFeeCurrency) where.tuitionFeeCurrency = tuitionFeeCurrency;
     if (studyLevel) where.studyLevel = studyLevel;
+    if (studyLanguage) where.studyLanguage = studyLanguage;
     if (intake) where.intakes = { some: { intakeId: intake } };
 
     if (search) {
