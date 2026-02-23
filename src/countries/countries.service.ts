@@ -63,6 +63,12 @@ export class CountriesService {
           visaProcessingTime: createCountryDto.visaProcessingTime,
           visaInterviewRequired: createCountryDto.visaInterviewRequired || false,
           dependentVisaAvailable: createCountryDto.dependentVisaAvailable || false,
+          visaFee: createCountryDto.visaFee,
+          visaFeeCurrency: createCountryDto.visaFeeCurrency,
+          insuranceFee: createCountryDto.insuranceFee,
+          bankStatement: createCountryDto.bankStatement,
+          otherExpenses: createCountryDto.otherExpenses || [],
+          visaRequiredDocuments: createCountryDto.visaRequiredDocuments,
 
           // Work Rights
           partTimeWorkHours: createCountryDto.partTimeWorkHours,
@@ -346,6 +352,12 @@ export class CountriesService {
       if (updateCountryDto.visaProcessingTime !== undefined) updateData.visaProcessingTime = updateCountryDto.visaProcessingTime;
       if (updateCountryDto.visaInterviewRequired !== undefined) updateData.visaInterviewRequired = updateCountryDto.visaInterviewRequired;
       if (updateCountryDto.dependentVisaAvailable !== undefined) updateData.dependentVisaAvailable = updateCountryDto.dependentVisaAvailable;
+      if (updateCountryDto.visaFee !== undefined) updateData.visaFee = updateCountryDto.visaFee;
+      if (updateCountryDto.visaFeeCurrency !== undefined) updateData.visaFeeCurrency = updateCountryDto.visaFeeCurrency;
+      if (updateCountryDto.insuranceFee !== undefined) updateData.insuranceFee = updateCountryDto.insuranceFee;
+      if (updateCountryDto.bankStatement !== undefined) updateData.bankStatement = updateCountryDto.bankStatement;
+      if (updateCountryDto.otherExpenses !== undefined) updateData.otherExpenses = updateCountryDto.otherExpenses;
+      if (updateCountryDto.visaRequiredDocuments !== undefined) updateData.visaRequiredDocuments = updateCountryDto.visaRequiredDocuments;
 
       // Work Rights
       if (updateCountryDto.partTimeWorkHours !== undefined) updateData.partTimeWorkHours = updateCountryDto.partTimeWorkHours;
