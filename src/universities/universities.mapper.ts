@@ -95,6 +95,7 @@ export class UniversitiesMapper {
           tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
           studyLevel: up.studyLevel as StudyLevel,
           duration: up.duration,
+          studyLanguage: up.studyLanguage,
           intakes:
             up.intakes?.map((api) => ({
               id: api.intake.id,
@@ -301,6 +302,7 @@ export class UniversitiesMapper {
       tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
       studyLevel: up.studyLevel as StudyLevel,
       duration: up.duration,
+      studyLanguage: up.studyLanguage,
       scholarships:
         up.scholarships?.map((s) => ({
           id: s.id,

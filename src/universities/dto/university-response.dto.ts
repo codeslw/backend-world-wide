@@ -58,6 +58,11 @@ class UniversityProgramResponseDto {
   })
   @Type(() => CampusResponseDto)
   campuses?: CampusResponseDto[];
+
+  @ApiPropertyOptional({
+    description: 'Study Language for this program',
+  })
+  studyLanguage?: string;
 }
 
 export class UniversityResponseDto {

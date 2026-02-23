@@ -218,4 +218,15 @@ export class CatalogController {
   ) {
     return this.catalogService.getProgram(id, lang);
   }
+
+  @Get('languages')
+  @ApiOperation({ summary: 'Get all study languages' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of study languages',
+    type: [String],
+  })
+  getLanguages() {
+    return this.catalogService.getLanguages();
+  }
 }

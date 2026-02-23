@@ -49,4 +49,21 @@ export class CatalogService {
     // Only get programs that don't have a parent (root programs)
     return this.programsService.findAll(null, lang, paginationDto);
   }
+
+  async getLanguages() {
+    return [
+      'English',
+      'Russian',
+      'Uzbek',
+      'German',
+      'French',
+      'Chinese',
+      'Korean',
+      'Japanese',
+      'Spanish',
+      'Italian',
+      'Turkish',
+      'Arabic',
+    ];
+  }
 }
