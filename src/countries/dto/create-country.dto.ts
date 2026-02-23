@@ -168,10 +168,34 @@ export class CreateCountryDto {
   @IsString()
   visaFeeCurrency?: string;
 
+  @ApiPropertyOptional({
+    description: 'Is visa fee refundable?',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isVisaFeeRefundable?: boolean;
+
   @ApiPropertyOptional({ description: 'Insurance fee amount', example: 500 })
   @IsOptional()
   @IsNumber()
   insuranceFee?: number;
+
+  @ApiPropertyOptional({
+    description: 'Insurance fee currency',
+    example: 'USD',
+  })
+  @IsOptional()
+  @IsString()
+  insuranceFeeCurrency?: string;
+
+  @ApiPropertyOptional({
+    description: 'Is insurance fee refundable?',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isInsuranceFeeRefundable?: boolean;
 
   @ApiPropertyOptional({
     description: 'Bank statement amount required',

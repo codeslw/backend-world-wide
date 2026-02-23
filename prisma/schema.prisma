@@ -68,16 +68,19 @@ model Country {
   scholarshipAvailability String?
 
   // Visa & Immigration
-  visaAcceptanceRate     String?
-  visaProcessingTime     String?
-  visaInterviewRequired  Boolean @default(false)
-  dependentVisaAvailable Boolean @default(false)
-  visaFee                Float?
-  visaFeeCurrency        String?
-  insuranceFee           Float?
-  bankStatement          Float?
-  otherExpenses          String[] @default([])
-  visaRequiredDocuments  String?  @db.Text
+  visaAcceptanceRate       String?
+  visaProcessingTime       String?
+  visaInterviewRequired    Boolean @default(false)
+  dependentVisaAvailable   Boolean @default(false)
+  visaFee                  Float?
+  visaFeeCurrency          String?
+  isVisaFeeRefundable      Boolean @default(false)
+  insuranceFee             Float?
+  insuranceFeeCurrency     String?
+  isInsuranceFeeRefundable Boolean @default(false)
+  bankStatement            Float?
+  otherExpenses            String[] @default([])
+  visaRequiredDocuments    String?  @db.Text
 
   // Work Rights
   partTimeWorkHours     String?

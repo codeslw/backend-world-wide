@@ -94,6 +94,12 @@ export class Country {
   })
   dependentVisaAvailable: boolean;
 
+  @ApiProperty({ description: 'Is visa fee refundable?', required: false })
+  isVisaFeeRefundable: boolean;
+
+  @ApiProperty({ description: 'Is insurance fee refundable?', required: false })
+  isInsuranceFeeRefundable: boolean;
+
   // Work Rights
   @ApiProperty({ description: 'Part-time work hours allowed', required: false })
   partTimeWorkHours?: string;

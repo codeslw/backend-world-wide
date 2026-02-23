@@ -82,8 +82,17 @@ export class CountryResponseDto {
   @ApiPropertyOptional({ description: 'Visa fee currency' })
   visaFeeCurrency?: string;
 
+  @ApiPropertyOptional({ description: 'Is visa fee refundable?' })
+  isVisaFeeRefundable?: boolean;
+
   @ApiPropertyOptional({ description: 'Insurance fee amount' })
   insuranceFee?: number;
+
+  @ApiPropertyOptional({ description: 'Insurance fee currency' })
+  insuranceFeeCurrency?: string;
+
+  @ApiPropertyOptional({ description: 'Is insurance fee refundable?' })
+  isInsuranceFeeRefundable?: boolean;
 
   @ApiPropertyOptional({ description: 'Bank statement amount required' })
   bankStatement?: number;
