@@ -70,14 +70,14 @@ model Country {
   // Visa & Immigration
   visaAcceptanceRate       String?
   visaProcessingTime       String?
-  visaInterviewRequired    Boolean @default(false)
-  dependentVisaAvailable   Boolean @default(false)
+  visaInterviewRequired    Boolean  @default(false)
+  dependentVisaAvailable   Boolean  @default(false)
   visaFee                  Float?
   visaFeeCurrency          String?
-  isVisaFeeRefundable      Boolean @default(false)
+  isVisaFeeRefundable      Boolean  @default(false)
   insuranceFee             Float?
   insuranceFeeCurrency     String?
-  isInsuranceFeeRefundable Boolean @default(false)
+  isInsuranceFeeRefundable Boolean  @default(false)
   bankStatement            Float?
   otherExpenses            String[] @default([])
   visaRequiredDocuments    String?  @db.Text
@@ -187,22 +187,22 @@ model UniversityRequirements {
 }
 
 model UniversityProgram {
-  id                 String                    @id @default(uuid())
+  id                 String     @id @default(uuid())
   universityId       String
   programId          String
   tuitionFee         Float
-  tuitionFeeCurrency String                    @default("USD")
-  studyLevel         StudyLevel                @default(BACHELOR)
-  createdAt          DateTime                  @default(now())
-  updatedAt          DateTime                  @updatedAt
+  tuitionFeeCurrency String     @default("USD")
+  studyLevel         StudyLevel @default(BACHELOR)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
   duration           Float?
-  logo               String?
-  studyLanguage      String?
-  program            Program                   @relation(fields: [programId], references: [id])
-  university         University                @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  scholarships       Scholarship[]
-  intakes            UniversityProgramIntake[]
-  campuses           Campus[]
+
+  studyLanguage String?
+  program       Program                   @relation(fields: [programId], references: [id])
+  university    University                @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  scholarships  Scholarship[]
+  intakes       UniversityProgramIntake[]
+  campuses      Campus[]
 
   @@unique([universityId, programId, studyLevel])
   @@index([universityId])

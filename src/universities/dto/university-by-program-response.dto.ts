@@ -59,11 +59,6 @@ export class ProgramDetailsDto {
   hasScholarship?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Logo URL for the program',
-  })
-  logo?: string;
-
-  @ApiPropertyOptional({
     description: 'Study language for the program',
   })
   studyLanguage?: string;

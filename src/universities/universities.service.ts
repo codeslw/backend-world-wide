@@ -58,7 +58,6 @@ export class UniversitiesService {
               tuitionFeeCurrency: program.tuitionFeeCurrency || 'USD',
               studyLevel: program.studyLevel,
               duration: program.duration,
-              logo: program.logo,
               studyLanguage: program.studyLanguage,
               campuses: program.campusIds
                 ? { connect: program.campusIds.map((id) => ({ id })) }
@@ -580,7 +579,6 @@ export class UniversitiesService {
           tuitionFeeCurrency: programData.tuitionFeeCurrency,
           studyLevel: programData.studyLevel,
           duration: programData.duration,
-          logo: programData.logo,
           studyLanguage: programData.studyLanguage,
           campuses: programData.campusIds
             ? { connect: programData.campusIds.map((id: string) => ({ id })) }
@@ -591,7 +589,6 @@ export class UniversitiesService {
           tuitionFeeCurrency: programData.tuitionFeeCurrency,
           studyLevel: programData.studyLevel,
           duration: programData.duration,
-          logo: programData.logo,
           studyLanguage: programData.studyLanguage,
           campuses: programData.campusIds
             ? { set: programData.campusIds.map((id: string) => ({ id })) }
