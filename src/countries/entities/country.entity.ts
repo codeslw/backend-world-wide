@@ -94,11 +94,42 @@ export class Country {
   })
   dependentVisaAvailable: boolean;
 
+  @ApiProperty({ description: 'Visa fee amount', required: false })
+  visaFee?: number;
+
+  @ApiProperty({ description: 'Visa fee currency', required: false })
+  visaFeeCurrency?: string;
+
   @ApiProperty({ description: 'Is visa fee refundable?', required: false })
   isVisaFeeRefundable: boolean;
 
+  @ApiProperty({ description: 'Insurance fee amount', required: false })
+  insuranceFee?: number;
+
+  @ApiProperty({ description: 'Insurance fee currency', required: false })
+  insuranceFeeCurrency?: string;
+
   @ApiProperty({ description: 'Is insurance fee refundable?', required: false })
   isInsuranceFeeRefundable: boolean;
+
+  @ApiProperty({
+    description: 'Bank statement amount required',
+    required: false,
+  })
+  bankStatement?: number;
+
+  @ApiProperty({
+    description: 'Other visa-related expenses',
+    type: [String],
+    required: false,
+  })
+  otherExpenses?: string[];
+
+  @ApiProperty({
+    description: 'Required documents for visa (rich text HTML)',
+    required: false,
+  })
+  visaRequiredDocuments?: string;
 
   // Work Rights
   @ApiProperty({ description: 'Part-time work hours allowed', required: false })

@@ -69,7 +69,11 @@ export class CountriesService {
             createCountryDto.dependentVisaAvailable || false,
           visaFee: createCountryDto.visaFee,
           visaFeeCurrency: createCountryDto.visaFeeCurrency,
+          isVisaFeeRefundable: createCountryDto.isVisaFeeRefundable || false,
           insuranceFee: createCountryDto.insuranceFee,
+          insuranceFeeCurrency: createCountryDto.insuranceFeeCurrency,
+          isInsuranceFeeRefundable:
+            createCountryDto.isInsuranceFeeRefundable || false,
           bankStatement: createCountryDto.bankStatement,
           otherExpenses: createCountryDto.otherExpenses || [],
           visaRequiredDocuments: createCountryDto.visaRequiredDocuments,
@@ -391,8 +395,15 @@ export class CountriesService {
         updateData.visaFee = updateCountryDto.visaFee;
       if (updateCountryDto.visaFeeCurrency !== undefined)
         updateData.visaFeeCurrency = updateCountryDto.visaFeeCurrency;
+      if (updateCountryDto.isVisaFeeRefundable !== undefined)
+        updateData.isVisaFeeRefundable = updateCountryDto.isVisaFeeRefundable;
       if (updateCountryDto.insuranceFee !== undefined)
         updateData.insuranceFee = updateCountryDto.insuranceFee;
+      if (updateCountryDto.insuranceFeeCurrency !== undefined)
+        updateData.insuranceFeeCurrency = updateCountryDto.insuranceFeeCurrency;
+      if (updateCountryDto.isInsuranceFeeRefundable !== undefined)
+        updateData.isInsuranceFeeRefundable =
+          updateCountryDto.isInsuranceFeeRefundable;
       if (updateCountryDto.bankStatement !== undefined)
         updateData.bankStatement = updateCountryDto.bankStatement;
       if (updateCountryDto.otherExpenses !== undefined)
