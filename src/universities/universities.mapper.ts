@@ -6,7 +6,6 @@ import {
   Program,
   UniversityProgram,
   Intake,
-  UniversityRequirements,
   Scholarship,
   AdmissionRequirement,
   Campus,
@@ -30,7 +29,6 @@ type UniversityWithRelations = University & {
     scholarships?: Scholarship[];
     campuses?: Campus[];
   })[];
-  requirements?: UniversityRequirements | null;
   admissionRequirements?: AdmissionRequirement[];
   scholarships?: Scholarship[];
   campuses?: Campus[];
@@ -126,7 +124,6 @@ export class UniversitiesMapper {
           lastUpdated: s.lastUpdated,
         })) || [],
       hasScholarship: university.hasScholarship ?? false,
-      requirements: university.requirements,
       admissionRequirements: university.admissionRequirements?.map((req) => ({
         ...req,
         languageRequirements:

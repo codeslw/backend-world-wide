@@ -4,7 +4,7 @@ import { UniversityType } from '../../common/enum/university-type.enum';
 import { PaginatedResponseDto } from '../../common/dto/pagination-response.dto';
 import { CountryResponseDto } from '../../countries/dto/country-response.dto';
 import { CityResponseDto } from '../../cities/dto/city-response.dto';
-import { UniversityRequirementsDto } from './university-requirements.dto';
+
 import { Currency } from '../../common/enum/currency.enum';
 import { StudyLevel } from '../../common/enum/study-level.enum';
 import { IntakeResponseDto } from './intake-response.dto';
@@ -165,11 +165,6 @@ export class UniversityResponseDto {
   })
   @Type(() => UniversityProgramResponseDto)
   universityPrograms: UniversityProgramResponseDto[];
-
-  @ApiPropertyOptional({
-    description: 'Requirements for the university',
-  })
-  requirements?: UniversityRequirementsDto;
 
   @ApiPropertyOptional({
     description: 'Admission requirements for the university',

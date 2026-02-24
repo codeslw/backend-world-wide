@@ -34,7 +34,6 @@ export class UniversitiesService {
       programs,
       countryCode,
       cityId,
-      requirements,
       admissionRequirements,
       ...universityData
     } = createUniversityDto;
@@ -71,14 +70,6 @@ export class UniversitiesService {
                 : undefined,
             })),
           },
-          requirements: requirements
-            ? {
-                create: {
-                  ...requirements,
-                  otherRequirements: requirements.otherRequirements || [],
-                },
-              }
-            : undefined,
           admissionRequirements: admissionRequirements
             ? {
                 create: admissionRequirements.map((req) => ({
@@ -102,7 +93,6 @@ export class UniversitiesService {
               campuses: true,
             },
           },
-          requirements: true,
           admissionRequirements: true,
           campuses: true,
         },
@@ -204,7 +194,6 @@ export class UniversitiesService {
               },
             },
           },
-          requirements: true,
           scholarships: true,
           admissionRequirements: true,
           campuses: true,
@@ -233,14 +222,13 @@ export class UniversitiesService {
       programs,
       countryCode,
       cityId,
-      requirements,
       admissionRequirements,
       ...otherFields
     } = updateUniversityDto;
 
     const existingUniversity = await this.prisma.university.findUnique({
       where: { id },
-      include: { universityPrograms: true, requirements: true },
+      include: { universityPrograms: true },
     });
     if (!existingUniversity) {
       throw new EntityNotFoundException('University', id);
@@ -278,10 +266,6 @@ export class UniversitiesService {
           );
         }
 
-        if (requirements) {
-          await this.updateUniversityRequirements(tx, id, requirements);
-        }
-
         if (admissionRequirements) {
           await tx.admissionRequirement.deleteMany({
             where: { universityId: id },
@@ -313,7 +297,6 @@ export class UniversitiesService {
                 },
               },
             },
-            requirements: true,
             admissionRequirements: true,
             campuses: true,
           },
@@ -609,42 +592,6 @@ export class UniversitiesService {
         });
       }
     }
-  }
-
-  private async updateUniversityRequirements(
-    tx: Prisma.TransactionClient,
-    universityId: string,
-    requirements: any,
-  ) {
-    const {
-      minIeltsScore,
-      minToeflScore,
-      minDuolingoScore,
-      requiredDegree,
-      minGpa,
-      minGmatScore,
-      minCatScore,
-      requiredRecommendationLetters,
-      otherRequirements,
-    } = requirements;
-
-    const requirementsData = {
-      minIeltsScore,
-      minToeflScore,
-      minDuolingoScore,
-      requiredDegree,
-      minGpa,
-      minGmatScore,
-      minCatScore,
-      requiredRecommendationLetters,
-      otherRequirements: otherRequirements || [],
-    };
-
-    await tx.universityRequirements.upsert({
-      where: { universityId },
-      create: { ...requirementsData, universityId },
-      update: requirementsData,
-    });
   }
 
   private async validateProgramIds(programIds: string[]): Promise<void> {

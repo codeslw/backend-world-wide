@@ -22,7 +22,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UniversityType } from '../../common/enum/university-type.enum';
 import { UniversityProgramDto } from './university-program.dto';
 import { Type } from 'class-transformer';
-import { UniversityRequirementsDto } from './university-requirements.dto';
+
 import { Currency } from '../../common/enum/currency.enum';
 import { CreateAdmissionRequirementNestedDto } from '../../admission-requirements/dto/create-admission-requirement.dto';
 
@@ -214,14 +214,6 @@ export class CreateUniversityDto {
   @ValidateNested({ each: true })
   @Type(() => UniversityProgramDto)
   programs: UniversityProgramDto[];
-
-  @ApiPropertyOptional({
-    description: 'Admission requirements for the university',
-  })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => UniversityRequirementsDto)
-  requirements?: UniversityRequirementsDto;
 
   @ApiPropertyOptional({
     description: 'Whether the university offers scholarships',

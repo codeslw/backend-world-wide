@@ -156,7 +156,6 @@ model University {
   country                 Country                 @relation(fields: [countryCode], references: [code])
   universityPrograms      UniversityProgram[]
   applications            Application[]
-  requirements            UniversityRequirements?
   hasScholarship          Boolean                 @default(false)
   scholarshipRequirements String[]                @default([])
   scholarships            Scholarship[]
@@ -165,25 +164,6 @@ model University {
 
   @@index([name])
   @@map("universities")
-}
-
-model UniversityRequirements {
-  id                            String      @id @default(uuid())
-  universityId                  String      @unique
-  university                    University  @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  minIeltsScore                 Float?
-  minToeflScore                 Int?
-  minDuolingoScore              Int?
-  requiredDegree                DegreeType?
-  minGpa                        Float?
-  minGmatScore                  Int?
-  minCatScore                   Int?
-  requiredRecommendationLetters Int?        @default(0)
-  otherRequirements             String[]    @default([])
-  createdAt                     DateTime    @default(now())
-  updatedAt                     DateTime    @updatedAt
-
-  @@map("university_requirements")
 }
 
 model UniversityProgram {
