@@ -70,6 +70,16 @@ export class ScholarshipsController {
     return this.scholarshipsService.findOne(id);
   }
 
+  @Get(':id/programs')
+  @ApiOperation({ summary: 'Get programs associated with a scholarship' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Returns all programs associated with the scholarship',
+  })
+  getScholarshipPrograms(@Param('id', ParseUUIDPipe) id: string) {
+    return this.scholarshipsService.getScholarshipPrograms(id);
+  }
+
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)

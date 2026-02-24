@@ -106,6 +106,52 @@ export class ScholarshipsService {
     return scholarship;
   }
 
+  async getScholarshipPrograms(scholarshipId: string) {
+    const scholarship = await this.prisma.scholarship.findUnique({
+      where: { id: scholarshipId },
+    });
+
+    if (!scholarship) {
+      throw new NotFoundException(
+        `Scholarship with ID ${scholarshipId} not found`,
+      );
+    }
+
+    const programs = await this.prisma.universityProgram.findMany({
+      where: {
+        scholarships: {
+          some: {
+            id: scholarshipId,
+          },
+        },
+      },
+      include: {
+        program: true,
+        university: {
+          select: {
+            id: true,
+            name: true,
+            photoUrl: true,
+          },
+        },
+        intakes: {
+          include: {
+            intake: true,
+          },
+        },
+        campuses: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+          },
+        },
+      },
+    });
+
+    return programs;
+  }
+
   async update(id: string, updateScholarshipDto: UpdateScholarshipDto) {
     const scholarship = await this.findOne(id);
     const { programIds, universityId, ...rest } = updateScholarshipDto;
