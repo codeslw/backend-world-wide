@@ -5,19 +5,19 @@ export class ProgramResponseDto {
   @ApiProperty({ description: 'Program ID' })
   id: string;
 
-  @ApiProperty({ description: 'Program name in Uzbek' })
-  nameUz: string;
+  @ApiProperty({ description: 'Program title in Uzbek' })
+  titleUz: string;
 
-  @ApiProperty({ description: 'Program name in Russian' })
-  nameRu: string;
+  @ApiProperty({ description: 'Program title in Russian' })
+  titleRu: string;
 
-  @ApiProperty({ description: 'Program name in English' })
-  nameEn: string;
+  @ApiProperty({ description: 'Program title in English' })
+  titleEn: string;
 
   @ApiProperty({
-    description: 'Localized program name based on language preference',
+    description: 'Localized program title based on language preference',
   })
-  name: string;
+  title: string;
 
   @ApiProperty({ description: 'Program description in Uzbek' })
   descriptionUz: string;
