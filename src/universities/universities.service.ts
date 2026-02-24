@@ -461,6 +461,7 @@ export class UniversitiesService {
               },
             },
             scholarships: true,
+            campuses: true,
           },
         }),
         this.prisma.universityProgram.count({ where }),

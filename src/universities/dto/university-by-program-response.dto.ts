@@ -7,6 +7,7 @@ import { Currency } from '../../common/enum/currency.enum';
 import { StudyLevel } from '../../common/enum/study-level.enum';
 import { ScholarshipResponseDto } from '../../scholarships/dto/scholarship-response.dto';
 import { IntakeResponseDto } from './intake-response.dto';
+import { CampusResponseDto } from '../../campuses/dto/campus-response.dto';
 
 // Program details within the university-by-program response
 export class ProgramDetailsDto {
@@ -62,6 +63,12 @@ export class ProgramDetailsDto {
     description: 'Study language for the program',
   })
   studyLanguage?: string;
+
+  @ApiPropertyOptional({
+    description: 'Campuses associated with this program',
+    type: [CampusResponseDto],
+  })
+  campuses?: CampusResponseDto[];
 }
 
 // Response DTO for each university-program combination

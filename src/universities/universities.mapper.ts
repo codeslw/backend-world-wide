@@ -45,6 +45,7 @@ type UniversityProgramWithRelations = UniversityProgram & {
   program: Program;
   intakes?: { intake: Intake }[];
   scholarships?: Scholarship[];
+  campuses?: Campus[];
   studyLanguage?: string;
 };
 
@@ -293,6 +294,7 @@ export class UniversitiesMapper {
             createdAt: s.createdAt,
             lastUpdated: s.lastUpdated,
           })) || [],
+        campuses: (up.campuses as any) || [],
       },
       createdAt: university.createdAt.toISOString(),
       updatedAt: university.updatedAt.toISOString(),
