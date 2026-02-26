@@ -115,9 +115,6 @@ export class UniversitiesRepository {
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
-        { descriptionUz: { contains: search, mode: 'insensitive' } },
-        { descriptionRu: { contains: search, mode: 'insensitive' } },
-        { descriptionEn: { contains: search, mode: 'insensitive' } },
         { website: { contains: search, mode: 'insensitive' } },
       ];
     }
@@ -179,21 +176,6 @@ export class UniversitiesRepository {
     if (search) {
       where.OR = [
         { university: { name: { contains: search, mode: 'insensitive' } } },
-        {
-          university: {
-            descriptionUz: { contains: search, mode: 'insensitive' },
-          },
-        },
-        {
-          university: {
-            descriptionRu: { contains: search, mode: 'insensitive' },
-          },
-        },
-        {
-          university: {
-            descriptionEn: { contains: search, mode: 'insensitive' },
-          },
-        },
         { program: { titleUz: { contains: search, mode: 'insensitive' } } },
         { program: { titleRu: { contains: search, mode: 'insensitive' } } },
         { program: { titleEn: { contains: search, mode: 'insensitive' } } },
