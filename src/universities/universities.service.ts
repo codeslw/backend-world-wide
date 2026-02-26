@@ -167,8 +167,22 @@ export class UniversitiesService {
           skip,
           take,
           include: {
-            country: true,
-            city: true,
+            country: {
+              select: {
+                code: true,
+                nameUz: true,
+                nameRu: true,
+                nameEn: true,
+              },
+            },
+            city: {
+              select: {
+                id: true,
+                nameUz: true,
+                nameRu: true,
+                nameEn: true,
+              },
+            },
             universityPrograms: {
               select: {
                 tuitionFee: true,
@@ -497,8 +511,25 @@ export class UniversitiesService {
           include: {
             university: {
               include: {
-                country: true,
-                city: true,
+                country: {
+                  select: {
+                    code: true,
+                    nameUz: true,
+                    nameRu: true,
+                    nameEn: true,
+                  },
+                },
+                city: {
+                  select: {
+                    id: true,
+                    nameUz: true,
+                    nameRu: true,
+                    nameEn: true,
+                    descriptionUz: true,
+                    descriptionRu: true,
+                    descriptionEn: true,
+                  },
+                },
               },
             },
             program: true,

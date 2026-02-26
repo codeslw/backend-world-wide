@@ -163,6 +163,12 @@ model University {
   campuses                Campus[]
 
   @@index([name])
+  @@index([type])
+  @@index([ranking])
+  @@index([established])
+  @@index([countryCode])
+  @@index([cityId])
+  @@index([isMain])
   @@map("universities")
 }
 
@@ -187,6 +193,9 @@ model UniversityProgram {
   @@unique([universityId, programId, studyLevel])
   @@index([universityId])
   @@index([programId])
+  @@index([tuitionFee])
+  @@index([studyLevel])
+  @@index([studyLanguage])
   @@map("university_programs")
 }
 
