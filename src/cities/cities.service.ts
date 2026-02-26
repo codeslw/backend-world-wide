@@ -12,13 +12,33 @@ import {
   EntityNotFoundException,
   InvalidDataException,
 } from '../common/exceptions/app.exceptions';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { Inject } from '@nestjs/common';
 
 @Injectable()
 export class CitiesService {
   constructor(
     private prisma: PrismaService,
     private filterService: FilterService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
+
+  private async clearCache() {
+    try {
+      if (typeof (this.cacheManager as any).reset === 'function') {
+        await (this.cacheManager as any).reset();
+      } else if (typeof (this.cacheManager as any).clear === 'function') {
+        await (this.cacheManager as any).clear();
+      } else if (
+        typeof (this.cacheManager as any).store?.reset === 'function'
+      ) {
+        await (this.cacheManager as any).store.reset();
+      }
+    } catch (e) {
+      console.warn('Cache clearing failed', e);
+    }
+  }
 
   async create(createCityDto: CreateCityDto) {
     try {
@@ -33,6 +53,7 @@ export class CitiesService {
           country: true,
         },
       });
+      await this.clearCache();
       return city;
     } catch (error) {
       // Let the global exception filter handle Prisma errors
@@ -48,6 +69,7 @@ export class CitiesService {
         }),
       );
 
+      await this.clearCache();
       return {
         count: createdCities.length,
         cities: createdCities,
@@ -64,6 +86,10 @@ export class CitiesService {
     limit: number = 10,
     countryCode?: number,
   ) {
+    const cacheKey = `cities:all:${lang}:${page}:${limit}:${countryCode || 'all'}`;
+    const cached = await this.cacheManager.get<any>(cacheKey);
+    if (cached) return cached;
+
     try {
       const skip = (page - 1) * limit;
 
@@ -101,7 +127,7 @@ export class CitiesService {
         this.localizeCity(city, lang),
       );
 
-      return {
+      const finalResult = {
         data: localizedCities,
         meta: {
           total,
@@ -110,6 +136,8 @@ export class CitiesService {
           totalPages: Math.ceil(total / limit),
         },
       };
+      await this.cacheManager.set(cacheKey, finalResult);
+      return finalResult;
     } catch (error) {
       // Let the global exception filter handle database errors
       throw error;
@@ -117,6 +145,10 @@ export class CitiesService {
   }
 
   async findOne(id: string, lang: string = 'uz') {
+    const cacheKey = `cities:one:${id}:${lang}`;
+    const cached = await this.cacheManager.get<any>(cacheKey);
+    if (cached) return cached;
+
     try {
       const city = await this.prisma.city.findUnique({
         where: { id },
@@ -129,7 +161,9 @@ export class CitiesService {
         throw new EntityNotFoundException('City', id);
       }
 
-      return this.localizeCity(city, lang);
+      const result = this.localizeCity(city, lang);
+      await this.cacheManager.set(cacheKey, result);
+      return result;
     } catch (error) {
       // If it's already our custom exception, just rethrow it
       if (error instanceof EntityNotFoundException) {
@@ -165,6 +199,7 @@ export class CitiesService {
         },
       });
 
+      await this.clearCache();
       return city;
     } catch (error) {
       // If it's already our custom exception, just rethrow it
@@ -195,6 +230,7 @@ export class CitiesService {
         },
       });
 
+      await this.clearCache();
       return city;
     } catch (error) {
       // If it's already our custom exception, just rethrow it

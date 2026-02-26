@@ -23,6 +23,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ScholarshipsModule } from './scholarships/scholarships.module';
 import { AdmissionRequirementsModule } from './admission-requirements/admission-requirements.module';
 import { CampusesModule } from './campuses/campuses.module';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { CampusesModule } from './campuses/campuses.module';
     ScholarshipsModule,
     AdmissionRequirementsModule,
     CampusesModule,
+    CacheModule.register({ isGlobal: true, ttl: 600000 }), // 10 minutes default TTL
   ],
   providers: [PrismaService, DigitalOceanService],
   controllers: [],

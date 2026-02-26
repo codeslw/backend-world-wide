@@ -2,7 +2,10 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  Inject,
 } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../db/prisma.service';
 import { CreateUniversityDto } from './dto/create-university.dto';
@@ -25,7 +28,24 @@ export class UniversitiesService {
     private readonly prisma: PrismaService,
     private readonly mapper: UniversitiesMapper,
     private readonly repository: UniversitiesRepository,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
+
+  private async clearCache() {
+    try {
+      if (typeof (this.cacheManager as any).reset === 'function') {
+        await (this.cacheManager as any).reset();
+      } else if (typeof (this.cacheManager as any).clear === 'function') {
+        await (this.cacheManager as any).clear();
+      } else if (
+        typeof (this.cacheManager as any).store?.reset === 'function'
+      ) {
+        await (this.cacheManager as any).store.reset();
+      }
+    } catch (e) {
+      console.warn('Cache clearing failed', e);
+    }
+  }
 
   async create(
     createUniversityDto: CreateUniversityDto,
@@ -97,6 +117,7 @@ export class UniversitiesService {
           campuses: true,
         },
       });
+      await this.clearCache();
       return this.mapper.toResponseDto(createdUniversity as any, 'uz');
     } catch (error) {
       this.handlePrismaError(error, countryCode, cityId);
@@ -110,6 +131,7 @@ export class UniversitiesService {
     const createdUniversities = await Promise.all(
       createManyUniversitiesDto.map((dto) => this.create(dto)),
     );
+    await this.clearCache();
     return createdUniversities;
   }
 
@@ -117,6 +139,13 @@ export class UniversitiesService {
     filterDto: UniversityFilterDto,
     lang: string = 'uz',
   ): Promise<PaginatedUniversityListItemResponseDto> {
+    const cacheKey = `universities:all:${JSON.stringify(filterDto)}:${lang}`;
+    const cached =
+      await this.cacheManager.get<PaginatedUniversityListItemResponseDto>(
+        cacheKey,
+      );
+    if (cached) return cached;
+
     try {
       const {
         page = 1,
@@ -157,7 +186,7 @@ export class UniversitiesService {
       );
       const totalPages = Math.ceil(total / Number(limit));
 
-      return {
+      const result = {
         data,
         meta: {
           total,
@@ -166,6 +195,8 @@ export class UniversitiesService {
           totalPages,
         },
       };
+      await this.cacheManager.set(cacheKey, result);
+      return result;
     } catch (error) {
       console.error('Error finding universities:', error);
       throw error;
@@ -176,6 +207,10 @@ export class UniversitiesService {
     id: string,
     lang: string = 'uz',
   ): Promise<UniversityResponseDto> {
+    const cacheKey = `universities:one:${id}:${lang}`;
+    const cached = await this.cacheManager.get<UniversityResponseDto>(cacheKey);
+    if (cached) return cached;
+
     try {
       const university = await this.prisma.university.findUnique({
         where: { id },
@@ -204,7 +239,9 @@ export class UniversitiesService {
         throw new EntityNotFoundException('University', id);
       }
 
-      return this.mapper.toResponseDto(university as any, lang);
+      const result = this.mapper.toResponseDto(university as any, lang);
+      await this.cacheManager.set(cacheKey, result);
+      return result;
     } catch (error) {
       if (error instanceof EntityNotFoundException) {
         throw error;
@@ -309,6 +346,7 @@ export class UniversitiesService {
         );
       }
 
+      await this.clearCache();
       return this.mapper.toResponseDto(updatedUniversity as any, 'uz');
     } catch (error) {
       this.handlePrismaError(error, countryCode, cityId);
@@ -335,6 +373,7 @@ export class UniversitiesService {
           where: { id },
         });
       });
+      await this.clearCache();
     } catch (error) {
       if (error instanceof EntityNotFoundException) {
         throw error;
@@ -374,6 +413,7 @@ export class UniversitiesService {
       await this.prisma.universityProgram.delete({
         where: { id: universityProgram.id },
       });
+      await this.clearCache();
     } catch (error) {
       if (error instanceof EntityNotFoundException) {
         throw error;
@@ -389,6 +429,11 @@ export class UniversitiesService {
   async findMainUniversities(
     lang: string = 'uz',
   ): Promise<MainUniversityResponseDto[]> {
+    const cacheKey = `universities:main:${lang}`;
+    const cached =
+      await this.cacheManager.get<MainUniversityResponseDto[]>(cacheKey);
+    if (cached) return cached;
+
     try {
       const universities = await this.prisma.university.findMany({
         where: { isMain: true },
@@ -397,22 +442,20 @@ export class UniversitiesService {
           country: true,
           city: true,
           universityPrograms: {
+            take: 5,
             include: {
               program: true,
-              intakes: {
-                include: {
-                  intake: true,
-                },
-              },
             },
           },
         },
         orderBy: { ranking: 'asc' },
       });
 
-      return universities.map((uni) =>
+      const result = universities.map((uni) =>
         this.mapper.toMainUniversityDto(uni as any, lang),
       );
+      await this.cacheManager.set(cacheKey, result);
+      return result;
     } catch (error) {
       console.error('Error finding main universities:', error);
       throw error;
@@ -423,6 +466,10 @@ export class UniversitiesService {
     filterDto: UniversitiesByProgramsFilterDto,
     lang: string = 'uz',
   ) {
+    const cacheKey = `universities:byPrograms:${JSON.stringify(filterDto)}:${lang}`;
+    const cached = await this.cacheManager.get<any>(cacheKey);
+    if (cached) return cached;
+
     try {
       const {
         page = 1,
@@ -479,7 +526,7 @@ export class UniversitiesService {
       );
       const totalPages = Math.ceil(total / Number(limit));
 
-      return {
+      const result = {
         data,
         meta: {
           total,
@@ -488,6 +535,8 @@ export class UniversitiesService {
           totalPages,
         },
       };
+      await this.cacheManager.set(cacheKey, result);
+      return result;
     } catch (error) {
       console.error('Error finding universities by programs:', error);
       throw error;
@@ -498,6 +547,10 @@ export class UniversitiesService {
     if (!universityId) {
       throw new BadRequestException('University ID is required');
     }
+    const cacheKey = `universities:programs:${universityId}:${lang}`;
+    const cached = await this.cacheManager.get<any>(cacheKey);
+    if (cached) return cached;
+
     const foundUniversity = await this.prisma.university.findUnique({
       where: {
         id: universityId,
@@ -520,9 +573,11 @@ export class UniversitiesService {
         },
       );
 
-      return programsByUniversity.map((up) =>
+      const result = programsByUniversity.map((up) =>
         this.mapper.toProgramDetailsDto(up as any, lang),
       );
+      await this.cacheManager.set(cacheKey, result);
+      return result;
     } catch (error) {
       throw new BadRequestException('Error finding programs by university');
     }

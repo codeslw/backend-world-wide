@@ -13,13 +13,33 @@ import {
   InvalidDataException,
 } from '../common/exceptions/app.exceptions';
 import { Prisma } from '@prisma/client';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { Inject } from '@nestjs/common';
 
 @Injectable()
 export class ProgramsService {
   constructor(
     private prisma: PrismaService,
     private filterService: FilterService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
+
+  private async clearCache() {
+    try {
+      if (typeof (this.cacheManager as any).reset === 'function') {
+        await (this.cacheManager as any).reset();
+      } else if (typeof (this.cacheManager as any).clear === 'function') {
+        await (this.cacheManager as any).clear();
+      } else if (
+        typeof (this.cacheManager as any).store?.reset === 'function'
+      ) {
+        await (this.cacheManager as any).store.reset();
+      }
+    } catch (e) {
+      console.warn('Cache clearing failed', e);
+    }
+  }
 
   async create(createProgramDto: CreateProgramDto) {
     try {
@@ -35,7 +55,9 @@ export class ProgramsService {
           : undefined,
       };
 
-      return this.prisma.program.create({ data });
+      const createdProgram = await this.prisma.program.create({ data });
+      await this.clearCache();
+      return createdProgram;
     } catch (error) {
       // Let the global exception filter handle Prisma errors
       throw error;
@@ -50,6 +72,7 @@ export class ProgramsService {
         }),
       );
 
+      await this.clearCache();
       return {
         count: createdPrograms.length,
         programs: createdPrograms,
@@ -65,6 +88,10 @@ export class ProgramsService {
     lang: string = 'uz',
     paginationDto?: PaginationDto,
   ) {
+    const cacheKey = `programs:all:${parentId || 'root'}:${lang}:${JSON.stringify(paginationDto)}`;
+    const cached = await this.cacheManager.get<any>(cacheKey);
+    if (cached) return cached;
+
     try {
       // Define filter options
       const filterOptions = {
@@ -131,10 +158,12 @@ export class ProgramsService {
         this.localizeProgram(program, lang),
       );
 
-      return {
+      const finalResult = {
         data: localizedData,
         meta: result.meta,
       };
+      await this.cacheManager.set(cacheKey, finalResult);
+      return finalResult;
     } catch (error) {
       // Let the global exception filter handle database errors
       throw error;
@@ -142,6 +171,10 @@ export class ProgramsService {
   }
 
   async findOne(id: string, lang: string = 'uz') {
+    const cacheKey = `programs:one:${id}:${lang}`;
+    const cached = await this.cacheManager.get<any>(cacheKey);
+    if (cached) return cached;
+
     try {
       const program = await this.prisma.program.findUnique({
         where: { id },
@@ -155,7 +188,9 @@ export class ProgramsService {
         throw new EntityNotFoundException('Program', id);
       }
 
-      return this.localizeProgram(program, lang);
+      const result = this.localizeProgram(program, lang);
+      await this.cacheManager.set(cacheKey, result);
+      return result;
     } catch (error) {
       // If it's already our custom exception, just rethrow it
       if (error instanceof EntityNotFoundException) {
@@ -186,10 +221,12 @@ export class ProgramsService {
         delete data.parentId;
       }
 
-      return await this.prisma.program.update({
+      const updatedProgram = await this.prisma.program.update({
         where: { id },
         data,
       });
+      await this.clearCache();
+      return updatedProgram;
     } catch (error) {
       // If it's already our custom exception, just rethrow it
       if (error instanceof EntityNotFoundException) {
@@ -234,9 +271,11 @@ export class ProgramsService {
         );
       }
 
-      return await this.prisma.program.delete({
+      const deletedProgram = await this.prisma.program.delete({
         where: { id },
       });
+      await this.clearCache();
+      return deletedProgram;
     } catch (error) {
       // If it's already our custom exception, just rethrow it
       if (

@@ -13,13 +13,33 @@ import {
   InvalidDataException,
 } from '../common/exceptions/app.exceptions';
 import { CountryResponseDto } from './dto/country-response.dto';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { Inject } from '@nestjs/common';
 
 @Injectable()
 export class CountriesService {
   constructor(
     private prisma: PrismaService,
     private filterService: FilterService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
+
+  private async clearCache() {
+    try {
+      if (typeof (this.cacheManager as any).reset === 'function') {
+        await (this.cacheManager as any).reset();
+      } else if (typeof (this.cacheManager as any).clear === 'function') {
+        await (this.cacheManager as any).clear();
+      } else if (
+        typeof (this.cacheManager as any).store?.reset === 'function'
+      ) {
+        await (this.cacheManager as any).store.reset();
+      }
+    } catch (e) {
+      console.warn('Cache clearing failed', e);
+    }
+  }
 
   async create(createCountryDto: CreateCountryDto) {
     try {
@@ -35,7 +55,7 @@ export class CountriesService {
         );
       }
 
-      return this.prisma.country.create({
+      const createdCountry = await this.prisma.country.create({
         data: {
           code: createCountryDto.code,
           nameUz: createCountryDto.nameUz,
@@ -103,6 +123,8 @@ export class CountriesService {
           hasVegetarianFood: createCountryDto.hasVegetarianFood || false,
         },
       });
+      await this.clearCache();
+      return createdCountry;
     } catch (error) {
       // Let the global exception filter handle Prisma errors
       throw error;
@@ -117,6 +139,7 @@ export class CountriesService {
         }),
       );
 
+      await this.clearCache();
       return {
         count: createdCountries.length,
         countries: createdCountries,
@@ -128,6 +151,10 @@ export class CountriesService {
   }
 
   async findAll(lang: string = 'uz', paginationDto?: PaginationDto) {
+    const cacheKey = `countries:all:${lang}:${JSON.stringify(paginationDto)}`;
+    const cached = await this.cacheManager.get<any>(cacheKey);
+    if (cached) return cached;
+
     try {
       console.log('🔍 Debug findAll - paginationDto:', paginationDto);
 
@@ -273,10 +300,12 @@ export class CountriesService {
         this.localizeCountry(country, lang),
       );
 
-      return {
+      const finalResult = {
         data: localizedData,
         meta: result.meta,
       };
+      await this.cacheManager.set(cacheKey, finalResult);
+      return finalResult;
     } catch (error) {
       console.error('🚨 Error in CountriesService.findAll:', error);
       console.error('🚨 Input parameters:', { lang, paginationDto });
@@ -286,6 +315,10 @@ export class CountriesService {
   }
 
   async findOne(code: number, lang: string = 'uz') {
+    const cacheKey = `countries:one:${code}:${lang}`;
+    const cached = await this.cacheManager.get<any>(cacheKey);
+    if (cached) return cached;
+
     try {
       const country = await this.prisma.country.findUnique({
         where: { code },
@@ -298,7 +331,9 @@ export class CountriesService {
         throw new EntityNotFoundException('Country', code);
       }
 
-      return this.localizeCountry(country, lang);
+      const result = this.localizeCountry(country, lang);
+      await this.cacheManager.set(cacheKey, result);
+      return result;
     } catch (error) {
       // If it's already our custom exception, just rethrow it
       if (error instanceof EntityNotFoundException) {
@@ -457,10 +492,12 @@ export class CountriesService {
         updateData.hasVegetarianFood = updateCountryDto.hasVegetarianFood;
 
       // Proceed with update
-      return await this.prisma.country.update({
+      const updatedCountry = await this.prisma.country.update({
         where: { code },
         data: updateData,
       });
+      await this.clearCache();
+      return updatedCountry;
     } catch (error) {
       // If it's already our custom exception, just rethrow it
       if (error instanceof EntityNotFoundException) {
@@ -483,9 +520,11 @@ export class CountriesService {
       }
 
       // Proceed with deletion
-      return await this.prisma.country.delete({
+      const deletedCountry = await this.prisma.country.delete({
         where: { code },
       });
+      await this.clearCache();
+      return deletedCountry;
     } catch (error) {
       // If it's already our custom exception, just rethrow it
       if (error instanceof EntityNotFoundException) {
@@ -541,6 +580,10 @@ export class CountriesService {
   }
 
   async findMainCountries(lang: string = 'uz'): Promise<CountryResponseDto[]> {
+    const cacheKey = `countries:main:${lang}`;
+    const cached = await this.cacheManager.get<CountryResponseDto[]>(cacheKey);
+    if (cached) return cached;
+
     try {
       const countries = await this.prisma.country.findMany({
         where: { isMain: true },
@@ -548,7 +591,11 @@ export class CountriesService {
         orderBy: { code: 'asc' },
       });
 
-      return countries.map((country) => this.localizeCountry(country, lang));
+      const result = countries.map((country) =>
+        this.localizeCountry(country, lang),
+      );
+      await this.cacheManager.set(cacheKey, result);
+      return result;
     } catch (error) {
       console.error('Error finding main countries:', error);
       throw error;
