@@ -195,6 +195,102 @@ export class UniversityFilterDto {
   @IsUUID('4', { each: true })
   programs?: string[];
 
+  @ApiProperty({ description: 'Minimum IELTS total score (0–9)', required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(9)
+  @Type(() => Number)
+  minIeltsTotal?: number;
+
+  @ApiProperty({ description: 'Maximum IELTS total score (0–9)', required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(9)
+  @Type(() => Number)
+  maxIeltsTotal?: number;
+
+  @ApiProperty({ description: 'Minimum IELTS reading score (0–9)', required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(9)
+  @Type(() => Number)
+  minIeltsReading?: number;
+
+  @ApiProperty({ description: 'Maximum IELTS reading score (0–9)', required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(9)
+  @Type(() => Number)
+  maxIeltsReading?: number;
+
+  @ApiProperty({ description: 'Minimum IELTS writing score (0–9)', required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(9)
+  @Type(() => Number)
+  minIeltsWriting?: number;
+
+  @ApiProperty({ description: 'Maximum IELTS writing score (0–9)', required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(9)
+  @Type(() => Number)
+  maxIeltsWriting?: number;
+
+  @ApiProperty({ description: 'Minimum IELTS speaking score (0–9)', required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(9)
+  @Type(() => Number)
+  minIeltsSpeaking?: number;
+
+  @ApiProperty({ description: 'Maximum IELTS speaking score (0–9)', required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(9)
+  @Type(() => Number)
+  maxIeltsSpeaking?: number;
+
+  @ApiProperty({ description: 'Minimum IELTS listening score (0–9)', required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(9)
+  @Type(() => Number)
+  minIeltsListening?: number;
+
+  @ApiProperty({ description: 'Maximum IELTS listening score (0–9)', required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(9)
+  @Type(() => Number)
+  maxIeltsListening?: number;
+
+  @ApiProperty({ description: 'Minimum GPA required (e.g. 2.5)', required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(4.5)
+  @Type(() => Number)
+  minGpa?: number;
+
+  @ApiProperty({ description: 'Maximum GPA required (e.g. 4.5)', required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(4.5)
+  @Type(() => Number)
+  maxGpa?: number;
+
   @ApiProperty({ description: 'Page number', required: false })
   @IsOptional()
   @IsInt()

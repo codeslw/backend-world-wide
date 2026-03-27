@@ -30,6 +30,18 @@ export class UniversitiesRepository {
       search,
       intake,
       studyLanguage,
+      minIeltsTotal,
+      maxIeltsTotal,
+      minIeltsReading,
+      maxIeltsReading,
+      minIeltsWriting,
+      maxIeltsWriting,
+      minIeltsSpeaking,
+      maxIeltsSpeaking,
+      minIeltsListening,
+      maxIeltsListening,
+      minGpa,
+      maxGpa,
     } = filterDto;
 
     const where: Prisma.UniversityWhereInput = {};
@@ -112,6 +124,41 @@ export class UniversitiesRepository {
       where.universityPrograms = universityProgramFilter;
     }
 
+    // Admission requirements: IELTS (per section) and GPA
+    const ieltsFilters = [
+      { path: ['ielts', 'total'], min: minIeltsTotal, max: maxIeltsTotal },
+      { path: ['ielts', 'sections', 'reading'], min: minIeltsReading, max: maxIeltsReading },
+      { path: ['ielts', 'sections', 'writing'], min: minIeltsWriting, max: maxIeltsWriting },
+      { path: ['ielts', 'sections', 'speaking'], min: minIeltsSpeaking, max: maxIeltsSpeaking },
+      { path: ['ielts', 'sections', 'listening'], min: minIeltsListening, max: maxIeltsListening },
+    ].filter((f) => f.min !== undefined || f.max !== undefined);
+
+    if (ieltsFilters.length > 0 || minGpa !== undefined || maxGpa !== undefined) {
+      const admissionAndConditions: Prisma.AdmissionRequirementWhereInput[] = [];
+
+      for (const f of ieltsFilters) {
+        const cond: any = { languageRequirements: { path: f.path } };
+        if (f.min !== undefined) cond.languageRequirements.gte = f.min;
+        if (f.max !== undefined) cond.languageRequirements.lte = f.max;
+        admissionAndConditions.push(cond);
+      }
+
+      if (minGpa !== undefined || maxGpa !== undefined) {
+        admissionAndConditions.push({
+          minGpa: {
+            ...(minGpa !== undefined && { gte: String(minGpa) }),
+            ...(maxGpa !== undefined && { lte: String(maxGpa) }),
+          },
+        });
+      }
+
+      where.admissionRequirements = {
+        some: admissionAndConditions.length === 1
+          ? admissionAndConditions[0]
+          : { AND: admissionAndConditions },
+      };
+    }
+
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -139,6 +186,18 @@ export class UniversitiesRepository {
       universityId,
       campusId,
       studyLanguage,
+      minIeltsTotal,
+      maxIeltsTotal,
+      minIeltsReading,
+      maxIeltsReading,
+      minIeltsWriting,
+      maxIeltsWriting,
+      minIeltsSpeaking,
+      maxIeltsSpeaking,
+      minIeltsListening,
+      maxIeltsListening,
+      minGpa,
+      maxGpa,
     } = filterDto;
 
     const where: Prisma.UniversityProgramWhereInput = {};
@@ -172,6 +231,46 @@ export class UniversitiesRepository {
     if (studyLevel) where.studyLevel = studyLevel;
     if (studyLanguage) where.studyLanguage = studyLanguage;
     if (intake) where.intakes = { some: { intakeId: intake } };
+
+    // IELTS (per section) and GPA filters via university's admission requirements
+    const ieltsFilters = [
+      { path: ['ielts', 'total'], min: minIeltsTotal, max: maxIeltsTotal },
+      { path: ['ielts', 'sections', 'reading'], min: minIeltsReading, max: maxIeltsReading },
+      { path: ['ielts', 'sections', 'writing'], min: minIeltsWriting, max: maxIeltsWriting },
+      { path: ['ielts', 'sections', 'speaking'], min: minIeltsSpeaking, max: maxIeltsSpeaking },
+      { path: ['ielts', 'sections', 'listening'], min: minIeltsListening, max: maxIeltsListening },
+    ].filter((f) => f.min !== undefined || f.max !== undefined);
+
+    if (ieltsFilters.length > 0 || minGpa !== undefined || maxGpa !== undefined) {
+      const admissionAndConditions: Prisma.AdmissionRequirementWhereInput[] = [];
+
+      for (const f of ieltsFilters) {
+        const cond: any = { languageRequirements: { path: f.path } };
+        if (f.min !== undefined) cond.languageRequirements.gte = f.min;
+        if (f.max !== undefined) cond.languageRequirements.lte = f.max;
+        admissionAndConditions.push(cond);
+      }
+
+      if (minGpa !== undefined || maxGpa !== undefined) {
+        admissionAndConditions.push({
+          minGpa: {
+            ...(minGpa !== undefined && { gte: String(minGpa) }),
+            ...(maxGpa !== undefined && { lte: String(maxGpa) }),
+          },
+        });
+      }
+
+      const admissionRequirementsFilter = {
+        some: admissionAndConditions.length === 1
+          ? admissionAndConditions[0]
+          : { AND: admissionAndConditions },
+      };
+
+      where.university = {
+        ...((where.university as any) || {}),
+        admissionRequirements: admissionRequirementsFilter,
+      };
+    }
 
     if (search) {
       where.OR = [
