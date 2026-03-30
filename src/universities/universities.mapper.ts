@@ -81,6 +81,7 @@ export class UniversitiesMapper {
       photoUrl: university.photoUrl,
       logoUrl: university.logoUrl,
       additionalPhotoUrls: university.additionalPhotoUrls,
+      youtubeVideoUrl: university.youtubeVideoUrl,
       isMain: university.isMain,
       createdAt: university.createdAt.toISOString(),
       updatedAt: university.updatedAt.toISOString(),

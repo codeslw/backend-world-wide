@@ -35,6 +35,15 @@ export class CreateScholarshipDto {
   isAutoApplied?: boolean;
 
   @ApiPropertyOptional({
+    description: 'Is visible in the public scholarship listing? (Still shown on university detail page)',
+    example: true,
+    default: true,
+  })
+  @IsBoolean()
+  @IsOptional()
+  isVisible?: boolean;
+
+  @ApiPropertyOptional({
     description: 'Eligible nationalities (array of country codes or names)',
     example: ['UZ', 'KZ', 'TJ'],
     default: [],

@@ -60,8 +60,24 @@ export class ScholarshipsController {
     type: String,
     description: 'University ID (UUID)',
   })
-  findAll(@Query() query: { programId?: string; universityId?: string }) {
-    return this.scholarshipsService.findAll(query);
+  @ApiQuery({
+    name: 'onlyVisible',
+    required: false,
+    type: Boolean,
+    description: 'When true, only return scholarships with isVisible=true (for public listing)',
+  })
+  findAll(
+    @Query()
+    query: {
+      programId?: string;
+      universityId?: string;
+      onlyVisible?: string;
+    },
+  ) {
+    return this.scholarshipsService.findAll({
+      ...query,
+      onlyVisible: query.onlyVisible === 'true',
+    });
   }
 
   @Get(':id')

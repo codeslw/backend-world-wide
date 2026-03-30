@@ -60,7 +60,11 @@ export class ScholarshipsService {
     return scholarship;
   }
 
-  async findAll(query: { programId?: string; universityId?: string }) {
+  async findAll(query: {
+    programId?: string;
+    universityId?: string;
+    onlyVisible?: boolean;
+  }) {
     const where: Prisma.ScholarshipWhereInput = {};
 
     if (query.universityId) {
@@ -71,6 +75,11 @@ export class ScholarshipsService {
       where.programs = {
         some: { id: query.programId },
       };
+    }
+
+    // When fetching for public listing, only return visible scholarships
+    if (query.onlyVisible) {
+      where.isVisible = true;
     }
 
     return this.prisma.scholarship.findMany({

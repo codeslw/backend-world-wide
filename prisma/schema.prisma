@@ -147,6 +147,7 @@ model University {
   photoUrl                String?
   logoUrl                 String?
   additionalPhotoUrls     String[]                @default([])
+  youtubeVideoUrl         String?
   isMain                  Boolean                 @default(false)
   cityId                  String
   countryCode             Int
@@ -410,6 +411,9 @@ model Scholarship {
 
   // Auto-application flag
   isAutoApplied Boolean @default(false)
+
+  // Visibility flag — controls whether scholarship appears in public listing
+  isVisible Boolean @default(true)
 
   // Eligibility arrays
   nationalities String[] @default([])

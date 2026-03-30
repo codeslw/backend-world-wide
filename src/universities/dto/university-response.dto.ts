@@ -147,6 +147,9 @@ export class UniversityResponseDto {
   })
   additionalPhotoUrls?: string[];
 
+  @ApiPropertyOptional({ description: 'YouTube video URL for university preview' })
+  youtubeVideoUrl?: string;
+
   @ApiProperty({ description: 'Whether this university is featured as main' })
   isMain: boolean;
 

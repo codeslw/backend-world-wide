@@ -13,6 +13,9 @@ export class ScholarshipResponseDto {
   @ApiProperty()
   isAutoApplied: boolean;
 
+  @ApiProperty({ default: true })
+  isVisible: boolean;
+
   @ApiProperty()
   nationalities: string[];
 

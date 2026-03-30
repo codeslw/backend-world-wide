@@ -191,6 +191,14 @@ export class CreateUniversityDto {
   additionalPhotoUrls?: string[];
 
   @ApiPropertyOptional({
+    description: 'YouTube video URL for university preview (any format: watch, share, embed)',
+    example: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+  })
+  @IsOptional()
+  @IsString()
+  youtubeVideoUrl?: string;
+
+  @ApiPropertyOptional({
     description: 'Whether this university is featured as main (only 3 allowed)',
     example: false,
     default: false,
