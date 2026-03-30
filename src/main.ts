@@ -6,7 +6,7 @@ import { Request, Response, NextFunction } from 'express';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { SwaggerAuthMiddleware } from './common/middleware/swagger-auth.middleware';
 import { ConfigService } from '@nestjs/config';
-import compression from 'compression';
+import * as compression from 'compression';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
