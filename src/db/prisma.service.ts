@@ -20,7 +20,10 @@ export class PrismaService
           url: process.env.DATABASE_URL,
         },
       },
-      log: ['warn', 'error'],
+      log:
+        process.env.NODE_ENV === 'production'
+          ? ['error']
+          : ['warn', 'error'],
     });
   }
 

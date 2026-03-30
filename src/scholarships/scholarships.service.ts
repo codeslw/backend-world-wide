@@ -118,11 +118,11 @@ export class ScholarshipsService {
   }
 
   async getScholarshipPrograms(scholarshipId: string) {
-    const scholarship = await this.prisma.scholarship.findUnique({
+    const count = await this.prisma.scholarship.count({
       where: { id: scholarshipId },
     });
 
-    if (!scholarship) {
+    if (count === 0) {
       throw new NotFoundException(
         `Scholarship with ID ${scholarshipId} not found`,
       );
@@ -218,16 +218,14 @@ export class ScholarshipsService {
   }
 
   private async updateUniversityScholarshipStatus(universityId: string) {
-    const scholarships = await this.prisma.scholarship.findMany({
+    const count = await this.prisma.scholarship.count({
       where: { universityId },
     });
-
-    const hasScholarship = scholarships.length > 0;
 
     await this.prisma.university.update({
       where: { id: universityId },
       data: {
-        hasScholarship,
+        hasScholarship: count > 0,
         scholarshipRequirements: [],
       },
     });

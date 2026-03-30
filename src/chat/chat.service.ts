@@ -649,42 +649,25 @@ export class ChatService {
     messageIds: string[],
     userRole: PrismaRole,
   ) {
-    // Optimization: Check which messages actually need updating for this user
-    const messagesToUpdate = await this.prisma.message.findMany({
+    if (messageIds.length === 0) return;
+
+    // Single bulk updateMany instead of N individual updates
+    const updateResult = await this.prisma.message.updateMany({
       where: {
         id: { in: messageIds },
-        chatId: chatId, // Ensure messages belong to the chat
-        // Only update messages that haven't been read by this user role yet
+        chatId: chatId,
         ...(userRole === PrismaRole.CLIENT
           ? { readByClient: false }
           : { readByAdmin: false }),
       },
-      select: { id: true, readByClient: true, readByAdmin: true },
+      data:
+        userRole === PrismaRole.CLIENT
+          ? { readByClient: true }
+          : { readByAdmin: true },
     });
 
-    const idsToUpdate = messagesToUpdate.map((m) => m.id);
-
-    if (idsToUpdate.length === 0) {
-      return; // Nothing to update for this user
-    }
-
-    // Use transaction for multiple updates - preserve existing read status
-    await this.prisma.$transaction(
-      idsToUpdate.map((messageId) => {
-        const currentMessage = messagesToUpdate.find((m) => m.id === messageId);
-        return this.prisma.message.update({
-          where: { id: messageId },
-          data:
-            userRole === PrismaRole.CLIENT
-              ? { readByClient: true } // Keep existing readByAdmin value
-              : { readByAdmin: true }, // Keep existing readByClient value
-        });
-      }),
-    );
-
-    // Notify other clients about read status
-    if (this.chatGateway) {
-      this.chatGateway.notifyMessagesRead(chatId, userRole, idsToUpdate);
+    if (updateResult.count > 0 && this.chatGateway) {
+      this.chatGateway.notifyMessagesRead(chatId, userRole, messageIds);
     }
   }
 

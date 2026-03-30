@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { PrismaService } from './db/prisma.service';
@@ -28,6 +29,11 @@ import { CacheModule } from '@nestjs/cache-manager';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    CacheModule.register({ isGlobal: true, ttl: 600000 }), // 10 minutes default TTL
+    ThrottlerModule.forRoot([{
+      ttl: 60000,   // 1 minute window
+      limit: 100,   // 100 requests per minute
+    }]),
     CommonModule,
     AuthModule,
     UsersModule,
@@ -45,12 +51,10 @@ import { CacheModule } from '@nestjs/cache-manager';
     ValidityModule,
     StatisticsModule,
     NotificationsModule,
-    NotificationsModule,
     IntakesModule,
     ScholarshipsModule,
     AdmissionRequirementsModule,
     CampusesModule,
-    CacheModule.register({ isGlobal: true, ttl: 600000 }), // 10 minutes default TTL
   ],
   providers: [PrismaService, DigitalOceanService],
   controllers: [],

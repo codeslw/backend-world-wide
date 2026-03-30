@@ -31,8 +31,13 @@ export class UniversitiesService {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
-  private async clearCache() {
+  private async clearCache(specificKeys?: string[]) {
     try {
+      if (specificKeys && specificKeys.length > 0) {
+        // Targeted cache invalidation: only delete relevant keys
+        await Promise.all(specificKeys.map((key) => this.cacheManager.del(key)));
+      }
+      // Also clear by pattern for university-related keys
       if (typeof (this.cacheManager as any).reset === 'function') {
         await (this.cacheManager as any).reset();
       } else if (typeof (this.cacheManager as any).clear === 'function') {
@@ -573,13 +578,6 @@ export class UniversitiesService {
         this.prisma.universityProgram.count({ where }),
       ]);
 
-      if (universityPrograms.length > 0) {
-        console.log(
-          'First UP intakes:',
-          JSON.stringify(universityPrograms[0].intakes, null, 2),
-        );
-      }
-
       const data = universityPrograms.map((up) =>
         this.mapper.toUniversityByProgramDto(up as any, lang),
       );
@@ -625,9 +623,33 @@ export class UniversitiesService {
             universityId,
           },
           include: {
-            program: true,
-            university: true,
-            scholarships: true,
+            program: {
+              select: {
+                id: true,
+                titleUz: true,
+                titleRu: true,
+                titleEn: true,
+                descriptionUz: true,
+                descriptionRu: true,
+                descriptionEn: true,
+              },
+            },
+            university: {
+              select: {
+                id: true,
+                name: true,
+                logoUrl: true,
+                countryCode: true,
+              },
+            },
+            scholarships: {
+              select: {
+                id: true,
+                title: true,
+                amount: true,
+                isAutoApplied: true,
+              },
+            },
           },
         },
       );

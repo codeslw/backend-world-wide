@@ -1,5 +1,4 @@
 import { NestFactory } from '@nestjs/core';
-// Rebuild trigger 1
 import { AppModule } from './app.module';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -7,9 +6,18 @@ import { Request, Response, NextFunction } from 'express';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { SwaggerAuthMiddleware } from './common/middleware/swagger-auth.middleware';
 import { ConfigService } from '@nestjs/config';
+import compression from 'compression';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn'],
+  });
+
+  // Enable gzip/brotli compression for all responses
+  app.use(compression({
+    threshold: 1024, // Only compress responses > 1KB
+    level: 6,
+  }));
   const configService = app.get(ConfigService);
 
   // Apply global validation pipe with detailed error messages

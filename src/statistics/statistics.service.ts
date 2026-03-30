@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { PrismaService } from '../db/prisma.service';
 import {
   TotalCountsResponseDto,
@@ -21,9 +23,15 @@ import {
 } from './dto/statistics-query.dto';
 import { Prisma, ApplicationStatus, IntakeSeason } from '@prisma/client';
 
+// Cache TTL: 5 minutes for stats (they don't need to be real-time)
+const STATS_CACHE_TTL = 300000;
+
 @Injectable()
 export class StatisticsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+  ) {}
 
   /**
    * Get comprehensive dashboard statistics including all key metrics
@@ -31,6 +39,10 @@ export class StatisticsService {
   async getDashboardStats(
     query?: StatisticsQueryDto,
   ): Promise<DashboardStatsResponseDto> {
+    const cacheKey = `stats:dashboard:${JSON.stringify(query || {})}`;
+    const cached = await this.cacheManager.get<DashboardStatsResponseDto>(cacheKey);
+    if (cached) return cached;
+
     const dateFilter = this.buildDateFilter(
       query?.period,
       query?.startDate,
@@ -52,11 +64,11 @@ export class StatisticsService {
       this.getGeographicDistribution(query?.limit || 10),
       this.getPopularPrograms(query?.limit || 10),
       this.getTopUniversities(query?.limit || 10),
-      this.getGrowthStats(12), // Last 12 months
+      this.getGrowthStats(12),
       this.getActivitySummary(),
     ]);
 
-    return {
+    const result = {
       totalCounts,
       applicationStats,
       geographicDistribution,
@@ -65,12 +77,19 @@ export class StatisticsService {
       growthStats,
       activitySummary,
     };
+
+    await this.cacheManager.set(cacheKey, result, STATS_CACHE_TTL);
+    return result;
   }
 
   /**
    * Get total counts across all entities
    */
   async getTotalCounts(): Promise<TotalCountsResponseDto> {
+    const cacheKey = 'stats:totalCounts';
+    const cached = await this.cacheManager.get<TotalCountsResponseDto>(cacheKey);
+    if (cached) return cached;
+
     const [
       universities,
       programs,
@@ -89,7 +108,7 @@ export class StatisticsService {
       this.prisma.message.count(),
     ]);
 
-    return {
+    const result = {
       universities,
       programs,
       applications,
@@ -98,6 +117,9 @@ export class StatisticsService {
       cities,
       messages,
     };
+
+    await this.cacheManager.set(cacheKey, result, STATS_CACHE_TTL);
+    return result;
   }
 
   /**
@@ -136,69 +158,44 @@ export class StatisticsService {
 
   /**
    * Get geographic distribution of students and universities
+   * FIXED: Eliminated N+1 queries by using raw SQL aggregation
    */
   async getGeographicDistribution(
     limit: number = 10,
   ): Promise<GeographicDistributionDto[]> {
-    const countryStats = await this.prisma.country.findMany({
-      select: {
-        code: true,
-        nameEn: true,
-        _count: {
-          select: {
-            universities: true,
-          },
-        },
-      },
-      orderBy: {
-        universities: {
-          _count: 'desc',
-        },
-      },
-      take: limit,
-    });
+    const cacheKey = `stats:geographic:${limit}`;
+    const cached = await this.cacheManager.get<GeographicDistributionDto[]>(cacheKey);
+    if (cached) return cached;
 
-    // Get application counts and student counts for each country
-    const result: GeographicDistributionDto[] = [];
+    // Single query using raw SQL to avoid N+1
+    const result = await this.prisma.$queryRaw<GeographicDistributionDto[]>`
+      SELECT
+        c.code AS "countryCode",
+        c."nameEn" AS "countryName",
+        COUNT(DISTINCT u.id)::int AS "universitiesCount",
+        COUNT(DISTINCT a.id)::int AS "applicationsCount",
+        COUNT(DISTINCT a."profileId")::int AS "studentsCount"
+      FROM "Country" c
+      LEFT JOIN universities u ON u."countryCode" = c.code
+      LEFT JOIN applications a ON a."preferredUniversity" = u.id
+      GROUP BY c.code, c."nameEn"
+      ORDER BY COUNT(DISTINCT u.id) DESC
+      LIMIT ${limit}
+    `;
 
-    for (const country of countryStats) {
-      const [applicationsCount, studentsCount] = await Promise.all([
-        this.prisma.application.count({
-          where: {
-            university: {
-              countryCode: country.code,
-            },
-          },
-        }),
-        this.prisma.profile.count({
-          where: {
-            applications: {
-              some: {
-                university: {
-                  countryCode: country.code,
-                },
-              },
-            },
-          },
-        }),
-      ]);
-
-      result.push({
-        countryCode: country.code,
-        countryName: country.nameEn,
-        universitiesCount: country._count.universities,
-        applicationsCount,
-        studentsCount,
-      });
-    }
-
+    await this.cacheManager.set(cacheKey, result, STATS_CACHE_TTL);
     return result;
   }
 
   /**
    * Get most popular programs by application count
+   * FIXED: Eliminated N+1 by batching aggregation
    */
   async getPopularPrograms(limit: number = 10): Promise<PopularProgramDto[]> {
+    const cacheKey = `stats:popularPrograms:${limit}`;
+    const cached = await this.cacheManager.get<PopularProgramDto[]>(cacheKey);
+    if (cached) return cached;
+
     const popularPrograms = await this.prisma.program.findMany({
       select: {
         id: true,
@@ -218,28 +215,35 @@ export class StatisticsService {
       take: limit,
     });
 
-    // Get average tuition fee for each program
-    const result: PopularProgramDto[] = [];
-
-    for (const program of popularPrograms) {
-      const avgTuitionResult = await this.prisma.universityProgram.aggregate({
-        where: {
-          programId: program.id,
-        },
-        _avg: {
-          tuitionFee: true,
-        },
-      });
-
-      result.push({
-        programId: program.id,
-        programTitle: program.titleEn || 'Unknown Program',
-        applicationsCount: program._count.applications,
-        universitiesCount: program._count.universityPrograms,
-        averageTuitionFee: avgTuitionResult._avg.tuitionFee || undefined,
-      });
+    if (popularPrograms.length === 0) {
+      return [];
     }
 
+    // Batch aggregate: get average tuition for all program IDs in one query
+    const programIds = popularPrograms.map((p) => p.id);
+    const avgTuitions = await this.prisma.universityProgram.groupBy({
+      by: ['programId'],
+      where: {
+        programId: { in: programIds },
+      },
+      _avg: {
+        tuitionFee: true,
+      },
+    });
+
+    const avgTuitionMap = new Map(
+      avgTuitions.map((a) => [a.programId, a._avg.tuitionFee]),
+    );
+
+    const result: PopularProgramDto[] = popularPrograms.map((program) => ({
+      programId: program.id,
+      programTitle: program.titleEn || 'Unknown Program',
+      applicationsCount: program._count.applications,
+      universitiesCount: program._count.universityPrograms,
+      averageTuitionFee: avgTuitionMap.get(program.id) || undefined,
+    }));
+
+    await this.cacheManager.set(cacheKey, result, STATS_CACHE_TTL);
     return result;
   }
 
@@ -247,6 +251,10 @@ export class StatisticsService {
    * Get universities with highest application volumes
    */
   async getTopUniversities(limit: number = 10): Promise<UniversityStatsDto[]> {
+    const cacheKey = `stats:topUniversities:${limit}`;
+    const cached = await this.cacheManager.get<UniversityStatsDto[]>(cacheKey);
+    if (cached) return cached;
+
     const topUniversities = await this.prisma.university.findMany({
       select: {
         id: true,
@@ -276,7 +284,7 @@ export class StatisticsService {
       take: limit,
     });
 
-    return topUniversities.map((university) => ({
+    const result = topUniversities.map((university) => ({
       universityId: university.id,
       universityName: university.name,
       applicationsCount: university._count.applications,
@@ -284,102 +292,51 @@ export class StatisticsService {
       countryName: university.country.nameEn,
       cityName: university.city.nameEn,
     }));
+
+    await this.cacheManager.set(cacheKey, result, STATS_CACHE_TTL);
+    return result;
   }
 
   /**
    * Get monthly growth statistics for profiles and applications
+   * FIXED: Use raw SQL COUNT/GROUP BY instead of fetching ALL rows into memory
    */
   async getGrowthStats(months: number = 12): Promise<GrowthStatsDto[]> {
+    const cacheKey = `stats:growth:${months}`;
+    const cached = await this.cacheManager.get<GrowthStatsDto[]>(cacheKey);
+    if (cached) return cached;
+
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - months);
 
-    // Get data using Prisma's findMany instead of raw SQL
-    const [profiles, applications, messages] = await Promise.all([
-      this.prisma.profile.findMany({
-        select: {
-          createdAt: true,
-        },
-        where: {
-          createdAt: {
-            gte: startDate,
-          },
-        },
-        orderBy: {
-          createdAt: 'asc',
-        },
-      }),
-      this.prisma.application.findMany({
-        select: {
-          createdAt: true,
-        },
-        where: {
-          createdAt: {
-            gte: startDate,
-          },
-        },
-        orderBy: {
-          createdAt: 'asc',
-        },
-      }),
-      this.prisma.message.findMany({
-        select: {
-          createdAt: true,
-        },
-        where: {
-          createdAt: {
-            gte: startDate,
-          },
-        },
-        orderBy: {
-          createdAt: 'asc',
-        },
-      }),
+    // Use raw SQL to aggregate at the database level instead of fetching all rows
+    const [profileStats, applicationStats, messageStats] = await Promise.all([
+      this.prisma.$queryRaw<{ period: string; count: number }[]>`
+        SELECT to_char("createdAt", 'YYYY-MM') AS period, COUNT(*)::int AS count
+        FROM profiles
+        WHERE "createdAt" >= ${startDate}
+        GROUP BY to_char("createdAt", 'YYYY-MM')
+        ORDER BY period ASC
+      `,
+      this.prisma.$queryRaw<{ period: string; count: number }[]>`
+        SELECT to_char("createdAt", 'YYYY-MM') AS period, COUNT(*)::int AS count
+        FROM applications
+        WHERE "createdAt" >= ${startDate}
+        GROUP BY to_char("createdAt", 'YYYY-MM')
+        ORDER BY period ASC
+      `,
+      this.prisma.$queryRaw<{ period: string; count: number }[]>`
+        SELECT to_char("createdAt", 'YYYY-MM') AS period, COUNT(*)::int AS count
+        FROM "Message"
+        WHERE "createdAt" >= ${startDate}
+        GROUP BY to_char("createdAt", 'YYYY-MM')
+        ORDER BY period ASC
+      `,
     ]);
 
-    // Group by month
-    const monthlyData = new Map<
-      string,
-      { newProfiles: number; newApplications: number; messagesCount: number }
-    >();
-
-    // Process profiles
-    profiles.forEach((profile) => {
-      const month = profile.createdAt.toISOString().substring(0, 7); // YYYY-MM format
-      if (!monthlyData.has(month)) {
-        monthlyData.set(month, {
-          newProfiles: 0,
-          newApplications: 0,
-          messagesCount: 0,
-        });
-      }
-      monthlyData.get(month)!.newProfiles++;
-    });
-
-    // Process applications
-    applications.forEach((application) => {
-      const month = application.createdAt.toISOString().substring(0, 7); // YYYY-MM format
-      if (!monthlyData.has(month)) {
-        monthlyData.set(month, {
-          newProfiles: 0,
-          newApplications: 0,
-          messagesCount: 0,
-        });
-      }
-      monthlyData.get(month)!.newApplications++;
-    });
-
-    // Process messages
-    messages.forEach((message) => {
-      const month = message.createdAt.toISOString().substring(0, 7); // YYYY-MM format
-      if (!monthlyData.has(month)) {
-        monthlyData.set(month, {
-          newProfiles: 0,
-          newApplications: 0,
-          messagesCount: 0,
-        });
-      }
-      monthlyData.get(month)!.messagesCount++;
-    });
+    const profileMap = new Map(profileStats.map((r) => [r.period, Number(r.count)]));
+    const appMap = new Map(applicationStats.map((r) => [r.period, Number(r.count)]));
+    const msgMap = new Map(messageStats.map((r) => [r.period, Number(r.count)]));
 
     // Generate result array with all months in the range
     const result: GrowthStatsDto[] = [];
@@ -387,23 +344,19 @@ export class StatisticsService {
     const endDate = new Date();
 
     while (currentDate <= endDate) {
-      const month = currentDate.toISOString().substring(0, 7); // YYYY-MM format
-      const data = monthlyData.get(month) || {
-        newProfiles: 0,
-        newApplications: 0,
-        messagesCount: 0,
-      };
+      const month = currentDate.toISOString().substring(0, 7);
 
       result.push({
         period: month,
-        newProfiles: data.newProfiles,
-        newApplications: data.newApplications,
-        messagesCount: data.messagesCount,
+        newProfiles: profileMap.get(month) || 0,
+        newApplications: appMap.get(month) || 0,
+        messagesCount: msgMap.get(month) || 0,
       });
 
       currentDate.setMonth(currentDate.getMonth() + 1);
     }
 
+    await this.cacheManager.set(cacheKey, result, STATS_CACHE_TTL);
     return result;
   }
 
@@ -411,10 +364,13 @@ export class StatisticsService {
    * Get activity summary and key metrics
    */
   async getActivitySummary(): Promise<ActivitySummaryDto> {
+    const cacheKey = 'stats:activitySummary';
+    const cached = await this.cacheManager.get<ActivitySummaryDto>(cacheKey);
+    if (cached) return cached;
+
     const now = new Date();
     const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const endLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
     const [
       activeUsers,
@@ -472,7 +428,7 @@ export class StatisticsService {
     const averageApplicationsPerUser =
       activeUsers > 0 ? totalApplications / activeUsers : 0;
 
-    return {
+    const result = {
       activeUsers,
       thisMonthApplications,
       lastMonthApplications,
@@ -481,6 +437,9 @@ export class StatisticsService {
         Math.round(averageApplicationsPerUser * 100) / 100,
       popularIntakeSeason: popularSeason[0]?.intakeSeason || 'FALL',
     };
+
+    await this.cacheManager.set(cacheKey, result, STATS_CACHE_TTL);
+    return result;
   }
 
   /**
@@ -489,6 +448,10 @@ export class StatisticsService {
   async getDetailedApplicationStats(
     query?: StatisticsQueryDto,
   ): Promise<DetailedApplicationStatsDto> {
+    const cacheKey = `stats:detailedApps:${JSON.stringify(query || {})}`;
+    const cached = await this.cacheManager.get<DetailedApplicationStatsDto>(cacheKey);
+    if (cached) return cached;
+
     const dateFilter = this.buildDateFilter(
       query?.period,
       query?.startDate,
@@ -501,22 +464,29 @@ export class StatisticsService {
         this.getApplicationsByCountry(dateFilter, query?.limit || 10),
         this.getApplicationsByIntakeSeason(dateFilter),
         this.getApplicationsByIntakeYear(dateFilter),
-        this.getApplicationTrends(30), // Last 30 days
+        this.getApplicationTrends(30),
       ]);
 
-    return {
+    const result = {
       byStatus,
       byCountry,
       byIntakeSeason,
       byIntakeYear,
       trends,
     };
+
+    await this.cacheManager.set(cacheKey, result, STATS_CACHE_TTL);
+    return result;
   }
 
   /**
    * Get user engagement statistics
    */
   async getUserEngagementStats(): Promise<UserEngagementStatsDto> {
+    const cacheKey = 'stats:engagement';
+    const cached = await this.cacheManager.get<UserEngagementStatsDto>(cacheKey);
+    if (cached) return cached;
+
     const [
       totalUsers,
       usersWithProfiles,
@@ -552,7 +522,7 @@ export class StatisticsService {
     const averageMessagesPerUser =
       totalUsers > 0 ? totalMessages / totalUsers : 0;
 
-    return {
+    const result = {
       totalUsers,
       usersWithProfiles,
       usersWithApplications,
@@ -561,45 +531,39 @@ export class StatisticsService {
       applicationConversionRate:
         Math.round(applicationConversionRate * 100) / 100,
     };
+
+    await this.cacheManager.set(cacheKey, result, STATS_CACHE_TTL);
+    return result;
   }
 
   /**
    * Get application trends over time
+   * FIXED: Use raw SQL date truncation instead of groupBy on exact timestamps
    */
   async getApplicationTrends(
     days: number = 30,
   ): Promise<ApplicationTrendDto[]> {
+    const cacheKey = `stats:trends:${days}`;
+    const cached = await this.cacheManager.get<ApplicationTrendDto[]>(cacheKey);
+    if (cached) return cached;
+
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    // Use Prisma's groupBy instead of raw SQL
-    const trends = await this.prisma.application.groupBy({
-      by: ['createdAt'],
-      where: {
-        createdAt: {
-          gte: startDate,
-        },
-      },
-      _count: {
-        _all: true,
-      },
-      orderBy: {
-        createdAt: 'asc',
-      },
-    });
+    const trends = await this.prisma.$queryRaw<ApplicationTrendDto[]>`
+      SELECT
+        to_char("createdAt", 'YYYY-MM-DD') AS date,
+        COUNT(*)::int AS count
+      FROM applications
+      WHERE "createdAt" >= ${startDate}
+      GROUP BY to_char("createdAt", 'YYYY-MM-DD')
+      ORDER BY date ASC
+    `;
 
-    // Group by date (day) manually since Prisma doesn't support date truncation in groupBy
-    const dailyGroups = new Map<string, number>();
+    const result = trends.map((t) => ({ date: t.date, count: Number(t.count) }));
 
-    trends.forEach((trend) => {
-      const date = trend.createdAt.toISOString().split('T')[0]; // Get YYYY-MM-DD format
-      dailyGroups.set(date, (dailyGroups.get(date) || 0) + trend._count._all);
-    });
-
-    // Convert to array and sort by date
-    return Array.from(dailyGroups.entries())
-      .map(([date, count]) => ({ date, count }))
-      .sort((a, b) => a.date.localeCompare(b.date));
+    await this.cacheManager.set(cacheKey, result, STATS_CACHE_TTL);
+    return result;
   }
 
   // Helper methods
@@ -669,6 +633,7 @@ export class StatisticsService {
 
   /**
    * Get applications grouped by country
+   * FIXED: Batch country lookups instead of N+1
    */
   private async getApplicationsByCountry(
     dateFilter?: Prisma.ApplicationWhereInput,
@@ -688,29 +653,30 @@ export class StatisticsService {
       take: limit,
     });
 
-    // Get country names
-    const result = [];
-    for (const app of applications) {
-      // Try to parse country code if it's numeric, otherwise use as string
+    // Batch fetch all country names in one query
+    const countryCodes = applications
+      .map((app) => parseInt(app.preferredCountry))
+      .filter((code) => !isNaN(code));
+
+    const countries = countryCodes.length > 0
+      ? await this.prisma.country.findMany({
+          where: { code: { in: countryCodes } },
+          select: { code: true, nameEn: true },
+        })
+      : [];
+
+    const countryMap = new Map(
+      countries.map((c) => [c.code, c.nameEn]),
+    );
+
+    return applications.map((app) => {
       const countryCode = parseInt(app.preferredCountry);
-      let countryName = app.preferredCountry;
-
-      if (!isNaN(countryCode)) {
-        const country = await this.prisma.country.findUnique({
-          where: { code: countryCode },
-          select: { nameEn: true },
-        });
-        countryName = country?.nameEn || app.preferredCountry;
-      }
-
-      result.push({
+      return {
         countryCode: isNaN(countryCode) ? 0 : countryCode,
-        countryName,
+        countryName: countryMap.get(countryCode) || app.preferredCountry,
         count: app._count.preferredCountry,
-      });
-    }
-
-    return result;
+      };
+    });
   }
 
   /**

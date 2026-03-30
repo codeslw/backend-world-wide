@@ -272,6 +272,9 @@ model Message {
   @@index([chatId])
   @@index([senderId])
   @@index([replyToId])
+  @@index([chatId, createdAt])
+  @@index([chatId, readByClient])
+  @@index([chatId, readByAdmin])
 }
 
 model Profile {
@@ -300,6 +303,7 @@ model Profile {
   languageCertificates      LanguageCertificate[]
   standardizedTests         StandardizedTest[]
 
+  @@index([createdAt])
   @@map("profiles")
 }
 
@@ -369,6 +373,10 @@ model Application {
 
   @@index([profileId])
   @@index([applicationStatus])
+  @@index([profileId, applicationStatus])
+  @@index([preferredUniversity])
+  @@index([preferredProgram])
+  @@index([createdAt])
   @@map("applications")
 }
 

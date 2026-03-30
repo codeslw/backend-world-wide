@@ -25,8 +25,10 @@ export class ProgramsService {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
-  private async clearCache() {
+  private async clearProgramsCache() {
     try {
+      // In-memory cache doesn't support pattern-based deletion,
+      // so we reset all cache. With Redis, use pattern deletion instead.
       if (typeof (this.cacheManager as any).reset === 'function') {
         await (this.cacheManager as any).reset();
       } else if (typeof (this.cacheManager as any).clear === 'function') {
@@ -37,7 +39,7 @@ export class ProgramsService {
         await (this.cacheManager as any).store.reset();
       }
     } catch (e) {
-      console.warn('Cache clearing failed', e);
+      // Silently fail - cache miss on next request will repopulate
     }
   }
 
@@ -56,7 +58,7 @@ export class ProgramsService {
       };
 
       const createdProgram = await this.prisma.program.create({ data });
-      await this.clearCache();
+      await this.clearProgramsCache();
       return createdProgram;
     } catch (error) {
       // Let the global exception filter handle Prisma errors
@@ -72,7 +74,7 @@ export class ProgramsService {
         }),
       );
 
-      await this.clearCache();
+      await this.clearProgramsCache();
       return {
         count: createdPrograms.length,
         programs: createdPrograms,
@@ -225,7 +227,7 @@ export class ProgramsService {
         where: { id },
         data,
       });
-      await this.clearCache();
+      await this.clearProgramsCache();
       return updatedProgram;
     } catch (error) {
       // If it's already our custom exception, just rethrow it
@@ -274,7 +276,7 @@ export class ProgramsService {
       const deletedProgram = await this.prisma.program.delete({
         where: { id },
       });
-      await this.clearCache();
+      await this.clearProgramsCache();
       return deletedProgram;
     } catch (error) {
       // If it's already our custom exception, just rethrow it
