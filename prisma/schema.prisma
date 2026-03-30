@@ -145,6 +145,7 @@ model University {
   avgApplicationFee       Float?
   applicationFeeCurrency  String?
   photoUrl                String?
+  logoUrl                 String?
   additionalPhotoUrls     String[]                @default([])
   isMain                  Boolean                 @default(false)
   cityId                  String

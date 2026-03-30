@@ -138,6 +138,9 @@ export class UniversityResponseDto {
   @ApiPropertyOptional({ description: 'University photo URL' })
   photoUrl?: string;
 
+  @ApiPropertyOptional({ description: 'University logo URL (64x64)' })
+  logoUrl?: string;
+
   @ApiPropertyOptional({
     description: 'Additional URLs to photos of the university',
     type: [String],

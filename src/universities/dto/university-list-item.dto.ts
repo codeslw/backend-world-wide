@@ -27,6 +27,9 @@ export class UniversityListItemDto {
   @ApiProperty({ description: 'University photo URL' })
   photoUrl: string;
 
+  @ApiProperty({ description: 'University logo URL' })
+  logoUrl: string;
+
   @ApiProperty({ description: 'Whether this university is featured as main' })
   isMain: boolean;
 

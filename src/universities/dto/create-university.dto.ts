@@ -171,6 +171,14 @@ export class CreateUniversityDto {
   photoUrl?: string;
 
   @ApiPropertyOptional({
+    description: 'URL to the logo of the university (64x64)',
+    example: 'https://example.com/university-logo.png',
+  })
+  @IsOptional()
+  @IsUrl()
+  logoUrl?: string;
+
+  @ApiPropertyOptional({
     description: 'Additional URLs to photos of the university',
     example: '["https://example.com/university2.jpg"]',
     type: [String],
