@@ -85,10 +85,12 @@ export class ScholarshipsService {
     return this.prisma.scholarship.findMany({
       where,
       include: {
-        university: true,
-        programs: {
-          include: {
-            program: true,
+        university: {
+          select: {
+            id: true,
+            name: true,
+            logoUrl: true,
+            photoUrl: true,
           },
         },
       },
