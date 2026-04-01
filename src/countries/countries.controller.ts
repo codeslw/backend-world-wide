@@ -103,7 +103,7 @@ export class CountriesController {
   }
 
   @Get('main')
-  @ApiOperation({ summary: 'Get main countries (maximum 3)' })
+  @ApiOperation({ summary: 'Get top 3 countries by university count' })
   @ApiHeader({
     name: 'Accept-Language',
     enum: ['uz', 'ru', 'en'],
@@ -111,7 +111,7 @@ export class CountriesController {
   })
   @ApiResponse({
     status: 200,
-    description: 'List of main countries',
+    description: 'List of top countries ranked by university count',
     type: [CountryResponseDto],
   })
   @ApiResponse({

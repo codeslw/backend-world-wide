@@ -524,18 +524,37 @@ export class CountriesService {
 
     try {
       const countries = await this.prisma.country.findMany({
-        where: { isMain: true },
         take: 3,
-        orderBy: { code: 'asc' },
+        orderBy: [
+          {
+            universities: {
+              _count: 'desc',
+            },
+          },
+          {
+            nameEn: 'asc',
+          },
+        ],
+        include: {
+          _count: {
+            select: {
+              universities: true,
+            },
+          },
+        },
       });
 
-      const result = countries.map((country) =>
-        this.localizeCountry(country, lang),
-      );
+      const result = countries.map((country) => {
+        const localizedCountry = this.localizeCountry(country, lang);
+        return {
+          ...localizedCountry,
+          universitiesCount: country._count.universities,
+        };
+      });
       await this.cacheManager.set(cacheKey, result);
       return result;
     } catch (error) {
-      console.error('Error finding main countries:', error);
+      console.error('Error finding top countries:', error);
       throw error;
     }
   }

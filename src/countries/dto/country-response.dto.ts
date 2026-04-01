@@ -25,6 +25,11 @@ export class CountryResponseDto {
   @ApiPropertyOptional({ description: 'Photo URL for the country' })
   photoUrl?: string;
 
+  @ApiPropertyOptional({
+    description: 'Number of universities available in this country',
+  })
+  universitiesCount?: number;
+
   // General Info
   @ApiPropertyOptional({ description: 'Overview in English' })
   overviewEn?: string;
