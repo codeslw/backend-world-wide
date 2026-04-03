@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   Min,
   IsArray,
 } from 'class-validator';
@@ -54,11 +55,15 @@ export class UniversityProgramDto {
 
   @ApiProperty({
     description:
-      'The duration of the program in months. Can accept decimal values like 1.5 or 2.5.',
+      'The duration of the program in years. Can accept decimal values like 1.5 or 2.5.',
     example: 2.5,
     required: false,
+    minimum: 0.5,
+    maximum: 10,
   })
   @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0.5)
+  @Max(10)
   @IsOptional()
   duration?: number;
 

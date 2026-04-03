@@ -37,7 +37,7 @@ export class ProgramDetailsDto {
 
   @ApiPropertyOptional({
     description:
-      'Duration of the program in months. Can accept decimal values like 1.5 or 2.5.',
+      'Duration of the program in years. Can accept decimal values like 1.5 or 2.5.',
     example: 2.5,
   })
   duration?: number;
