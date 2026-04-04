@@ -78,7 +78,10 @@ export class UniversitiesService {
           universityPrograms: {
             create: programs.map((program) => ({
               program: { connect: { id: program.programId } },
-              tuitionFee: program.tuitionFee,
+              tuitionFee: this.resolveTuitionFee(program),
+              tuitionPerYear: program.tuitionPerYear,
+              tuitionPerSemester: program.tuitionPerSemester,
+              totalProgramFee: program.totalProgramFee,
               tuitionFeeCurrency: program.tuitionFeeCurrency || 'USD',
               studyLevel: program.studyLevel,
               duration: program.duration,
@@ -191,6 +194,9 @@ export class UniversitiesService {
             universityPrograms: {
               select: {
                 tuitionFee: true,
+                tuitionPerYear: true,
+                tuitionPerSemester: true,
+                totalProgramFee: true,
                 tuitionFeeCurrency: true,
                 studyLevel: true,
               },
@@ -696,7 +702,10 @@ export class UniversitiesService {
         create: {
           university: { connect: { id: universityId } },
           program: { connect: { id: programData.programId } },
-          tuitionFee: programData.tuitionFee,
+          tuitionFee: this.resolveTuitionFee(programData),
+          tuitionPerYear: programData.tuitionPerYear,
+          tuitionPerSemester: programData.tuitionPerSemester,
+          totalProgramFee: programData.totalProgramFee,
           tuitionFeeCurrency: programData.tuitionFeeCurrency,
           studyLevel: programData.studyLevel,
           duration: programData.duration,
@@ -706,7 +715,10 @@ export class UniversitiesService {
             : undefined,
         },
         update: {
-          tuitionFee: programData.tuitionFee,
+          tuitionFee: this.resolveTuitionFee(programData),
+          tuitionPerYear: programData.tuitionPerYear,
+          tuitionPerSemester: programData.tuitionPerSemester,
+          totalProgramFee: programData.totalProgramFee,
           tuitionFeeCurrency: programData.tuitionFeeCurrency,
           studyLevel: programData.studyLevel,
           duration: programData.duration,
@@ -749,6 +761,28 @@ export class UniversitiesService {
         `Invalid program IDs provided: ${invalidIds.join(', ')}`,
       );
     }
+  }
+
+  private resolveTuitionFee(program: {
+    tuitionFee?: number;
+    tuitionPerYear?: number;
+    tuitionPerSemester?: number;
+    totalProgramFee?: number;
+  }): number {
+    const resolved = [
+      program.tuitionPerYear,
+      program.tuitionPerSemester,
+      program.totalProgramFee,
+      program.tuitionFee,
+    ].find((value) => value !== undefined && value !== null);
+
+    if (resolved === undefined) {
+      throw new BadRequestException(
+        'At least one tuition fee value is required for each program.',
+      );
+    }
+
+    return Number(resolved);
   }
 
   private async validateIsMainLimit(

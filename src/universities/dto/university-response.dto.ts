@@ -38,6 +38,22 @@ class UniversityProgramResponseDto {
   })
   tuitionFee: number;
 
+  @ApiPropertyOptional({
+    description: 'Annual tuition fee for this program at this university',
+  })
+  tuitionPerYear?: number;
+
+  @ApiPropertyOptional({
+    description: 'Semester tuition fee for this program at this university',
+  })
+  tuitionPerSemester?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Total program fee for this program at this university covering the full duration',
+  })
+  totalProgramFee?: number;
+
   @ApiProperty({ description: 'Tuition fee currency', enum: Currency })
   tuitionFeeCurrency: Currency;
 

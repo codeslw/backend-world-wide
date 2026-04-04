@@ -27,11 +27,46 @@ export class UniversityProgramDto {
       'The tuition fee for this specific program at this university.',
     example: 15000.0,
     minimum: 0,
+    required: false,
   })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  @IsNotEmpty()
-  tuitionFee: number;
+  @IsOptional()
+  tuitionFee?: number;
+
+  @ApiProperty({
+    description: 'Annual tuition fee for this specific program.',
+    example: 15000.0,
+    minimum: 0,
+    required: false,
+  })
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @IsOptional()
+  tuitionPerYear?: number;
+
+  @ApiProperty({
+    description: 'Semester tuition fee for this specific program.',
+    example: 7500.0,
+    minimum: 0,
+    required: false,
+  })
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @IsOptional()
+  tuitionPerSemester?: number;
+
+  @ApiProperty({
+    description:
+      'Total program fee covering the full program duration from start to finish.',
+    example: 32000.0,
+    minimum: 0,
+    required: false,
+  })
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @IsOptional()
+  totalProgramFee?: number;
 
   @ApiProperty({
     description: 'The currency of the tuition fee.',

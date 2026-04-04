@@ -29,6 +29,22 @@ export class ProgramDetailsDto {
   @ApiProperty({ description: 'Tuition fee for this program' })
   tuitionFee: number;
 
+  @ApiPropertyOptional({
+    description: 'Annual tuition fee for this program',
+  })
+  tuitionPerYear?: number;
+
+  @ApiPropertyOptional({
+    description: 'Semester tuition fee for this program',
+  })
+  tuitionPerSemester?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Total program fee covering the full duration of this program',
+  })
+  totalProgramFee?: number;
+
   @ApiProperty({ description: 'Tuition fee currency', enum: Currency })
   tuitionFeeCurrency: Currency;
 
