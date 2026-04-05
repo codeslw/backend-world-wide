@@ -92,9 +92,7 @@ export class UniversitiesMapper {
           titleRu: up.program?.titleRu,
           titleEn: up.program?.titleEn,
           tuitionFee: up.tuitionFee,
-          tuitionPerYear: up.tuitionPerYear,
-          tuitionPerSemester: up.tuitionPerSemester,
-          totalProgramFee: up.totalProgramFee,
+          tuitionFeeType: up.tuitionFeeType,
           tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
           studyLevel: up.studyLevel as StudyLevel,
           duration: up.duration,
@@ -164,7 +162,7 @@ export class UniversitiesMapper {
     let tuitionFeeCurrency = Currency.USD;
 
     if (programs.length > 0) {
-      const fees = programs.flatMap((p) => this.getProgramFeeCandidates(p));
+      const fees = programs.map((p) => Number(p.tuitionFee));
       if (fees.length > 0) {
         minTuitionFee = Math.min(...fees);
         maxTuitionFee = Math.max(...fees);
@@ -223,9 +221,7 @@ export class UniversitiesMapper {
           programId: up.programId,
           title: this.getLocalizedField(up.program, 'title', langSuffix),
           tuitionFee: up.tuitionFee,
-          tuitionPerYear: up.tuitionPerYear,
-          tuitionPerSemester: up.tuitionPerSemester,
-          totalProgramFee: up.totalProgramFee,
+          tuitionFeeType: up.tuitionFeeType,
           tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
           studyLevel: up.studyLevel as StudyLevel,
           intakes:
@@ -276,9 +272,7 @@ export class UniversitiesMapper {
         title: this.getLocalizedField(program, 'title', langSuffix),
         description: this.getLocalizedField(program, 'description', langSuffix),
         tuitionFee: up.tuitionFee,
-        tuitionPerYear: up.tuitionPerYear,
-        tuitionPerSemester: up.tuitionPerSemester,
-        totalProgramFee: up.totalProgramFee,
+        tuitionFeeType: up.tuitionFeeType,
         tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
         studyLevel: up.studyLevel as StudyLevel,
         duration: up.duration,
@@ -330,9 +324,7 @@ export class UniversitiesMapper {
       title: this.getLocalizedField(program, 'title', langSuffix),
       description: this.getLocalizedField(program, 'description', langSuffix),
       tuitionFee: up.tuitionFee,
-      tuitionPerYear: up.tuitionPerYear,
-      tuitionPerSemester: up.tuitionPerSemester,
-      totalProgramFee: up.totalProgramFee,
+      tuitionFeeType: up.tuitionFeeType,
       tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
       studyLevel: up.studyLevel as StudyLevel,
       duration: up.duration,
@@ -396,19 +388,4 @@ export class UniversitiesMapper {
     return date ? date.toISOString().split('T')[0] : null;
   }
 
-  private getProgramFeeCandidates(program: {
-    tuitionFee?: number | null;
-    tuitionPerYear?: number | null;
-    tuitionPerSemester?: number | null;
-    totalProgramFee?: number | null;
-  }): number[] {
-    return [
-      program.tuitionPerYear,
-      program.tuitionPerSemester,
-      program.totalProgramFee,
-      program.tuitionFee,
-    ]
-      .filter((fee): fee is number => fee !== null && fee !== undefined)
-      .map((fee) => Number(fee));
-  }
 }

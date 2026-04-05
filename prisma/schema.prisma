@@ -179,9 +179,7 @@ model UniversityProgram {
   universityId       String
   programId          String
   tuitionFee         Float
-  tuitionPerYear     Float?
-  tuitionPerSemester Float?
-  totalProgramFee    Float?
+  tuitionFeeType     String     @default("tuition_per_year")
   tuitionFeeCurrency String     @default("USD")
   studyLevel         StudyLevel @default(BACHELOR)
   createdAt          DateTime   @default(now())

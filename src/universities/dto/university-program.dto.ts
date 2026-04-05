@@ -9,9 +9,18 @@ import {
   Max,
   Min,
   IsArray,
+  IsIn,
 } from 'class-validator';
 import { Currency } from '../../common/enum/currency.enum';
 import { StudyLevel } from '../../common/enum/study-level.enum';
+
+export const TUITION_FEE_TYPES = [
+  'tuition_per_year',
+  'tuition_per_semester',
+  'programm_fee',
+] as const;
+
+export type TuitionFeeType = (typeof TUITION_FEE_TYPES)[number];
 
 export class UniversityProgramDto {
   @ApiProperty({
@@ -27,46 +36,21 @@ export class UniversityProgramDto {
       'The tuition fee for this specific program at this university.',
     example: 15000.0,
     minimum: 0,
-    required: false,
   })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
-  @IsOptional()
-  tuitionFee?: number;
+  @IsNotEmpty()
+  tuitionFee: number;
 
   @ApiProperty({
-    description: 'Annual tuition fee for this specific program.',
-    example: 15000.0,
-    minimum: 0,
-    required: false,
+    description: 'Type of tuition fee value.',
+    example: 'tuition_per_year',
+    enum: TUITION_FEE_TYPES,
   })
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  @IsOptional()
-  tuitionPerYear?: number;
-
-  @ApiProperty({
-    description: 'Semester tuition fee for this specific program.',
-    example: 7500.0,
-    minimum: 0,
-    required: false,
-  })
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  @IsOptional()
-  tuitionPerSemester?: number;
-
-  @ApiProperty({
-    description:
-      'Total program fee covering the full program duration from start to finish.',
-    example: 32000.0,
-    minimum: 0,
-    required: false,
-  })
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  @IsOptional()
-  totalProgramFee?: number;
+  @IsString()
+  @IsIn(TUITION_FEE_TYPES)
+  @IsNotEmpty()
+  tuitionFeeType: TuitionFeeType;
 
   @ApiProperty({
     description: 'The currency of the tuition fee.',

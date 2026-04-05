@@ -15,17 +15,8 @@ class MainUniversityProgramDto {
   @ApiProperty({ description: 'Tuition fee' })
   tuitionFee: number;
 
-  @ApiProperty({ description: 'Annual tuition fee', required: false })
-  tuitionPerYear?: number;
-
-  @ApiProperty({ description: 'Semester tuition fee', required: false })
-  tuitionPerSemester?: number;
-
-  @ApiProperty({
-    description: 'Total program fee covering the full duration',
-    required: false,
-  })
-  totalProgramFee?: number;
+  @ApiProperty({ description: 'Tuition fee type' })
+  tuitionFeeType: string;
 
   @ApiProperty({ description: 'Tuition fee currency', enum: Currency })
   tuitionFeeCurrency: Currency;
