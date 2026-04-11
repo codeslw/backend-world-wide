@@ -25,17 +25,15 @@ import { Type } from 'class-transformer';
 
 import { Currency } from '../../common/enum/currency.enum';
 import { CreateAdmissionRequirementNestedDto } from '../../admission-requirements/dto/create-admission-requirement.dto';
-import { AgencyServiceDto } from './agency-service.dto';
 
 export class CreateUniversityDto {
   @ApiPropertyOptional({
-    description: 'Services provided by the agency for this university',
-    type: AgencyServiceDto,
+    description: 'ID of the agency service template for this university',
+    example: 'a8f6b6e4-9b1a-4b0e-8b0a-7b0c9b0a7b0c',
   })
   @IsOptional()
-  @ValidateNested()
-  @Type(() => AgencyServiceDto)
-  agencyService?: AgencyServiceDto;
+  @IsString()
+  agencyServiceId?: string;
 
   @ApiProperty({
     description: 'Name of the univsersity',

@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNumber, IsArray, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsArray, IsOptional, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class TariffDto {
   @ApiProperty({ example: 'Basic' })
@@ -20,19 +21,26 @@ export class TariffDto {
   services: string[];
 }
 
-export class AgencyServiceDto {
-  @ApiProperty()
-  id: string;
-
-  @ApiProperty()
+export class CreateAgencyServiceDto {
+  @ApiProperty({ example: 'Standard International Service' })
+  @IsString()
   name: string;
 
   @ApiPropertyOptional({ type: TariffDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TariffDto)
   basic?: TariffDto;
 
   @ApiPropertyOptional({ type: TariffDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TariffDto)
   standard?: TariffDto;
 
   @ApiPropertyOptional({ type: TariffDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TariffDto)
   premium?: TariffDto;
 }

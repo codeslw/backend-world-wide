@@ -26,6 +26,8 @@ import { AdmissionRequirementsModule } from './admission-requirements/admission-
 import { CampusesModule } from './campuses/campuses.module';
 import { CacheModule } from '@nestjs/cache-manager';
 
+import { AgencyServicesModule } from './agency-services/agency-services.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -42,6 +44,7 @@ import { CacheModule } from '@nestjs/cache-manager';
     CountriesModule,
     CitiesModule,
     UniversitiesModule,
+    AgencyServicesModule,
     DigitalOceanModule,
     FilesModule,
     ChatModule,

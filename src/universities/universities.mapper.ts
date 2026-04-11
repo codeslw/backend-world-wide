@@ -140,6 +140,8 @@ export class UniversitiesMapper {
       campuses: (university.campuses as any) || [],
       agencyService: university.agencyService
         ? {
+            id: university.agencyService.id,
+            name: university.agencyService.name,
             basic: university.agencyService.basic as any,
             standard: university.agencyService.standard as any,
             premium: university.agencyService.premium as any,

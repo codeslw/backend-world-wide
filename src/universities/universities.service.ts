@@ -60,7 +60,7 @@ export class UniversitiesService {
       countryCode,
       cityId,
       admissionRequirements,
-      agencyService,
+      agencyServiceId,
       ...universityData
     } = createUniversityDto;
 
@@ -76,6 +76,9 @@ export class UniversitiesService {
           ...universityData,
           country: { connect: { code: countryCode } },
           city: { connect: { id: cityId } },
+          agencyService: agencyServiceId
+            ? { connect: { id: agencyServiceId } }
+            : undefined,
           universityPrograms: {
             create: programs.map((program) => ({
               program: { connect: { id: program.programId } },
@@ -103,15 +106,6 @@ export class UniversitiesService {
                   ...req,
                   languageRequirements: req.languageRequirements as any,
                 })),
-              }
-            : undefined,
-          agencyService: agencyService
-            ? {
-                create: {
-                  basic: agencyService.basic as any,
-                  standard: agencyService.standard as any,
-                  premium: agencyService.premium as any,
-                },
               }
             : undefined,
         },
@@ -293,7 +287,7 @@ export class UniversitiesService {
       countryCode,
       cityId,
       admissionRequirements,
-      agencyService,
+      agencyServiceId,
       ...otherFields
     } = updateUniversityDto;
 
@@ -352,22 +346,10 @@ export class UniversitiesService {
           }
         }
         
-        if (agencyService) {
-          await tx.agencyService.upsert({
-            where: { universityId: id },
-            create: {
-              ...agencyService,
-              universityId: id,
-              basic: agencyService.basic as any,
-              standard: agencyService.standard as any,
-              premium: agencyService.premium as any,
-            },
-            update: {
-              basic: agencyService.basic as any,
-              standard: agencyService.standard as any,
-              premium: agencyService.premium as any,
-            },
-          });
+        if (agencyServiceId !== undefined) {
+          dataToUpdate.agencyService = agencyServiceId
+            ? { connect: { id: agencyServiceId } }
+            : { disconnect: true };
         }
 
         return tx.university.findUnique({
