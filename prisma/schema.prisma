@@ -163,6 +163,7 @@ model University {
   scholarships            Scholarship[]
   admissionRequirements   AdmissionRequirement[]
   campuses                Campus[]
+  agencyService           AgencyService?
 
   @@index([name])
   @@index([type])
@@ -172,6 +173,21 @@ model University {
   @@index([cityId])
   @@index([isMain])
   @@map("universities")
+}
+
+model AgencyService {
+  id           String     @id @default(uuid())
+  universityId String     @unique
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+  basic    Json? // { title: string, description: string, price: number, services: string[] }
+  standard Json? // { title: string, description: string, price: number, services: string[] }
+  premium  Json? // { title: string, description: string, price: number, services: string[] }
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("agency_services")
 }
 
 model UniversityProgram {

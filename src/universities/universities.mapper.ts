@@ -9,6 +9,7 @@ import {
   Scholarship,
   AdmissionRequirement,
   Campus,
+  AgencyService,
 } from '@prisma/client';
 import { UniversityResponseDto } from './dto/university-response.dto';
 import { UniversityListItemDto } from './dto/university-list-item.dto';
@@ -32,6 +33,7 @@ type UniversityWithRelations = University & {
   admissionRequirements?: AdmissionRequirement[];
   scholarships?: Scholarship[];
   campuses?: Campus[];
+  agencyService?: AgencyService;
   _count?: {
     universityPrograms: number;
   };
@@ -136,6 +138,13 @@ export class UniversitiesMapper {
       })),
       scholarshipRequirements: [],
       campuses: (university.campuses as any) || [],
+      agencyService: university.agencyService
+        ? {
+            basic: university.agencyService.basic as any,
+            standard: university.agencyService.standard as any,
+            premium: university.agencyService.premium as any,
+          }
+        : undefined,
     };
   }
 

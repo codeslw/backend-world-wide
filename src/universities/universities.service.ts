@@ -60,6 +60,7 @@ export class UniversitiesService {
       countryCode,
       cityId,
       admissionRequirements,
+      agencyService,
       ...universityData
     } = createUniversityDto;
 
@@ -104,6 +105,15 @@ export class UniversitiesService {
                 })),
               }
             : undefined,
+          agencyService: agencyService
+            ? {
+                create: {
+                  basic: agencyService.basic as any,
+                  standard: agencyService.standard as any,
+                  premium: agencyService.premium as any,
+                },
+              }
+            : undefined,
         },
         include: {
           country: true,
@@ -121,6 +131,7 @@ export class UniversitiesService {
           },
           admissionRequirements: true,
           campuses: true,
+          agencyService: true,
         },
       });
       await this.clearCache();
@@ -253,6 +264,7 @@ export class UniversitiesService {
           scholarships: true,
           admissionRequirements: true,
           campuses: true,
+          agencyService: true,
         },
       });
 
@@ -281,6 +293,7 @@ export class UniversitiesService {
       countryCode,
       cityId,
       admissionRequirements,
+      agencyService,
       ...otherFields
     } = updateUniversityDto;
 
@@ -338,6 +351,24 @@ export class UniversitiesService {
             });
           }
         }
+        
+        if (agencyService) {
+          await tx.agencyService.upsert({
+            where: { universityId: id },
+            create: {
+              ...agencyService,
+              universityId: id,
+              basic: agencyService.basic as any,
+              standard: agencyService.standard as any,
+              premium: agencyService.premium as any,
+            },
+            update: {
+              basic: agencyService.basic as any,
+              standard: agencyService.standard as any,
+              premium: agencyService.premium as any,
+            },
+          });
+        }
 
         return tx.university.findUnique({
           where: { id },
@@ -357,6 +388,7 @@ export class UniversitiesService {
             },
             admissionRequirements: true,
             campuses: true,
+            agencyService: true,
           },
         });
       });

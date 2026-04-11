@@ -11,6 +11,7 @@ import { IntakeResponseDto } from './intake-response.dto';
 import { ScholarshipResponseDto } from 'src/scholarships/dto/scholarship-response.dto';
 import { AdmissionRequirementResponseDto } from 'src/admission-requirements/dto/admission-requirement-response.dto';
 import { CampusResponseDto } from 'src/campuses/dto/campus-response.dto';
+import { AgencyServiceDto } from './agency-service.dto';
 
 // DTO for representing program details within the university response
 class UniversityProgramResponseDto {
@@ -207,6 +208,13 @@ export class UniversityResponseDto {
   })
   @Type(() => CampusResponseDto)
   campuses?: CampusResponseDto[];
+
+  @ApiPropertyOptional({
+    description: 'Services provided by the agency for this university',
+    type: AgencyServiceDto,
+  })
+  @Type(() => AgencyServiceDto)
+  agencyService?: AgencyServiceDto;
 }
 
 export class PaginatedUniversityResponseDto extends PaginatedResponseDto<UniversityResponseDto> {

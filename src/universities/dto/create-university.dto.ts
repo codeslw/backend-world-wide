@@ -25,8 +25,18 @@ import { Type } from 'class-transformer';
 
 import { Currency } from '../../common/enum/currency.enum';
 import { CreateAdmissionRequirementNestedDto } from '../../admission-requirements/dto/create-admission-requirement.dto';
+import { AgencyServiceDto } from './agency-service.dto';
 
 export class CreateUniversityDto {
+  @ApiPropertyOptional({
+    description: 'Services provided by the agency for this university',
+    type: AgencyServiceDto,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AgencyServiceDto)
+  agencyService?: AgencyServiceDto;
+
   @ApiProperty({
     description: 'Name of the univsersity',
     example: 'Toshkent Axborot Texnologiyalari Universiteti',
