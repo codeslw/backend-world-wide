@@ -177,12 +177,20 @@ model University {
 }
 
 model AgencyService {
-  id   String @id @default(uuid())
-  name String
+  id     String @id @default(uuid())
+  nameEn String
+  nameRu String
+  nameUz String
 
-  basic    Json? // { title: string, description: string, price: number, services: string[] }
-  standard Json? // { title: string, description: string, price: number, services: string[] }
-  premium  Json? // { title: string, description: string, price: number, services: string[] }
+  // { 
+  //   titleEn: string, titleRu: string, titleUz: string, 
+  //   descriptionEn: string, descriptionRu: string, descriptionUz: string, 
+  //   price: number, currency: string, 
+  //   servicesEn: string[], servicesRu: string[], servicesUz: string[] 
+  // }
+  basic    Json?
+  standard Json?
+  premium  Json?
 
   universities University[]
 

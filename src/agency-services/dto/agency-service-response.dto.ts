@@ -6,7 +6,13 @@ export class AgencyServiceResponseDto {
   id: string;
 
   @ApiProperty()
-  name: string;
+  nameEn: string;
+
+  @ApiProperty()
+  nameRu: string;
+
+  @ApiProperty()
+  nameUz: string;
 
   @ApiPropertyOptional({ type: TariffDto })
   basic?: TariffDto;

@@ -5,26 +5,64 @@ import { Type } from 'class-transformer';
 export class TariffDto {
   @ApiProperty({ example: 'Basic' })
   @IsString()
-  title: string;
+  titleEn: string;
 
-  @ApiProperty({ example: 'Description of basic tariff' })
+  @ApiProperty({ example: 'Базовый' })
   @IsString()
-  description: string;
+  titleRu: string;
+
+  @ApiProperty({ example: 'Boshlang\'ich' })
+  @IsString()
+  titleUz: string;
+
+  @ApiProperty({ example: 'Description in English' })
+  @IsString()
+  descriptionEn: string;
+
+  @ApiProperty({ example: 'Описание на русском' })
+  @IsString()
+  descriptionRu: string;
+
+  @ApiProperty({ example: 'O\'zbek tilida tavsif' })
+  @IsString()
+  descriptionUz: string;
 
   @ApiProperty({ example: 0 })
   @IsNumber()
   price: number;
 
-  @ApiProperty({ example: ['Service 1', 'Service 2'], type: [String] })
+  @ApiProperty({ example: 'USD' })
+  @IsString()
+  currency: string;
+
+  @ApiProperty({ example: ['Job 1'], type: [String] })
   @IsArray()
   @IsString({ each: true })
-  services: string[];
+  servicesEn: string[];
+
+  @ApiProperty({ example: ['Работа 1'], type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  servicesRu: string[];
+
+  @ApiProperty({ example: ['Ish 1'], type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  servicesUz: string[];
 }
 
 export class CreateAgencyServiceDto {
-  @ApiProperty({ example: 'Standard International Service' })
+  @ApiProperty({ example: 'Standard Service En' })
   @IsString()
-  name: string;
+  nameEn: string;
+
+  @ApiProperty({ example: 'Стандартный сервис Ru' })
+  @IsString()
+  nameRu: string;
+
+  @ApiProperty({ example: 'Standart servis Uz' })
+  @IsString()
+  nameUz: string;
 
   @ApiPropertyOptional({ type: TariffDto })
   @IsOptional()
