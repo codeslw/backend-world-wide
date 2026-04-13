@@ -34,6 +34,16 @@ export class TariffDto {
   @IsString()
   currency: string;
 
+  @ApiPropertyOptional({ example: 20 })
+  @IsOptional()
+  @IsNumber()
+  discountPercentage?: number;
+
+  @ApiPropertyOptional({ example: '2024-12-31T23:59:59Z' })
+  @IsOptional()
+  @IsString()
+  discountDeadline?: string;
+
   @ApiProperty({ example: ['Job 1'], type: [String] })
   @IsArray()
   @IsString({ each: true })

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNumber, IsArray, IsOptional, ValidateNested } from 'class-validator';
+import { IsString, IsNumber, IsArray, IsOptional, ValidateNested, IsDateString, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class TariffDto {
@@ -34,6 +34,18 @@ export class TariffDto {
   @ApiProperty({ example: 'USD' })
   @IsString()
   currency: string;
+
+  @ApiPropertyOptional({ example: 20, description: 'Discount percentage (0-100)' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  discountPercentage?: number;
+
+  @ApiPropertyOptional({ example: '2024-12-31T23:59:59Z', description: 'Discount deadline in ISO format' })
+  @IsOptional()
+  @IsDateString()
+  discountDeadline?: string;
 
   @ApiProperty({ example: ['Job 1'], type: [String] })
   @IsArray()
