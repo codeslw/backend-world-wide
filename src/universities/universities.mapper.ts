@@ -141,7 +141,9 @@ export class UniversitiesMapper {
       agencyService: university.agencyService
         ? {
             id: university.agencyService.id,
-            name: university.agencyService.name,
+            nameEn: university.agencyService.nameEn,
+            nameRu: university.agencyService.nameRu,
+            nameUz: university.agencyService.nameUz,
             basic: university.agencyService.basic as any,
             standard: university.agencyService.standard as any,
             premium: university.agencyService.premium as any,
