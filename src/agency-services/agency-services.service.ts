@@ -8,18 +8,24 @@ export class AgencyServicesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createDto: CreateAgencyServiceDto) {
+    const { universityIds, ...data } = createDto;
     return this.prisma.agencyService.create({
       data: {
-        name: createDto.name,
+        ...data,
         basic: createDto.basic as any,
         standard: createDto.standard as any,
         premium: createDto.premium as any,
+        universities: universityIds ? {
+          connect: universityIds.map(id => ({ id }))
+        } : undefined
       },
+      include: { universities: true }
     });
   }
 
   async findAll() {
     return this.prisma.agencyService.findMany({
+      include: { universities: true },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -27,20 +33,26 @@ export class AgencyServicesService {
   async findOne(id: string) {
     const service = await this.prisma.agencyService.findUnique({
       where: { id },
+      include: { universities: true }
     });
     if (!service) throw new NotFoundException(`Agency service with ID ${id} not found`);
     return service;
   }
 
   async update(id: string, updateDto: UpdateAgencyServiceDto) {
+    const { universityIds, ...data } = updateDto;
     return this.prisma.agencyService.update({
       where: { id },
       data: {
-        name: updateDto.name,
+        ...data,
         basic: updateDto.basic as any,
         standard: updateDto.standard as any,
         premium: updateDto.premium as any,
+        universities: universityIds ? {
+          set: universityIds.map(id => ({ id }))
+        } : undefined
       },
+      include: { universities: true }
     });
   }
 

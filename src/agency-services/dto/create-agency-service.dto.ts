@@ -43,4 +43,10 @@ export class CreateAgencyServiceDto {
   @ValidateNested()
   @Type(() => TariffDto)
   premium?: TariffDto;
+
+  @ApiPropertyOptional({ type: [String], example: ['uuid-1', 'uuid-2'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  universityIds?: string[];
 }

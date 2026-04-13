@@ -17,6 +17,9 @@ export class AgencyServiceResponseDto {
   @ApiPropertyOptional({ type: TariffDto })
   premium?: TariffDto;
 
+  @ApiPropertyOptional({ type: [Object] })
+  universities?: any[];
+
   @ApiProperty()
   createdAt: Date;
 
