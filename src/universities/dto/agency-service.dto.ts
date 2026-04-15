@@ -60,20 +60,23 @@ export class TariffDto {
   @IsOptional()
   servicesUz: string[];
 
-  @ApiPropertyOptional({ example: 'Some notes' })
+  @ApiPropertyOptional({ example: ['Note 1'], type: [String] })
   @IsOptional()
-  @IsString()
-  notesEn?: string;
+  @IsArray()
+  @IsString({ each: true })
+  notesEn?: string[];
 
-  @ApiPropertyOptional({ example: 'Некоторые заметки' })
+  @ApiPropertyOptional({ example: ['Заметка 1'], type: [String] })
   @IsOptional()
-  @IsString()
-  notesRu?: string;
+  @IsArray()
+  @IsString({ each: true })
+  notesRu?: string[];
 
-  @ApiPropertyOptional({ example: 'Ba\'zi eslatmalar' })
+  @ApiPropertyOptional({ example: ['Eslatma 1'], type: [String] })
   @IsOptional()
-  @IsString()
-  notesUz?: string;
+  @IsArray()
+  @IsString({ each: true })
+  notesUz?: string[];
 }
 
 export class AgencyServiceDto {
