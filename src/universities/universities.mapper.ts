@@ -144,9 +144,7 @@ export class UniversitiesMapper {
             nameEn: university.agencyService.nameEn,
             nameRu: university.agencyService.nameRu,
             nameUz: university.agencyService.nameUz,
-            basic: university.agencyService.basic as any,
-            standard: university.agencyService.standard as any,
-            premium: university.agencyService.premium as any,
+            tariffs: university.agencyService.tariffs as any,
           }
         : undefined,
     };
