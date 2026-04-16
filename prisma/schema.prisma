@@ -19,6 +19,7 @@ model User {
   messages      Message[]
   profile       Profile?
   refreshTokens RefreshToken[]
+  partnerStudents PartnerStudent[] @relation("PartnerStudents")
   // readMessages Message[] @relation("MessageReads")
 
   @@map("users")
@@ -624,4 +625,55 @@ enum CampusStatus {
   ACTIVE
   UNDER_CONSTRUCTION
   CLOSED
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+  OTHER
+}
+
+model PartnerStudent {
+  id                   String        @id @default(uuid())
+  partnerId            String
+  partner              User          @relation("PartnerStudents", fields: [partnerId], references: [id], onDelete: Cascade)
+
+  // 1.1 Personal Information
+  firstName            String
+  lastName             String
+  middleName           String?
+  dateOfBirth          DateTime
+  firstLanguage        String?
+  countryOfCitizenship String
+  passportNumber       String?
+  passportPlaceOfBirth String?
+  passportExpiryDate   DateTime
+  maritalStatus        MaritalStatus
+  gender               Gender
+
+  // 1.2 Address
+  streetAddress        String
+  city                 String
+  country              String
+  provinceState        String
+  postalZipCode        String?
+
+  // 2.1 Education details
+  countryOfEducation   String
+  highestLevelOfEducation String
+  gradingScheme        String?
+  gradeScaleOutOf      String?
+  gradeAverage         String?
+
+  // 3.1 & 3.2 Certificates & Test Scores
+  certificates         Json? // Array of objects mapping file urls with document types
+  testScores           Json? // Array of objects with test types and scores
+
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  @@index([partnerId])
+  @@map("partner_students")
 }

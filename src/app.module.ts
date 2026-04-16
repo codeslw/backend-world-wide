@@ -27,6 +27,7 @@ import { CampusesModule } from './campuses/campuses.module';
 import { CacheModule } from '@nestjs/cache-manager';
 
 import { AgencyServicesModule } from './agency-services/agency-services.module';
+import { PartnerStudentsModule } from './partner-students/partner-students.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { AgencyServicesModule } from './agency-services/agency-services.module';
     ScholarshipsModule,
     AdmissionRequirementsModule,
     CampusesModule,
+    PartnerStudentsModule,
   ],
   providers: [PrismaService, DigitalOceanService],
   controllers: [],
