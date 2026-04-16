@@ -15,18 +15,6 @@ export class TariffDto {
   @IsString()
   titleUz: string;
 
-  @ApiProperty({ example: 'Description in English' })
-  @IsString()
-  descriptionEn: string;
-
-  @ApiProperty({ example: 'Описание на русском' })
-  @IsString()
-  descriptionRu: string;
-
-  @ApiProperty({ example: 'O\'zbek tilida tavsif' })
-  @IsString()
-  descriptionUz: string;
-
   @ApiProperty({ example: 0 })
   @IsNumber()
   price: number;
@@ -61,6 +49,24 @@ export class TariffDto {
   @IsArray()
   @IsString({ each: true })
   servicesUz: string[];
+
+  @ApiPropertyOptional({ example: ['Note 1'], type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  notesEn?: string[];
+
+  @ApiPropertyOptional({ example: ['Заметка 1'], type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  notesRu?: string[];
+
+  @ApiPropertyOptional({ example: ['Eslatma 1'], type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  notesUz?: string[];
 }
 
 export class CreateAgencyServiceDto {
@@ -76,23 +82,12 @@ export class CreateAgencyServiceDto {
   @IsString()
   nameUz: string;
 
-  @ApiPropertyOptional({ type: TariffDto })
+  @ApiPropertyOptional({ type: [TariffDto] })
   @IsOptional()
-  @ValidateNested()
+  @IsArray()
+  @ValidateNested({ each: true })
   @Type(() => TariffDto)
-  basic?: TariffDto;
-
-  @ApiPropertyOptional({ type: TariffDto })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => TariffDto)
-  standard?: TariffDto;
-
-  @ApiPropertyOptional({ type: TariffDto })
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => TariffDto)
-  premium?: TariffDto;
+  tariffs?: TariffDto[];
 
   @ApiPropertyOptional({ type: [String], example: ['uuid-1', 'uuid-2'] })
   @IsOptional()

@@ -183,15 +183,17 @@ model AgencyService {
   nameRu String
   nameUz String
 
+  // Unified tariffs field storing an array of tariff objects
+  // Each tariff object structure:
   // { 
   //   titleEn: string, titleRu: string, titleUz: string, 
-  //   descriptionEn: string, descriptionRu: string, descriptionUz: string, 
   //   price: number, currency: string, 
-  //   servicesEn: string[], servicesRu: string[], servicesUz: string[] 
+  //   servicesEn: string[], servicesRu: string[], servicesUz: string[],
+  //   notesEn: string[], notesRu: string[], notesUz: string[],
+  //   discountPercentage?: number,
+  //   discountDeadline?: Date
   // }
-  basic    Json?
-  standard Json?
-  premium  Json?
+  tariffs Json? @default("[]")
 
   universities University[]
 

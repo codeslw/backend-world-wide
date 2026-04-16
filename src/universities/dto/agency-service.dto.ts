@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNumber, IsArray, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsArray, IsOptional, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class TariffDto {
   @ApiProperty({ example: 'Basic' })
@@ -14,18 +15,6 @@ export class TariffDto {
   @IsString()
   titleUz: string;
 
-  @ApiProperty({ example: 'Description' })
-  @IsString()
-  descriptionEn: string;
-
-  @ApiProperty({ example: 'Описание' })
-  @IsString()
-  descriptionRu: string;
-
-  @ApiProperty({ example: 'Tavsif' })
-  @IsString()
-  descriptionUz: string;
-
   @ApiProperty({ example: 0 })
   @IsNumber()
   price: number;
@@ -33,16 +22,6 @@ export class TariffDto {
   @ApiProperty({ example: 'USD' })
   @IsString()
   currency: string;
-
-  @ApiPropertyOptional({ example: 20 })
-  @IsOptional()
-  @IsNumber()
-  discountPercentage?: number;
-
-  @ApiPropertyOptional({ example: '2024-12-31T23:59:59Z' })
-  @IsOptional()
-  @IsString()
-  discountDeadline?: string;
 
   @ApiProperty({ example: ['Job 1'], type: [String] })
   @IsArray()
@@ -57,7 +36,6 @@ export class TariffDto {
   @ApiProperty({ example: ['Ish 1'], type: [String] })
   @IsArray()
   @IsString({ each: true })
-  @IsOptional()
   servicesUz: string[];
 
   @ApiPropertyOptional({ example: ['Note 1'], type: [String] })
@@ -77,27 +55,38 @@ export class TariffDto {
   @IsArray()
   @IsString({ each: true })
   notesUz?: string[];
+
+  @ApiPropertyOptional({ example: 20 })
+  @IsOptional()
+  @IsNumber()
+  discountPercentage?: number;
+
+  @ApiPropertyOptional({ example: '2024-12-31T23:59:59Z' })
+  @IsOptional()
+  @IsString()
+  discountDeadline?: string;
 }
 
 export class AgencyServiceDto {
   @ApiProperty()
   id: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'Standard Services' })
+  @IsString()
   nameEn: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'Стандартные услуги' })
+  @IsString()
   nameRu: string;
 
-  @ApiProperty()
+  @ApiProperty({ example: 'Standart xizmatlar' })
+  @IsString()
   nameUz: string;
 
-  @ApiPropertyOptional({ type: TariffDto })
-  basic?: TariffDto;
-
-  @ApiPropertyOptional({ type: TariffDto })
-  standard?: TariffDto;
-
-  @ApiPropertyOptional({ type: TariffDto })
-  premium?: TariffDto;
+  @ApiProperty({ type: [TariffDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TariffDto)
+  @IsOptional()
+  tariffs?: TariffDto[];
 }

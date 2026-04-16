@@ -12,9 +12,7 @@ export class AgencyServicesService {
     return this.prisma.agencyService.create({
       data: {
         ...data,
-        basic: createDto.basic as any,
-        standard: createDto.standard as any,
-        premium: createDto.premium as any,
+        tariffs: createDto.tariffs as any,
         universities: universityIds ? {
           connect: universityIds.map(id => ({ id }))
         } : undefined
@@ -45,9 +43,7 @@ export class AgencyServicesService {
       where: { id },
       data: {
         ...data,
-        basic: updateDto.basic as any,
-        standard: updateDto.standard as any,
-        premium: updateDto.premium as any,
+        tariffs: updateDto.tariffs as any,
         universities: universityIds ? {
           set: universityIds.map(id => ({ id }))
         } : undefined
