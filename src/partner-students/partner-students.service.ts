@@ -9,13 +9,18 @@ export class PartnerStudentsService {
 
   async create(partnerId: string, createStudentDto: CreatePartnerStudentDto) {
     const { dateOfBirth, passportExpiryDate, ...rest } = createStudentDto;
-    
+
+    // Remove undefined values to avoid Prisma relation errors
+    const cleanRest = Object.fromEntries(
+      Object.entries(rest).filter(([, v]) => v !== undefined),
+    );
+
     return this.prisma.partnerStudent.create({
       data: {
         partnerId,
         dateOfBirth: new Date(dateOfBirth),
         passportExpiryDate: new Date(passportExpiryDate),
-        ...rest,
+        ...cleanRest,
       },
     });
   }
@@ -57,7 +62,10 @@ export class PartnerStudentsService {
 
     const { dateOfBirth, passportExpiryDate, ...rest } = updateStudentDto;
 
-    const dataToUpdate: any = { ...rest };
+    // Remove undefined values to avoid Prisma relation errors
+    const dataToUpdate: any = Object.fromEntries(
+      Object.entries(rest).filter(([, v]) => v !== undefined),
+    );
     if (dateOfBirth) dataToUpdate.dateOfBirth = new Date(dateOfBirth);
     if (passportExpiryDate) dataToUpdate.passportExpiryDate = new Date(passportExpiryDate);
 
