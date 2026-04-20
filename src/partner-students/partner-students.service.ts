@@ -10,19 +10,13 @@ export class PartnerStudentsService {
   async create(partnerId: string, createStudentDto: CreatePartnerStudentDto) {
     const { dateOfBirth, passportExpiryDate, ...rest } = createStudentDto;
 
-    // Remove undefined values to avoid Prisma relation errors
-    const cleanRest = Object.fromEntries(
-      Object.entries(rest).filter(([, v]) => v !== undefined),
-    );
+    // Strip undefined fields so Prisma doesn't see partner: undefined
+    const data: any = { partnerId, dateOfBirth: new Date(dateOfBirth), passportExpiryDate: new Date(passportExpiryDate) };
+    for (const [k, v] of Object.entries(rest)) {
+      if (v !== undefined) data[k] = v;
+    }
 
-    return this.prisma.partnerStudent.create({
-      data: {
-        partnerId,
-        dateOfBirth: new Date(dateOfBirth),
-        passportExpiryDate: new Date(passportExpiryDate),
-        ...cleanRest,
-      },
-    });
+    return this.prisma.partnerStudent.create({ data });
   }
 
   async findAllByPartner(partnerId: string) {
