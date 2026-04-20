@@ -28,13 +28,13 @@ export class PartnerStudentsController {
   @Roles(Role.PARTNER)
   @Post()
   create(@Req() req, @Body() createPartnerStudentDto: CreatePartnerStudentDto) {
-    return this.partnerStudentsService.create(req.user.id, createPartnerStudentDto);
+    return this.partnerStudentsService.create(req.user.userId, createPartnerStudentDto);
   }
 
   @Roles(Role.PARTNER)
   @Get()
   findAllForPartner(@Req() req) {
-    return this.partnerStudentsService.findAllByPartner(req.user.id);
+    return this.partnerStudentsService.findAllByPartner(req.user.userId);
   }
 
   @Roles(Role.ADMIN)
@@ -46,7 +46,7 @@ export class PartnerStudentsController {
   @Roles(Role.PARTNER, Role.ADMIN)
   @Get(':id')
   findOne(@Req() req, @Param('id') id: string) {
-    const partnerId = req.user.role === Role.ADMIN ? undefined : req.user.id;
+    const partnerId = req.user.role === Role.ADMIN ? undefined : req.user.userId;
     return this.partnerStudentsService.findOne(id, partnerId);
   }
 
@@ -57,14 +57,14 @@ export class PartnerStudentsController {
     @Param('id') id: string,
     @Body() updatePartnerStudentDto: UpdatePartnerStudentDto,
   ) {
-    const partnerId = req.user.role === Role.ADMIN ? undefined : req.user.id;
+    const partnerId = req.user.role === Role.ADMIN ? undefined : req.user.userId;
     return this.partnerStudentsService.update(id, updatePartnerStudentDto, partnerId);
   }
 
   @Roles(Role.PARTNER, Role.ADMIN)
   @Delete(':id')
   remove(@Req() req, @Param('id') id: string) {
-    const partnerId = req.user.role === Role.ADMIN ? undefined : req.user.id;
+    const partnerId = req.user.role === Role.ADMIN ? undefined : req.user.userId;
     return this.partnerStudentsService.remove(id, partnerId);
   }
 }
