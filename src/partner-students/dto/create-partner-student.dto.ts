@@ -1,9 +1,9 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, IsObject, ValidateNested, IsArray } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { MaritalStatus, Gender } from '@prisma/client';
 
 export class CreatePartnerStudentDto {
+  // 1.1 Personal Information
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
@@ -55,6 +55,17 @@ export class CreatePartnerStudentDto {
   @IsEnum(Gender)
   gender: Gender;
 
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  email?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
+  // 1.2 Address
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
@@ -80,6 +91,7 @@ export class CreatePartnerStudentDto {
   @IsOptional()
   postalZipCode?: string;
 
+  // 2.1 Education details
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
@@ -105,10 +117,51 @@ export class CreatePartnerStudentDto {
   gradeAverage?: string;
 
   @ApiPropertyOptional()
+  @IsBoolean()
+  @IsOptional()
+  graduated?: boolean;
+
+  @ApiPropertyOptional({ description: 'Array of school objects' })
+  @IsOptional()
+  schools?: any;
+
+  // 3.1 & 3.2 Certificates & Test Scores
+  @ApiPropertyOptional({ description: 'Array of { name, url, type? }' })
   @IsOptional()
   certificates?: any;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Object with test type keys and score/date values' })
   @IsOptional()
   testScores?: any;
+
+  // 4. Additional details
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  emergencyName?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  emergencyPhone?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  emergencyRelation?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  financialSupport?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  howHeard?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  additionalNotes?: string;
 }
