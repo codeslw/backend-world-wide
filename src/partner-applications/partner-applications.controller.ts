@@ -104,8 +104,8 @@ export class PartnerApplicationsController {
     return this.partnerApplicationsService.findAll({
       skip,
       take: limit || 50,
-      status,
-      search,
+      status: (status as any) === 'undefined' || status === ('' as any) ? undefined : status,
+      search: search === 'undefined' || search === '' ? undefined : search,
     });
   }
 
