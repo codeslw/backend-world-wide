@@ -45,8 +45,8 @@ export class PartnerApplicationsService {
     // Verify university-program relationship exists
     const universityProgram = await this.prisma.universityProgram.findFirst({
       where: {
+        id: dto.programId,
         universityId: dto.universityId,
-        programId: dto.programId,
       },
       include: {
         university: true,
@@ -57,7 +57,7 @@ export class PartnerApplicationsService {
     if (!universityProgram) {
       throw new EntityNotFoundException(
         'Program',
-        `Program ${dto.programId} is not offered by University ${dto.universityId}`,
+        `University program with relationship ID ${dto.programId} not found for university ${dto.universityId}`,
       );
     }
 
@@ -68,7 +68,7 @@ export class PartnerApplicationsService {
         partner: { connect: { id: partnerId } },
         partnerStudent: { connect: { id: dto.partnerStudentId } },
         university: { connect: { id: dto.universityId } },
-        program: { connect: { id: dto.programId } },
+        program: { connect: { id: program.id } },
         intakeSeason: dto.intakeSeason,
         intakeYear: dto.intakeYear,
         englishProficiency: dto.englishProficiency,
