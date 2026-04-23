@@ -42,18 +42,26 @@ export class PartnerApplicationsService {
       );
     }
 
-    // Verify university and program exist
-    const [university, program] = await Promise.all([
-      this.prisma.university.findUnique({ where: { id: dto.universityId } }),
-      this.prisma.program.findUnique({ where: { id: dto.programId } }),
-    ]);
+    // Verify university-program relationship exists
+    const universityProgram = await this.prisma.universityProgram.findFirst({
+      where: {
+        universityId: dto.universityId,
+        programId: dto.programId,
+      },
+      include: {
+        university: true,
+        program: true,
+      },
+    });
 
-    if (!university) {
-      throw new EntityNotFoundException('University', dto.universityId);
+    if (!universityProgram) {
+      throw new EntityNotFoundException(
+        'Program',
+        `Program ${dto.programId} is not offered by University ${dto.universityId}`,
+      );
     }
-    if (!program) {
-      throw new EntityNotFoundException('Program', dto.programId);
-    }
+
+    const { university, program } = universityProgram;
 
     const application = await this.prisma.partnerApplication.create({
       data: {
