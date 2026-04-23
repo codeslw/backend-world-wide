@@ -19,7 +19,8 @@ model User {
   messages      Message[]
   profile       Profile?
   refreshTokens RefreshToken[]
-  partnerStudents PartnerStudent[] @relation("PartnerStudents")
+  partnerStudents    PartnerStudent[]    @relation("PartnerStudents")
+  partnerApplications PartnerApplication[] @relation("PartnerApplications")
   // readMessages Message[] @relation("MessageReads")
 
   @@map("users")
@@ -38,8 +39,10 @@ model Program {
   titleUz            String
   parent             Program?            @relation("ProgramToProgram", fields: [parentId], references: [id])
   children           Program[]           @relation("ProgramToProgram")
-  universityPrograms UniversityProgram[]
-  applications       Application[]
+  universityPrograms     UniversityProgram[]
+  applications           Application[]
+  partnerApplications    PartnerApplication[]
+  processTemplate        ApplicationProcessTemplate?
 
   @@map("programs")
 }
@@ -164,6 +167,7 @@ model University {
   scholarships            Scholarship[]
   admissionRequirements   AdmissionRequirement[]
   campuses                Campus[]
+  partnerApplications     PartnerApplication[]
   agencyServiceId         String?
   agencyService           AgencyService?          @relation(fields: [agencyServiceId], references: [id])
 
@@ -518,6 +522,7 @@ enum IntakeSeason {
   FALL
   SPRING
   SUMMER
+  WINTER
 }
 
 enum LanguageTest {
@@ -629,12 +634,124 @@ enum CampusStatus {
   CLOSED
 }
 
+enum PartnerApplicationStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  DOCUMENTS_REQUIRED
+  CONDITIONAL_OFFER
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+  ENROLLED
+}
+
 enum MaritalStatus {
   SINGLE
   MARRIED
   DIVORCED
   WIDOWED
   OTHER
+}
+
+// ── Application Process Templates ──────────────────────────────────────────────
+
+model ApplicationProcessTemplate {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  isDefault   Boolean  @default(false) // true = standard template used as fallback
+  programId   String?  @unique         // null = standard template; non-null = program-specific override
+  program     Program? @relation(fields: [programId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  steps ApplicationProcessStep[]
+
+  @@index([isDefault])
+  @@map("application_process_templates")
+}
+
+model ApplicationProcessStep {
+  id          String  @id @default(uuid())
+  templateId  String
+  template    ApplicationProcessTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  order       Int
+  name        String
+  description String?
+  statusKey   String  // maps to PartnerApplicationStatus value
+  isActive    Boolean @default(true)
+
+  requiredDocuments ApplicationDocumentType[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([templateId])
+  @@map("application_process_steps")
+}
+
+model ApplicationDocumentType {
+  id          String @id @default(uuid())
+  stepId      String
+  step        ApplicationProcessStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  required    Boolean  @default(true)
+  fileTypes   String[] @default(["pdf"])
+  maxSizeMb   Int      @default(5)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stepId])
+  @@map("application_document_types")
+}
+
+// ── Partner Applications ──────────────────────────────────────────────────────
+
+model PartnerApplication {
+  id               String                 @id @default(uuid())
+  partnerId        String                 // the partner (User) who submitted
+  partner          User                   @relation("PartnerApplications", fields: [partnerId], references: [id], onDelete: Cascade)
+  partnerStudentId String
+  partnerStudent   PartnerStudent         @relation(fields: [partnerStudentId], references: [id], onDelete: Cascade)
+  universityId     String
+  university       University             @relation(fields: [universityId], references: [id])
+  programId        String
+  program          Program                @relation(fields: [programId], references: [id])
+  intakeSeason     IntakeSeason
+  intakeYear       Int
+
+  status           PartnerApplicationStatus @default(DRAFT)
+  rejectionReason  String?
+  submittedAt      DateTime?
+  reviewedAt       DateTime?
+
+  // Qualifications snapshot
+  englishProficiency String?
+  gpa                String?
+  prerequisites      String?
+  notes              String?
+  adminNotes         String?
+  assignedTo         String?
+
+  // Backup / alternative programs (JSON array of { programId, universityId, programTitle, universityName })
+  backupPrograms     Json?    @default("[]")
+
+  // Documents uploaded by partner (JSON array of { documentTypeId, fileName, fileUrl, uploadedAt })
+  documents          Json?    @default("[]")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([partnerId])
+  @@index([partnerStudentId])
+  @@index([status])
+  @@index([universityId])
+  @@index([programId])
+  @@index([createdAt])
+  @@map("partner_applications")
 }
 
 model PartnerStudent {
@@ -687,6 +804,8 @@ model PartnerStudent {
 
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
+
+  partnerApplications  PartnerApplication[]
 
   @@index([partnerId])
   @@map("partner_students")

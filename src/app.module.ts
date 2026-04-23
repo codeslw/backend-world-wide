@@ -28,6 +28,8 @@ import { CacheModule } from '@nestjs/cache-manager';
 
 import { AgencyServicesModule } from './agency-services/agency-services.module';
 import { PartnerStudentsModule } from './partner-students/partner-students.module';
+import { PartnerApplicationsModule } from './partner-applications/partner-applications.module';
+import { ApplicationProcessModule } from './application-process/application-process.module';
 
 @Module({
   imports: [
@@ -60,6 +62,8 @@ import { PartnerStudentsModule } from './partner-students/partner-students.modul
     AdmissionRequirementsModule,
     CampusesModule,
     PartnerStudentsModule,
+    PartnerApplicationsModule,
+    ApplicationProcessModule,
   ],
   providers: [PrismaService, DigitalOceanService],
   controllers: [],
