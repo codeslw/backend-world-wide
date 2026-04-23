@@ -272,6 +272,8 @@ export class UniversitiesMapper {
       email: university.email,
       phone: university.phone,
       address: university.address,
+      avgApplicationFee: university.avgApplicationFee,
+      applicationFeeCurrency: university.applicationFeeCurrency as Currency,
       photoUrl: university.photoUrl,
       winterIntakeDeadline: this.formatDate(university.winterIntakeDeadline),
       autumnIntakeDeadline: this.formatDate(university.autumnIntakeDeadline),
