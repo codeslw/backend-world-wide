@@ -115,7 +115,17 @@ export class UniversityProgramDto {
   studyLanguage?: string;
 
   @ApiProperty({
+    description: 'Study language ID from catalog',
+    example: 'd290f1ee-6c54-4b01-90e6-d701748f0851',
+    required: false,
+  })
+  @IsUUID()
+  @IsOptional()
+  studyLanguageId?: string;
+
+  @ApiProperty({
     description: 'List of campus IDs this program is attached to',
+
     example: ['d290f1ee-6c54-4b01-90e6-d701748f0851'],
     required: false,
   })

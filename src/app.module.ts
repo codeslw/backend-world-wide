@@ -30,6 +30,7 @@ import { AgencyServicesModule } from './agency-services/agency-services.module';
 import { PartnerStudentsModule } from './partner-students/partner-students.module';
 import { PartnerApplicationsModule } from './partner-applications/partner-applications.module';
 import { ApplicationProcessModule } from './application-process/application-process.module';
+import { StudyLanguagesModule } from './study-languages/study-languages.module';
 
 @Module({
   imports: [
@@ -64,7 +65,9 @@ import { ApplicationProcessModule } from './application-process/application-proc
     PartnerStudentsModule,
     PartnerApplicationsModule,
     ApplicationProcessModule,
+    StudyLanguagesModule,
   ],
+
   providers: [PrismaService, DigitalOceanService],
   controllers: [],
 })

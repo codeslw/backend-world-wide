@@ -219,7 +219,8 @@ model UniversityProgram {
   updatedAt          DateTime   @updatedAt
   duration           Float?
 
-  studyLanguage String?
+  studyLanguageId String?
+  studyLanguage   StudyLanguage? @relation(fields: [studyLanguageId], references: [id])
   program       Program                   @relation(fields: [programId], references: [id])
   university    University                @relation(fields: [universityId], references: [id], onDelete: Cascade)
   scholarships  Scholarship[]
@@ -231,9 +232,24 @@ model UniversityProgram {
   @@index([programId])
   @@index([tuitionFee])
   @@index([studyLevel])
-  @@index([studyLanguage])
+  @@index([studyLanguageId])
   @@map("university_programs")
 }
+
+model StudyLanguage {
+  id     String @id @default(uuid())
+  nameEn String
+  nameRu String
+  nameUz String
+
+  universityPrograms UniversityProgram[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("study_languages")
+}
+
 
 model Intake {
   id                 String                    @id @default(uuid())
