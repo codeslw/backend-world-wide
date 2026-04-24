@@ -383,7 +383,11 @@ export class UniversitiesMapper {
   private localizeCountry(country: any, langSuffix: string) {
     if (!country) return null;
     return {
-      ...country,
+      code: country.code,
+      nameUz: country.nameUz,
+      nameRu: country.nameRu,
+      nameEn: country.nameEn,
+      photoUrl: country.photoUrl,
       name: this.getLocalizedField(country, 'name', langSuffix),
     };
   }
@@ -391,7 +395,10 @@ export class UniversitiesMapper {
   private localizeCity(city: any, langSuffix: string) {
     if (!city) return null;
     return {
-      ...city,
+      id: city.id,
+      nameUz: city.nameUz,
+      nameRu: city.nameRu,
+      nameEn: city.nameEn,
       name: this.getLocalizedField(city, 'name', langSuffix),
       description: this.getLocalizedField(city, 'description', langSuffix),
     };

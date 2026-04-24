@@ -474,12 +474,39 @@ export class UniversitiesService {
         where: { isMain: true },
         take: 3,
         include: {
-          country: true,
-          city: true,
+          country: {
+            select: {
+              code: true,
+              nameUz: true,
+              nameRu: true,
+              nameEn: true,
+              photoUrl: true,
+            },
+          },
+          city: {
+            select: {
+              id: true,
+              nameUz: true,
+              nameRu: true,
+              nameEn: true,
+            },
+          },
           universityPrograms: {
             take: 5,
             include: {
-              program: true,
+              program: {
+                select: {
+                  id: true,
+                  titleUz: true,
+                  titleRu: true,
+                  titleEn: true,
+                },
+              },
+              intakes: {
+                include: {
+                  intake: true,
+                },
+              },
             },
           },
         },
@@ -575,17 +602,9 @@ export class UniversitiesService {
                 title: true,
                 amount: true,
                 isAutoApplied: true,
-                nationalities: true,
-                programLevels: true,
-                overview: true,
-                howItWorks: true,
-                scholarshipValue: true,
-                importantNotes: true,
-                eligibilityCriteria: true,
-                sourceUrl: true,
+                // Only fetch minimal scholarship info for list view
+                // Large text fields like overview and eligibilityCriteria are omitted
                 universityId: true,
-                createdAt: true,
-                lastUpdated: true,
               },
             },
             campuses: true,
