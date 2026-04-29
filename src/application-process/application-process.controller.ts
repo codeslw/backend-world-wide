@@ -15,6 +15,10 @@ import { ApplicationProcessService } from './application-process.service';
 import { CreateProcessTemplateDto } from './dto/create-process-template.dto';
 import { CreateProcessStepDto } from './dto/create-process-step.dto';
 import { CreateDocumentTypeDto } from './dto/create-document-type.dto';
+import { UpdateProcessTemplateDto } from './dto/update-process-template.dto';
+import { UpdateProcessStepDto } from './dto/update-process-step.dto';
+import { UpdateDocumentTypeDto } from './dto/update-document-type.dto';
+import { CloneTemplateDto } from './dto/clone-template.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -80,7 +84,7 @@ export class ApplicationProcessController {
   @ApiResponse({ status: 404, type: ErrorResponseDto })
   updateTemplate(
     @Param('id') id: string,
-    @Body() dto: Partial<CreateProcessTemplateDto>,
+    @Body() dto: UpdateProcessTemplateDto,
   ) {
     return this.applicationProcessService.updateTemplate(id, dto);
   }
@@ -106,9 +110,9 @@ export class ApplicationProcessController {
   @ApiResponse({ status: 404, type: ErrorResponseDto })
   cloneTemplate(
     @Param('id') id: string,
-    @Body('programId') programId: string,
+    @Body() dto: CloneTemplateDto,
   ) {
-    return this.applicationProcessService.cloneTemplateForProgram(id, programId);
+    return this.applicationProcessService.cloneTemplateForProgram(id, dto.programId);
   }
 
   // ── Steps ─────────────────────────────────────────────────────────────────
@@ -131,7 +135,7 @@ export class ApplicationProcessController {
   @ApiResponse({ status: 404, type: ErrorResponseDto })
   updateStep(
     @Param('id') id: string,
-    @Body() dto: Partial<CreateProcessStepDto>,
+    @Body() dto: UpdateProcessStepDto,
   ) {
     return this.applicationProcessService.updateStep(id, dto);
   }
@@ -167,7 +171,7 @@ export class ApplicationProcessController {
   @ApiResponse({ status: 404, type: ErrorResponseDto })
   updateDocumentType(
     @Param('id') id: string,
-    @Body() dto: Partial<CreateDocumentTypeDto>,
+    @Body() dto: UpdateDocumentTypeDto,
   ) {
     return this.applicationProcessService.updateDocumentType(id, dto);
   }
