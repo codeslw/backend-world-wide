@@ -117,6 +117,7 @@ export class UniversitiesService {
           universityPrograms: {
             include: {
               program: true,
+              studyLanguage: true,
               intakes: {
                 include: {
                   intake: true,
@@ -248,6 +249,7 @@ export class UniversitiesService {
           universityPrograms: {
             include: {
               program: true,
+              studyLanguage: true,
               scholarships: true,
               campuses: true,
               intakes: {
@@ -362,6 +364,7 @@ export class UniversitiesService {
             universityPrograms: {
               include: {
                 program: true,
+                studyLanguage: true,
                 campuses: true,
                 intakes: {
                   include: {
@@ -753,7 +756,7 @@ export class UniversitiesService {
           duration: programData.duration,
           studyLanguage: programData.studyLanguageId
             ? { connect: { id: programData.studyLanguageId } }
-            : undefined,
+            : { disconnect: true },
           campuses: programData.campusIds
             ? { set: programData.campusIds.map((id: string) => ({ id })) }
             : undefined,

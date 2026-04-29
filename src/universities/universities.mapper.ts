@@ -100,6 +100,7 @@ export class UniversitiesMapper {
           studyLevel: up.studyLevel as StudyLevel,
           duration: up.duration,
           studyLanguage: this.getLocalizedField(up.studyLanguage, 'name', langSuffix),
+          studyLanguageId: up.studyLanguageId,
           intakes:
             up.intakes?.map((api) => ({
               id: api.intake.id,
@@ -291,6 +292,7 @@ export class UniversitiesMapper {
         studyLevel: up.studyLevel as StudyLevel,
         duration: up.duration,
         studyLanguage: this.getLocalizedField(up.studyLanguage, 'name', langSuffix),
+        studyLanguageId: up.studyLanguageId,
         intakes:
           up.intakes?.map((api) => ({
             id: api.intake.id,
@@ -343,6 +345,7 @@ export class UniversitiesMapper {
       studyLevel: up.studyLevel as StudyLevel,
       duration: up.duration,
       studyLanguage: this.getLocalizedField(up.studyLanguage, 'name', langSuffix),
+      studyLanguageId: up.studyLanguageId,
       scholarships:
         up.scholarships?.map((s) => ({
           id: s.id,

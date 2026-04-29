@@ -69,6 +69,11 @@ class UniversityProgramResponseDto {
     description: 'Study Language for this program',
   })
   studyLanguage?: string;
+
+  @ApiPropertyOptional({
+    description: 'Study Language ID for this program',
+  })
+  studyLanguageId?: string;
 }
 
 export class UniversityResponseDto {
