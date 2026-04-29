@@ -485,6 +485,9 @@ model Scholarship {
   // Optional source URL
   sourceUrl String?
 
+  // YouTube video URL for preview
+  videoUrl String?
+
   // Timestamps
   lastUpdated DateTime @updatedAt
   createdAt   DateTime @default(now())
@@ -632,6 +635,9 @@ model Campus {
   phone          String?
   operatingHours String?
   status         CampusStatus @default(ACTIVE)
+
+  // YouTube video URL for preview
+  videoUrl String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

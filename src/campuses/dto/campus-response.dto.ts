@@ -62,6 +62,9 @@ export class CampusResponseDto {
   @ApiProperty({ enum: CampusStatus })
   status: CampusStatus;
 
+  @ApiPropertyOptional()
+  videoUrl?: string;
+
   @ApiProperty()
   createdAt: Date;
 

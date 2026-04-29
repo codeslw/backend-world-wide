@@ -7,6 +7,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUrl,
   IsUUID,
 } from 'class-validator';
 import { CampusStatus } from '@prisma/client';
@@ -109,4 +110,9 @@ export class CreateCampusDto {
   @IsOptional()
   @IsEnum(CampusStatus)
   status?: CampusStatus;
+
+  @ApiPropertyOptional({ description: 'YouTube video URL for iframe preview' })
+  @IsOptional()
+  @IsUrl()
+  videoUrl?: string;
 }

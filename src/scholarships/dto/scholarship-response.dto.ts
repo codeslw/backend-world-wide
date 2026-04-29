@@ -40,6 +40,9 @@ export class ScholarshipResponseDto {
   @ApiPropertyOptional()
   sourceUrl?: string;
 
+  @ApiPropertyOptional()
+  videoUrl?: string;
+
   @ApiProperty()
   universityId: string;
 

@@ -5,6 +5,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUrl,
   IsUUID,
 } from 'class-validator';
 
@@ -117,6 +118,14 @@ export class CreateScholarshipDto {
   @IsString()
   @IsOptional()
   sourceUrl?: string;
+
+  @ApiPropertyOptional({
+    description: 'YouTube video URL for iframe preview',
+    example: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+  })
+  @IsUrl()
+  @IsOptional()
+  videoUrl?: string;
 
   @ApiProperty({
     description: 'ID of the university offering the scholarship',
