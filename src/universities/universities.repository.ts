@@ -115,7 +115,13 @@ export class UniversitiesRepository {
           universityProgramFilter.some.tuitionFeeCurrency = tuitionFeeCurrency;
         if (studyLevel) universityProgramFilter.some.studyLevel = studyLevel;
         if (studyLanguage)
-          universityProgramFilter.some.studyLanguage = studyLanguage;
+          universityProgramFilter.some.studyLanguage = {
+            OR: [
+              { nameEn: { contains: studyLanguage, mode: 'insensitive' } },
+              { nameRu: { contains: studyLanguage, mode: 'insensitive' } },
+              { nameUz: { contains: studyLanguage, mode: 'insensitive' } },
+            ],
+          };
         if (intake) {
           universityProgramFilter.some.intakes = { some: { intakeId: intake } };
         }
@@ -229,7 +235,14 @@ export class UniversitiesRepository {
 
     if (tuitionFeeCurrency) where.tuitionFeeCurrency = tuitionFeeCurrency;
     if (studyLevel) where.studyLevel = studyLevel;
-    if (studyLanguage) where.studyLanguage = studyLanguage;
+    if (studyLanguage)
+      where.studyLanguage = {
+        OR: [
+          { nameEn: { contains: studyLanguage, mode: 'insensitive' } },
+          { nameRu: { contains: studyLanguage, mode: 'insensitive' } },
+          { nameUz: { contains: studyLanguage, mode: 'insensitive' } },
+        ],
+      };
     if (intake) where.intakes = { some: { intakeId: intake } };
 
     // IELTS (per section) and GPA filters via university's admission requirements

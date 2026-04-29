@@ -29,6 +29,7 @@ type UniversityWithRelations = University & {
     intakes?: { intake: Intake }[];
     scholarships?: Scholarship[];
     campuses?: Campus[];
+    studyLanguage?: any;
   })[];
   admissionRequirements?: AdmissionRequirement[];
   scholarships?: Scholarship[];
@@ -48,7 +49,7 @@ type UniversityProgramWithRelations = UniversityProgram & {
   intakes?: { intake: Intake }[];
   scholarships?: Scholarship[];
   campuses?: Campus[];
-  studyLanguage?: string;
+  studyLanguage?: any;
 };
 
 @Injectable()
@@ -98,7 +99,7 @@ export class UniversitiesMapper {
           tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
           studyLevel: up.studyLevel as StudyLevel,
           duration: up.duration,
-          studyLanguage: up.studyLanguage,
+          studyLanguage: this.getLocalizedField(up.studyLanguage, 'name', langSuffix),
           intakes:
             up.intakes?.map((api) => ({
               id: api.intake.id,
@@ -289,7 +290,7 @@ export class UniversitiesMapper {
         tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
         studyLevel: up.studyLevel as StudyLevel,
         duration: up.duration,
-        studyLanguage: up.studyLanguage,
+        studyLanguage: this.getLocalizedField(up.studyLanguage, 'name', langSuffix),
         intakes:
           up.intakes?.map((api) => ({
             id: api.intake.id,
@@ -325,7 +326,7 @@ export class UniversitiesMapper {
   }
 
   toProgramDetailsDto(
-    up: UniversityProgram & { program: Program; scholarships?: Scholarship[] },
+    up: UniversityProgram & { program: Program; scholarships?: Scholarship[]; studyLanguage?: any },
     lang: string = 'uz',
   ): ProgramDetailsDto {
     const langSuffix = this.getLangSuffix(lang);
@@ -341,7 +342,7 @@ export class UniversitiesMapper {
       tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
       studyLevel: up.studyLevel as StudyLevel,
       duration: up.duration,
-      studyLanguage: up.studyLanguage,
+      studyLanguage: this.getLocalizedField(up.studyLanguage, 'name', langSuffix),
       scholarships:
         up.scholarships?.map((s) => ({
           id: s.id,
@@ -380,7 +381,7 @@ export class UniversitiesMapper {
     );
   }
 
-  private localizeCountry(country: any, langSuffix: string) {
+  private localizeCountry(country: any, langSuffix: string): any {
     if (!country) return null;
     return {
       code: country.code,
@@ -388,19 +389,26 @@ export class UniversitiesMapper {
       nameRu: country.nameRu,
       nameEn: country.nameEn,
       photoUrl: country.photoUrl,
+      isMain: country.isMain ?? false,
       name: this.getLocalizedField(country, 'name', langSuffix),
+      createdAt: country.createdAt || new Date(),
+      updatedAt: country.updatedAt || new Date(),
     };
   }
 
-  private localizeCity(city: any, langSuffix: string) {
+  private localizeCity(city: any, langSuffix: string): any {
     if (!city) return null;
     return {
       id: city.id,
       nameUz: city.nameUz,
       nameRu: city.nameRu,
       nameEn: city.nameEn,
+      countryCode: city.countryCode,
       name: this.getLocalizedField(city, 'name', langSuffix),
       description: this.getLocalizedField(city, 'description', langSuffix),
+      createdAt: city.createdAt || new Date(),
+      updatedAt: city.updatedAt || new Date(),
+      country: city.country ? this.localizeCountry(city.country, langSuffix) : undefined,
     };
   }
 

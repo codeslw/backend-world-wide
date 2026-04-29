@@ -4,6 +4,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { PrismaService } from './db/prisma.service';
+import { DbModule } from './db/db.module';
 import { ProgramsModule } from './programs/programs.module';
 import { CountriesModule } from './countries/countries.module';
 import { CitiesModule } from './cities/cities.module';
@@ -66,9 +67,10 @@ import { StudyLanguagesModule } from './study-languages/study-languages.module';
     PartnerApplicationsModule,
     ApplicationProcessModule,
     StudyLanguagesModule,
+    DbModule,
   ],
 
-  providers: [PrismaService, DigitalOceanService],
+  providers: [DigitalOceanService],
   controllers: [],
 })
 export class AppModule {}

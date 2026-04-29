@@ -118,6 +118,12 @@ export class UniversityByProgramResponseDto {
   @ApiProperty({ description: 'University address' })
   address: string;
 
+  @ApiPropertyOptional({ description: 'Average application fee' })
+  avgApplicationFee?: number;
+
+  @ApiPropertyOptional({ description: 'Application fee currency', enum: Currency })
+  applicationFeeCurrency?: Currency;
+
   @ApiPropertyOptional({ description: 'University photo URL' })
   photoUrl?: string;
 
