@@ -21,9 +21,6 @@ export class MiniApplicationResponseDto {
   lastName: string;
 
   @ApiProperty()
-  email: string;
-
-  @ApiProperty()
   phoneNumber: string;
 
   @ApiProperty({ enum: MiniApplicationStatus })

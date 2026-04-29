@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsEmail,
   IsNotEmpty,
   IsString,
   IsUUID,
@@ -25,15 +24,6 @@ export class CreateMiniApplicationDto {
   @IsNotEmpty()
   @IsString()
   lastName: string;
-
-  @ApiProperty({
-    example: 'john.doe@example.com',
-    description: 'Email address of the applicant',
-    required: true,
-  })
-  @IsNotEmpty()
-  @IsEmail()
-  email: string;
 
   @ApiProperty({
     example: '+1234567890',
