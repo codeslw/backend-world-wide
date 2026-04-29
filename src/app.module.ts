@@ -32,6 +32,7 @@ import { PartnerStudentsModule } from './partner-students/partner-students.modul
 import { PartnerApplicationsModule } from './partner-applications/partner-applications.module';
 import { ApplicationProcessModule } from './application-process/application-process.module';
 import { StudyLanguagesModule } from './study-languages/study-languages.module';
+import { ReviewsModule } from './reviews/reviews.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { StudyLanguagesModule } from './study-languages/study-languages.module';
     PartnerApplicationsModule,
     ApplicationProcessModule,
     StudyLanguagesModule,
+    ReviewsModule,
     DbModule,
   ],
 

@@ -770,6 +770,21 @@ model PartnerApplication {
   @@map("partner_applications")
 }
 
+model Review {
+  id          String   @id @default(uuid())
+  fullName    String
+  phoneNumber String?
+  rating      Int
+  content     String?
+  videoUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([rating])
+  @@index([createdAt])
+  @@map("reviews")
+}
+
 model PartnerStudent {
   id                   String        @id @default(uuid())
   partnerId            String
