@@ -114,6 +114,18 @@ export class CountryResponseDto {
   visaRequiredDocuments?: string;
 
   // Work Rights
+  @ApiPropertyOptional({ description: 'Is working during studies allowed?' })
+  workingDuringStudiesAllowed?: boolean;
+
+  @ApiPropertyOptional({ description: "Working hours allowed (Bachelor's Degree)" })
+  workingHoursBachelor?: string;
+
+  @ApiPropertyOptional({ description: "Working hours allowed (Master's Degree)" })
+  workingHoursMaster?: string;
+
+  @ApiPropertyOptional({ description: 'Working places allowed', type: [String] })
+  workingPlacesAllowed?: string[];
+
   @ApiPropertyOptional({ description: 'Part-time work hours allowed' })
   partTimeWorkHours?: string;
 

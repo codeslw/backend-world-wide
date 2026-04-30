@@ -87,9 +87,13 @@ model Country {
   visaRequiredDocuments    String?  @db.Text
 
   // Work Rights
-  partTimeWorkHours     String?
-  postStudyWorkDuration String?
-  prPathwayAvailable    Boolean @default(false)
+  workingDuringStudiesAllowed Boolean  @default(false)
+  workingHoursBachelor        String?
+  workingHoursMaster          String?
+  workingPlacesAllowed        String[] @default([])
+  partTimeWorkHours           String?
+  postStudyWorkDuration       String?
+  prPathwayAvailable          Boolean  @default(false)
 
   // Academic & Logistical
   majorIntakes              String[] @default([])

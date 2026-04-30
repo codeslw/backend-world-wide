@@ -225,6 +225,40 @@ export class CreateCountryDto {
 
   // Work Rights
   @ApiPropertyOptional({
+    description: 'Whether working during studies is allowed',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  workingDuringStudiesAllowed?: boolean;
+
+  @ApiPropertyOptional({
+    description: "Working hours allowed (Bachelor's Degree)",
+    example: '20 hours/week',
+  })
+  @IsOptional()
+  @IsString()
+  workingHoursBachelor?: string;
+
+  @ApiPropertyOptional({
+    description: "Working hours allowed (Master's Degree)",
+    example: '20 hours/week',
+  })
+  @IsOptional()
+  @IsString()
+  workingHoursMaster?: string;
+
+  @ApiPropertyOptional({
+    description: 'Working places allowed',
+    type: [String],
+    example: ['On campus', 'Off campus'],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  workingPlacesAllowed?: string[];
+
+  @ApiPropertyOptional({
     description: 'Part-time work hours allowed',
     example: '20 hours/week',
   })
