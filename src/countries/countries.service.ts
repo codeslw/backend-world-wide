@@ -386,6 +386,15 @@ export class CountriesService {
           updateCountryDto.visaRequiredDocuments;
 
       // Work Rights
+      if (updateCountryDto.workingDuringStudiesAllowed !== undefined)
+        updateData.workingDuringStudiesAllowed =
+          updateCountryDto.workingDuringStudiesAllowed;
+      if (updateCountryDto.workingHoursBachelor !== undefined)
+        updateData.workingHoursBachelor = updateCountryDto.workingHoursBachelor;
+      if (updateCountryDto.workingHoursMaster !== undefined)
+        updateData.workingHoursMaster = updateCountryDto.workingHoursMaster;
+      if (updateCountryDto.workingPlacesAllowed !== undefined)
+        updateData.workingPlacesAllowed = updateCountryDto.workingPlacesAllowed;
       if (updateCountryDto.partTimeWorkHours !== undefined)
         updateData.partTimeWorkHours = updateCountryDto.partTimeWorkHours;
       if (updateCountryDto.postStudyWorkDuration !== undefined)
