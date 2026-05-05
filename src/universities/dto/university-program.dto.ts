@@ -87,6 +87,17 @@ export class UniversityProgramDto {
   duration?: number;
 
   @ApiProperty({
+    description: 'The tuition fee after scholarship is applied.',
+    example: 10000.0,
+    minimum: 0,
+    required: false,
+  })
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @IsOptional()
+  scholarshipAppliedTutionFee?: number;
+
+  @ApiProperty({
     description: 'The intakes for this program.',
     example: ['d290f1ee-6c54-4b01-90e6-d701748f0851'],
     required: false,

@@ -99,6 +99,7 @@ export class UniversitiesMapper {
           tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
           studyLevel: up.studyLevel as StudyLevel,
           duration: up.duration,
+          scholarshipAppliedTutionFee: up.scholarshipAppliedTutionFee,
           studyLanguage: this.getLocalizedField(up.studyLanguage, 'name', langSuffix),
           studyLanguageId: up.studyLanguageId,
           intakes:
@@ -140,6 +141,7 @@ export class UniversitiesMapper {
       })),
       scholarshipRequirements: [],
       campuses: (university.campuses as any) || [],
+      isAdmissionFeeRefundable: university.isAdmissionFeeRefundable ?? false,
       agencyService: university.agencyService
         ? {
             id: university.agencyService.id,
@@ -215,6 +217,7 @@ export class UniversitiesMapper {
       masterCount,
       phdCount,
       hasScholarship: university.hasScholarship ?? false,
+      isAdmissionFeeRefundable: university.isAdmissionFeeRefundable ?? false,
     };
   }
 
@@ -291,6 +294,7 @@ export class UniversitiesMapper {
         tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
         studyLevel: up.studyLevel as StudyLevel,
         duration: up.duration,
+        scholarshipAppliedTutionFee: up.scholarshipAppliedTutionFee,
         studyLanguage: this.getLocalizedField(up.studyLanguage, 'name', langSuffix),
         studyLanguageId: up.studyLanguageId,
         intakes:
@@ -344,6 +348,7 @@ export class UniversitiesMapper {
       tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
       studyLevel: up.studyLevel as StudyLevel,
       duration: up.duration,
+      scholarshipAppliedTutionFee: up.scholarshipAppliedTutionFee,
       studyLanguage: this.getLocalizedField(up.studyLanguage, 'name', langSuffix),
       studyLanguageId: up.studyLanguageId,
       scholarships:

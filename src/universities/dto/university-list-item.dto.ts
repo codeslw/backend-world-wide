@@ -21,6 +21,9 @@ export class UniversityListItemDto {
   @ApiProperty({ enum: Currency, description: 'Application fee currency' })
   applicationFeeCurrency: string;
 
+  @ApiProperty({ description: 'Whether the application fee is refundable' })
+  isAdmissionFeeRefundable: boolean;
+
   @ApiProperty({ description: 'University ranking' })
   ranking: number;
 

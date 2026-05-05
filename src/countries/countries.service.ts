@@ -97,6 +97,7 @@ export class CountriesService {
           bankStatement: createCountryDto.bankStatement,
           otherExpenses: createCountryDto.otherExpenses || [],
           visaRequiredDocuments: createCountryDto.visaRequiredDocuments,
+          isVisaRequired: createCountryDto.isVisaRequired ?? true,
 
           // Work Rights
           partTimeWorkHours: createCountryDto.partTimeWorkHours,
@@ -384,6 +385,8 @@ export class CountriesService {
       if (updateCountryDto.visaRequiredDocuments !== undefined)
         updateData.visaRequiredDocuments =
           updateCountryDto.visaRequiredDocuments;
+      if (updateCountryDto.isVisaRequired !== undefined)
+        updateData.isVisaRequired = updateCountryDto.isVisaRequired;
 
       // Work Rights
       if (updateCountryDto.workingDuringStudiesAllowed !== undefined)

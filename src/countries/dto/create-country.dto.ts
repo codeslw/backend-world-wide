@@ -389,4 +389,12 @@ export class CreateCountryDto {
   @IsOptional()
   @IsBoolean()
   hasVegetarianFood?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Whether visa is required for this country',
+    default: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isVisaRequired?: boolean;
 }

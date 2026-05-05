@@ -87,6 +87,7 @@ export class UniversitiesService {
               tuitionFeeCurrency: program.tuitionFeeCurrency || 'USD',
               studyLevel: program.studyLevel,
               duration: program.duration,
+              scholarshipAppliedTutionFee: program.scholarshipAppliedTutionFee,
               studyLanguage: program.studyLanguageId
                 ? { connect: { id: program.studyLanguageId } }
                 : undefined,
@@ -741,6 +742,7 @@ export class UniversitiesService {
           tuitionFeeCurrency: programData.tuitionFeeCurrency,
           studyLevel: programData.studyLevel,
           duration: programData.duration,
+          scholarshipAppliedTutionFee: programData.scholarshipAppliedTutionFee,
           studyLanguage: programData.studyLanguageId
             ? { connect: { id: programData.studyLanguageId } }
             : undefined,
@@ -754,6 +756,7 @@ export class UniversitiesService {
           tuitionFeeCurrency: programData.tuitionFeeCurrency,
           studyLevel: programData.studyLevel,
           duration: programData.duration,
+          scholarshipAppliedTutionFee: programData.scholarshipAppliedTutionFee,
           studyLanguage: programData.studyLanguageId
             ? { connect: { id: programData.studyLanguageId } }
             : { disconnect: true },

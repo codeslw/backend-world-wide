@@ -171,6 +171,14 @@ export class CreateUniversityDto {
   applicationFeeCurrency?: Currency;
 
   @ApiPropertyOptional({
+    description: 'Whether the application fee is refundable',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isAdmissionFeeRefundable?: boolean;
+
+  @ApiPropertyOptional({
     description: 'URL to a photo of the university',
     example: 'https://example.com/university.jpg',
   })

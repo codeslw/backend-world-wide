@@ -112,6 +112,7 @@ model Country {
   internationalStudentPopulation String?
   hasHalalFood                   Boolean  @default(false)
   hasVegetarianFood              Boolean  @default(false)
+  isVisaRequired                 Boolean  @default(true)
 
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
@@ -172,6 +173,7 @@ model University {
   admissionRequirements   AdmissionRequirement[]
   campuses                Campus[]
   partnerApplications     PartnerApplication[]
+  isAdmissionFeeRefundable Boolean                 @default(false)
   agencyServiceId         String?
   agencyService           AgencyService?          @relation(fields: [agencyServiceId], references: [id])
 
@@ -222,6 +224,7 @@ model UniversityProgram {
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
   duration           Float?
+  scholarshipAppliedTutionFee Float?
 
   studyLanguageId String?
   studyLanguage   StudyLanguage? @relation(fields: [studyLanguageId], references: [id])

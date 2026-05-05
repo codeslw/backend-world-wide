@@ -34,6 +34,11 @@ class UniversityProgramResponseDto {
   })
   duration?: number;
 
+  @ApiPropertyOptional({
+    description: 'The tuition fee after scholarship is applied.',
+  })
+  scholarshipAppliedTutionFee?: number;
+
   @ApiProperty({
     description: 'Tuition fee for this program at this university',
   })
@@ -97,6 +102,11 @@ export class UniversityResponseDto {
     enum: Currency,
   })
   applicationFeeCurrency?: Currency;
+
+  @ApiPropertyOptional({
+    description: 'Whether the application fee is refundable',
+  })
+  isAdmissionFeeRefundable?: boolean;
 
   @ApiProperty({ description: 'Country Code' }) // Changed from countryId for clarity
   countryCode: number;

@@ -182,6 +182,9 @@ export class CountryResponseDto {
   @ApiPropertyOptional({ description: 'Has Vegetarian food options?' })
   hasVegetarianFood?: boolean;
 
+  @ApiPropertyOptional({ description: 'Is visa required?' })
+  isVisaRequired?: boolean;
+
   @ApiProperty({ description: 'Creation timestamp' })
   createdAt: Date;
 
