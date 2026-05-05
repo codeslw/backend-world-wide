@@ -29,6 +29,11 @@ export class ProgramDetailsDto {
   @ApiProperty({ description: 'Tuition fee for this program' })
   tuitionFee: number;
 
+  @ApiPropertyOptional({
+    description: 'The tuition fee after scholarship is applied.',
+  })
+  scholarshipAppliedTutionFee?: number;
+
   @ApiProperty({ description: 'Tuition fee type for this program' })
   tuitionFeeType: string;
 
