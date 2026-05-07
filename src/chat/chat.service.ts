@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   ForbiddenException,
   Inject,
@@ -76,6 +77,8 @@ const mapMessageToDto = (
 
 @Injectable()
 export class ChatService {
+  private readonly logger = new Logger(ChatService.name);
+
   constructor(
     private prisma: PrismaService,
     private filesService: FilesService,
@@ -404,8 +407,8 @@ export class ChatService {
       userRole === PrismaRole.CLIENT
     ) {
       try {
-        console.log(
-          `Client ${userId} activating their PENDING chat ${chatId} by sending first message...`,
+        this.logger.verbose(
+          `Client ${userId} activating PENDING chat ${chatId} by sending first message`,
         );
         // Update DB to activate the chat
         await this.prisma.chat.update({
@@ -419,8 +422,8 @@ export class ChatService {
         chat.status = ChatStatus.ACTIVE;
         clientActivatedChat = true;
 
-        console.log(
-          `Chat ${chatId} activated by client ${userId}. Status: ${chat.status}`,
+        this.logger.log(
+          `Chat ${chatId} activated by client ${userId}`,
         );
 
         // Notify via WebSocket
@@ -428,9 +431,9 @@ export class ChatService {
           this.chatGateway.notifyChatStatusChange(chatId, chat.status);
         }
       } catch (error) {
-        console.error(
-          `CRITICAL: Failed to activate chat ${chatId} for client ${userId}:`,
-          error,
+        this.logger.error(
+          `CRITICAL: Failed to activate chat ${chatId} for client ${userId}: ${error instanceof Error ? error.message : error}`,
+          error instanceof Error ? error.stack : undefined,
         );
         // Don't throw here, allow the message to be sent anyway
       }
@@ -439,8 +442,8 @@ export class ChatService {
     // --- Admin Auto-Assignment Logic ---
     if (!chat.adminId && userRole === PrismaRole.ADMIN) {
       try {
-        console.log(
-          `Admin ${userId} assigning chat ${chatId} by sending message...`,
+        this.logger.verbose(
+          `Admin ${userId} auto-assigning to chat ${chatId} by sending first message`,
         );
         // Update DB first
         await this.prisma.chat.update({
@@ -465,8 +468,8 @@ export class ChatService {
         chat.status = ChatStatus.ACTIVE;
         adminAssignedInThisRequest = true;
 
-        console.log(
-          `Chat ${chatId} assigned to admin ${userId}. Status: ${chat.status}`,
+        this.logger.log(
+          `Chat ${chatId} auto-assigned to admin ${userId}`,
         );
 
         // Notify immediately
@@ -480,9 +483,9 @@ export class ChatService {
         }
       } catch (error) {
         // Log error but maybe don't block message sending?
-        console.error(
-          `CRITICAL: Failed to auto-assign admin ${userId} to chat ${chatId}:`,
-          error,
+        this.logger.error(
+          `CRITICAL: Failed to auto-assign admin ${userId} to chat ${chatId}: ${error instanceof Error ? error.message : error}`,
+          error instanceof Error ? error.stack : undefined,
         );
         // Depending on policy, you might throw here or just log the assignment failure
         // throw new Error('Failed to assign admin to chat before sending message');
@@ -986,7 +989,7 @@ export class ChatService {
     });
 
     // Log the action
-    console.log(
+    this.logger.log(
       `Admin ${userId} cleared ${deleteResult.count} messages from chat ${chatId}`,
     );
 
@@ -1043,7 +1046,7 @@ export class ChatService {
     }
 
     // Log the action
-    console.log(`Chat ${chatId} deleted by user ${userId} (role: ${userRole})`);
+    this.logger.log(`Chat ${chatId} deleted by user ${userId} (role: ${userRole})`);
 
     return {
       success: true,

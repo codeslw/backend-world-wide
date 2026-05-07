@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../db/prisma.service';
 import { CreateCityDto } from './dto/create-city.dto';
 import { UpdateCityDto } from './dto/update-city.dto';
@@ -18,6 +18,8 @@ import { Inject } from '@nestjs/common';
 
 @Injectable()
 export class CitiesService {
+  private readonly logger = new Logger(CitiesService.name);
+
   constructor(
     private prisma: PrismaService,
     private filterService: FilterService,
@@ -36,7 +38,7 @@ export class CitiesService {
         await (this.cacheManager as any).store.reset();
       }
     } catch (e) {
-      console.warn('Cache clearing failed', e);
+      this.logger.warn(`Cache clearing failed: ${e instanceof Error ? e.message : e}`);
     }
   }
 

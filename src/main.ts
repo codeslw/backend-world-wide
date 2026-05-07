@@ -1,6 +1,6 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { BadRequestException, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, Logger, LogLevel, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Request, Response, NextFunction } from 'express';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
@@ -8,9 +8,16 @@ import { SwaggerAuthMiddleware } from './common/middleware/swagger-auth.middlewa
 import { ConfigService } from '@nestjs/config';
 import * as compression from 'compression';
 
+const logger = new Logger('Bootstrap');
+
 async function bootstrap() {
+  const isProduction = process.env.NODE_ENV === 'production';
+  const logLevels: LogLevel[] = isProduction
+    ? ['error', 'warn', 'log']
+    : ['error', 'warn', 'log', 'debug', 'verbose'];
+
   const app = await NestFactory.create(AppModule, {
-    logger: ['error', 'warn'],
+    logger: logLevels,
   });
 
   // Enable gzip/brotli compression for all responses
@@ -126,7 +133,8 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`Application is running on: http://localhost:${port}`);
+  logger.log(`Application is running on: http://localhost:${port}`);
+  logger.log(`Environment: ${process.env.NODE_ENV ?? 'development'}`);
 }
 
 bootstrap();

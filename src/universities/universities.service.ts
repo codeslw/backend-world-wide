@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
   Inject,
 } from '@nestjs/common';
@@ -24,6 +25,8 @@ import { MainUniversityResponseDto } from './dto/main-university-response.dto';
 
 @Injectable()
 export class UniversitiesService {
+  private readonly logger = new Logger(UniversitiesService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly mapper: UniversitiesMapper,
@@ -48,7 +51,7 @@ export class UniversitiesService {
         await (this.cacheManager as any).store.reset();
       }
     } catch (e) {
-      console.warn('Cache clearing failed', e);
+      this.logger.warn(`Cache clearing failed: ${e instanceof Error ? e.message : e}`);
     }
   }
 
@@ -228,7 +231,10 @@ export class UniversitiesService {
       await this.cacheManager.set(cacheKey, result);
       return result;
     } catch (error) {
-      console.error('Error finding universities:', error);
+      this.logger.error(
+        `Failed to list universities: ${error instanceof Error ? error.message : error}`,
+        error instanceof Error ? error.stack : undefined,
+      );
       throw error;
     }
   }
@@ -278,7 +284,10 @@ export class UniversitiesService {
       if (error instanceof EntityNotFoundException) {
         throw error;
       }
-      console.error(`Error finding university with id ${id}:`, error);
+      this.logger.error(
+        `Failed to find university ${id}: ${error instanceof Error ? error.message : error}`,
+        error instanceof Error ? error.stack : undefined,
+      );
       throw error;
     }
   }
@@ -430,7 +439,10 @@ export class UniversitiesService {
           );
         }
       }
-      console.error(`Error deleting university with id ${id}:`, error);
+      this.logger.error(
+        `Failed to delete university ${id}: ${error instanceof Error ? error.message : error}`,
+        error instanceof Error ? error.stack : undefined,
+      );
       throw error;
     }
   }
@@ -459,7 +471,10 @@ export class UniversitiesService {
       if (error instanceof EntityNotFoundException) {
         throw error;
       }
-      console.error(`Error removing university-program association:`, error);
+      this.logger.error(
+        `Failed to remove university-program association (uni: ${universityId}, prog: ${programId}): ${error instanceof Error ? error.message : error}`,
+        error instanceof Error ? error.stack : undefined,
+      );
       throw new InvalidDataException(
         'Failed to remove university-program association',
         { universityId, programId },
@@ -525,7 +540,10 @@ export class UniversitiesService {
       await this.cacheManager.set(cacheKey, result);
       return result;
     } catch (error) {
-      console.error('Error finding main universities:', error);
+      this.logger.error(
+        `Failed to list main universities: ${error instanceof Error ? error.message : error}`,
+        error instanceof Error ? error.stack : undefined,
+      );
       throw error;
     }
   }
@@ -636,7 +654,10 @@ export class UniversitiesService {
       await this.cacheManager.set(cacheKey, result);
       return result;
     } catch (error) {
-      console.error('Error finding universities by programs:', error);
+      this.logger.error(
+        `Failed to list universities by programs: ${error instanceof Error ? error.message : error}`,
+        error instanceof Error ? error.stack : undefined,
+      );
       throw error;
     }
   }
@@ -837,6 +858,9 @@ export class UniversitiesService {
         );
       }
     }
-    console.error('Error creating/updating university:', error);
+    this.logger.error(
+      `Unhandled Prisma error creating/updating university: ${error instanceof Error ? error.message : error}`,
+      error instanceof Error ? error.stack : undefined,
+    );
   }
 }

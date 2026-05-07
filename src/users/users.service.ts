@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { CreateAdminUserDto } from './dto/create-admin-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -18,6 +18,8 @@ import {
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     private prisma: PrismaService,
     private filterService: FilterService,
@@ -26,17 +28,12 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto) {
     try {
-      console.log('Starting user creation for:', createUserDto.email);
+      this.logger.verbose(`Creating user: ${createUserDto.email}`);
 
       // Check if user already exists
-      console.log('Checking for existing user...');
       const existingUser = await this.prisma.user.findUnique({
         where: { email: createUserDto.email },
       });
-      console.log(
-        'Existing user check completed:',
-        existingUser ? 'Found' : 'Not found',
-      );
 
       if (existingUser) {
         throw new ConflictException(
@@ -44,15 +41,11 @@ export class UsersService {
         );
       }
 
-      // Hash password
-      console.log('Hashing password...');
       const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
       // Extract profile data if present
       const { profile, ...userData } = createUserDto;
 
-      // Create user with hashed password
-      console.log('Creating user...');
       const user = await this.prisma.user.create({
         data: {
           ...userData,
@@ -66,36 +59,33 @@ export class UsersService {
           updatedAt: true,
         },
       });
-      console.log('User created successfully:', user.id);
+      this.logger.log(`User created: ${user.id} (${user.email})`);
 
       // Create profile only if provided for ADMIN users, otherwise use defaults
       if (profile) {
-        console.log('Creating profile...');
         await this.profilesService.create(user.id, profile);
-        console.log('Profile created successfully');
+        this.logger.verbose(`Profile created for user ${user.id}`);
       } else if (userData.role !== 'ADMIN') {
         // For non-admin users, create default profile if none provided
-        const defaultProfileData = {
-          firstName: 'User',
-          lastName: 'Profile',
-        };
-        console.log('Creating default profile...');
+        const defaultProfileData = { firstName: 'User', lastName: 'Profile' };
         await this.profilesService.create(user.id, defaultProfileData);
-        console.log('Default profile created successfully');
+        this.logger.verbose(`Default profile created for user ${user.id}`);
       } else {
-        console.log(
-          'No profile data provided for ADMIN user, skipping profile creation',
+        this.logger.verbose(
+          `Skipping profile creation for ADMIN user ${user.id}`,
         );
       }
 
       return user;
     } catch (error) {
-      console.error('Error in user creation:', error);
       // If it's already our custom exception, just rethrow it
       if (error instanceof ConflictException) {
         throw error;
       }
-      // Otherwise let the global exception filter handle it
+      this.logger.error(
+        `Failed to create user: ${createUserDto.email}`,
+        error instanceof Error ? error.stack : String(error),
+      );
       throw error;
     }
   }
@@ -107,7 +97,6 @@ export class UsersService {
     while (attempt < maxRetries) {
       try {
         // Check if any users already exist
-        console.log('Checking for existing users...');
         const existingUsers = await this.prisma.user.findMany({
           where: { email: { in: createUserDto.map((user) => user.email) } },
         });
@@ -122,7 +111,6 @@ export class UsersService {
         }
 
         // Hash passwords
-        console.log('Hashing passwords...');
         const hashedPasswords = await Promise.all(
           createUserDto.map(async (user) => {
             return await bcrypt.hash(user.password, 10);
@@ -141,13 +129,11 @@ export class UsersService {
         });
 
         // Create users without profiles
-        console.log('Creating users...');
         const users = await this.prisma.user.createMany({
           data: userData,
         });
 
         // Get created users to get their IDs
-        console.log('Retrieving created users...');
         const createdUsers = await this.prisma.user.findMany({
           where: { email: { in: createUserDto.map((user) => user.email) } },
           select: {
@@ -160,7 +146,6 @@ export class UsersService {
         });
 
         // Create profiles for each user
-        console.log('Creating profiles...');
         for (let i = 0; i < createUserDto.length; i++) {
           const user = createdUsers.find(
             (u) => u.email === createUserDto[i].email,
@@ -181,12 +166,10 @@ export class UsersService {
           }
         }
 
-        console.log('Users created successfully');
+        this.logger.log(`Bulk created ${users.count} users`);
         return { count: users.count, users: createdUsers };
       } catch (error) {
         attempt++;
-        console.error(`Attempt ${attempt} failed:`, error.message);
-
         // If it's already our custom exception, just rethrow it
         if (error instanceof ConflictException) {
           throw error;
@@ -197,7 +180,7 @@ export class UsersService {
           error.message?.includes('Server has closed the connection') &&
           attempt < maxRetries
         ) {
-          console.log(
+          this.logger.warn(
             `Retrying after connection error (attempt ${attempt}/${maxRetries})...`,
           );
 
@@ -210,15 +193,21 @@ export class UsersService {
           try {
             await this.prisma.$disconnect();
             await this.prisma.$connect();
-            console.log('Reconnected to database');
+            this.logger.log('Reconnected to database');
           } catch (reconnectError) {
-            console.error('Failed to reconnect:', reconnectError.message);
+            this.logger.error(
+              'Failed to reconnect to database',
+              reconnectError instanceof Error ? reconnectError.stack : String(reconnectError),
+            );
           }
 
           continue; // Retry the operation
         }
 
-        // Otherwise let the global exception filter handle it
+        this.logger.error(
+          `Bulk user creation failed on attempt ${attempt}: ${error instanceof Error ? error.message : String(error)}`,
+          error instanceof Error ? error.stack : undefined,
+        );
         throw error;
       }
     }
@@ -226,20 +215,11 @@ export class UsersService {
 
   async createAsAdmin(createAdminUserDto: CreateAdminUserDto) {
     try {
-      console.log(
-        'Starting admin user creation for:',
-        createAdminUserDto.email,
-      );
+      this.logger.verbose(`Creating admin user: ${createAdminUserDto.email}`);
 
-      // Check if user already exists
-      console.log('Checking for existing user...');
       const existingUser = await this.prisma.user.findUnique({
         where: { email: createAdminUserDto.email },
       });
-      console.log(
-        'Existing user check completed:',
-        existingUser ? 'Found' : 'Not found',
-      );
 
       if (existingUser) {
         throw new ConflictException(
@@ -247,15 +227,11 @@ export class UsersService {
         );
       }
 
-      // Hash password
-      console.log('Hashing password...');
       const hashedPassword = await bcrypt.hash(createAdminUserDto.password, 10);
 
       // Extract profile data if present
       const { profile, ...userData } = createAdminUserDto;
 
-      // Create user with hashed password
-      console.log('Creating user...');
       const user = await this.prisma.user.create({
         data: {
           ...userData,
@@ -269,25 +245,28 @@ export class UsersService {
           updatedAt: true,
         },
       });
-      console.log('User created successfully:', user.id);
+      this.logger.log(`Admin user created: ${user.id} (${user.email})`);
 
       // Create profile only if provided
       if (profile) {
-        console.log('Creating profile...');
         await this.profilesService.create(user.id, profile);
-        console.log('Profile created successfully');
+        this.logger.verbose(`Profile created for admin user ${user.id}`);
       } else {
-        console.log('No profile data provided, skipping profile creation');
+        this.logger.verbose(
+          `No profile data provided for admin user ${user.id}, skipping profile creation`,
+        );
       }
 
       return user;
     } catch (error) {
-      console.error('Error in admin user creation:', error);
       // If it's already our custom exception, just rethrow it
       if (error instanceof ConflictException) {
         throw error;
       }
-      // Otherwise let the global exception filter handle it
+      this.logger.error(
+        `Failed to create admin user: ${createAdminUserDto.email}`,
+        error instanceof Error ? error.stack : String(error),
+      );
       throw error;
     }
   }

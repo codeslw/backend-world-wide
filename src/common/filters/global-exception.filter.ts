@@ -94,18 +94,27 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       };
     }
 
-    // Log the error (with different level based on severity)
-    const logMethod =
-      errorResponse.statusCode >= 500
-        ? this.logger.error.bind(this.logger)
-        : this.logger.warn.bind(this.logger);
+    const { method, url, ip } = request;
+    const userAgent = request.get('user-agent') ?? 'unknown';
+    const { statusCode } = errorResponse;
 
-    logMethod(
-      `${request.method} ${request.url} - ${errorResponse.statusCode} ${errorResponse.message}`,
-      exception instanceof Error ? exception.stack : 'No stack trace available',
-    );
+    const logContext = `${method} ${url} [${statusCode}] IP:${ip} UA:${userAgent}`;
+
+    // Log with appropriate level based on severity
+    if (statusCode >= 500) {
+      const stack = exception instanceof Error ? exception.stack : undefined;
+      this.logger.error(
+        `${logContext} — ${errorResponse.message}`,
+        stack ?? 'No stack trace available',
+      );
+    } else if (statusCode >= 400) {
+      this.logger.warn(`${logContext} — ${errorResponse.message}`);
+    } else {
+      this.logger.log(`${logContext} — ${errorResponse.message}`);
+    }
 
     // Send response
     response.status(errorResponse.statusCode).json(errorResponse);
   }
 }
+

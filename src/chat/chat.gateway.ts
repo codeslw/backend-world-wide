@@ -10,7 +10,7 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Inject, UseGuards, forwardRef } from '@nestjs/common';
+import { Inject, Logger, UseGuards, forwardRef } from '@nestjs/common';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { WsJwtGuard } from '../auth/guards/ws-jwt.guard';
 import { JwtService } from '@nestjs/jwt';
@@ -59,6 +59,7 @@ export class ChatGateway
   private chatRooms: Map<string, Set<string>> = new Map();
   // Define the admin room name
   private readonly adminRoom = 'admins';
+  private readonly logger = new Logger(ChatGateway.name);
 
   constructor(
     @Inject(forwardRef(() => ChatService))
@@ -68,7 +69,7 @@ export class ChatGateway
   ) {}
 
   afterInit(server: Server) {
-    console.log('WebSocket Gateway initialized');
+    this.logger.log('WebSocket Gateway initialized');
     // Ensure the service knows about the gateway if using setChatGateway approach
     // This depends on your module setup (forwardRef vs. onModuleInit)
     if (
@@ -81,7 +82,7 @@ export class ChatGateway
 
   async handleConnection(client: Socket) {
     try {
-      console.log(`[WebSocket] New connection attempt: ${client.id}`);
+      this.logger.verbose(`New connection attempt: ${client.id}`);
 
       // Extract and verify JWT token
       const token =
@@ -89,26 +90,19 @@ export class ChatGateway
         client.handshake.headers.authorization?.split(' ')[1];
 
       if (!token) {
-        console.error(
-          `[WebSocket] No token provided for connection ${client.id}`,
-        );
+        this.logger.warn(`No token provided for connection ${client.id} — disconnecting`);
         client.disconnect();
         return;
       }
 
-      console.log(
-        `[WebSocket] Token found, verifying for connection ${client.id}`,
-      );
       const payload = this.jwtService.verify(token);
-
-      console.log(`[WebSocket] Token verified, fetching user ${payload.sub}`);
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
         select: { id: true, email: true, role: true },
       });
 
       if (!user) {
-        console.error(`[WebSocket] User ${payload.sub} not found in database`);
+        this.logger.warn(`User ${payload.sub} not found — disconnecting ${client.id}`);
         client.disconnect();
         return;
       }
@@ -127,26 +121,22 @@ export class ChatGateway
       }
       this.userSockets.get(user.id)!.add(client.id);
 
-      console.log(
-        `[WebSocket] Client connected successfully: ${client.id}, User: ${user.id}, Role: ${user.role}`,
+      this.logger.log(
+        `Client connected: ${client.id}, user=${user.id} (${user.role})`,
       );
 
       // Join admin room if applicable
       if (user.role === PrismaRole.ADMIN) {
         client.join(this.adminRoom);
-        console.log(
-          `[WebSocket] Admin ${user.id} joined room: ${this.adminRoom}`,
-        );
+        this.logger.verbose(`Admin ${user.id} joined admin room`);
       }
 
       client.emit('connected', { userId: user.id }); // Confirm connection to client
     } catch (error) {
-      console.error(`[WebSocket] Connection error for ${client.id}:`, {
-        error: error.message,
-        stack: error.stack,
-        headers: client.handshake.headers,
-        auth: client.handshake.auth,
-      });
+      this.logger.error(
+        `Connection error for ${client.id}: ${error instanceof Error ? error.message : error}`,
+        error instanceof Error ? error.stack : undefined,
+      );
       client.disconnect();
     }
   }
@@ -175,7 +165,7 @@ export class ChatGateway
       });
     }
 
-    console.log(`Client disconnected: ${client.id}`);
+    this.logger.verbose(`Client disconnected: ${client.id}${user ? ` (user: ${user.id})` : ''}`);
   }
 
   @UseGuards(WsJwtGuard)
@@ -188,18 +178,15 @@ export class ChatGateway
       const userId = client.user.id;
       const userRole = client.user.role;
 
-      console.log(
-        `[WebSocket] User ${userId} (${userRole}) attempting to join chat ${chatId}`,
-      );
+      this.logger.verbose(`User ${userId} (${userRole}) attempting to join chat ${chatId}`);
 
       // Validate chatId parameter
       if (!chatId || typeof chatId !== 'string') {
-        console.error(`[WebSocket] Invalid chatId provided:`, chatId);
+        this.logger.warn(`Invalid chatId provided by ${userId}: ${chatId}`);
         throw new Error('Invalid chat ID');
       }
 
       // Verify user has access to this chat
-      console.log(`[WebSocket] Fetching chat ${chatId} from database...`);
       const chat = await this.prisma.chat.findUnique({
         where: { id: chatId },
         include: {
@@ -209,13 +196,9 @@ export class ChatGateway
       });
 
       if (!chat) {
-        console.error(`[WebSocket] Chat ${chatId} not found in database`);
+        this.logger.warn(`Chat ${chatId} not found (requested by ${userId})`);
         throw new Error('Chat not found');
       }
-
-      console.log(
-        `[WebSocket] Chat found: clientId=${chat.clientId}, adminId=${chat.adminId}, status=${chat.status}`,
-      );
 
       // Check if user has access to this chat
       const hasAccess =
@@ -224,21 +207,14 @@ export class ChatGateway
         userRole === PrismaRole.ADMIN;
 
       if (!hasAccess) {
-        console.error(
-          `[WebSocket] Access denied for user ${userId} to chat ${chatId}. ClientId: ${chat.clientId}, AdminId: ${chat.adminId}, UserRole: ${userRole}`,
+        this.logger.warn(
+          `Access denied: user ${userId} (${userRole}) tried to join chat ${chatId}`,
         );
         throw new Error('Access denied to this chat');
       }
 
-      console.log(
-        `[WebSocket] Access granted for user ${userId} to chat ${chatId}`,
-      );
-
       // Join the socket room for this chat
       client.join(`chat:${chatId}`);
-      console.log(
-        `[WebSocket] User ${userId} joined socket room: chat:${chatId}`,
-      );
 
       // Track user in chat room
       if (!this.chatRooms.has(chatId)) {
@@ -247,7 +223,6 @@ export class ChatGateway
       this.chatRooms.get(chatId).add(userId);
 
       // Get recent messages
-      console.log(`[WebSocket] Fetching recent messages for chat ${chatId}...`);
       const messagesPayload = await this.chatService.getChatMessages(
         chatId,
         userId,
@@ -256,23 +231,16 @@ export class ChatGateway
         20,
       );
 
-      console.log(
-        `[WebSocket] Successfully joined chat ${chatId}. Messages count: ${messagesPayload.data?.length || 0}`,
-      );
+      this.logger.verbose(`User ${userId} joined chat ${chatId} (${messagesPayload.data?.length ?? 0} messages loaded)`);
       return {
         success: true,
         chatId,
         messages: messagesPayload,
       };
     } catch (error) {
-      console.error(
-        `[WebSocket] Join chat error for user ${client.user?.id} and chat ${chatId}:`,
-        {
-          error: error.message,
-          stack: error.stack,
-          user: client.user,
-          chatId,
-        },
+      this.logger.error(
+        `Join chat error — user ${client.user?.id}, chat ${chatId}: ${error instanceof Error ? error.message : error}`,
+        error instanceof Error ? error.stack : undefined,
       );
 
       // Throw error to be handled by NestJS WebSocket exception filter
@@ -298,7 +266,7 @@ export class ChatGateway
       }
     }
 
-    console.log(`User ${userId} left chat room: ${chatId}`);
+    this.logger.verbose(`User ${userId} left chat room: ${chatId}`);
     return { success: true, chatId };
   }
 
@@ -353,8 +321,10 @@ export class ChatGateway
 
       return { success: true, message: messageResult };
     } catch (error) {
-      console.error('Send message error:', error);
-      // Throw error to be handled by NestJS WebSocket exception filter
+      this.logger.error(
+        `Send message error (user: ${client.user?.id}): ${error instanceof Error ? error.message : error}`,
+        error instanceof Error ? error.stack : undefined,
+      );
       throw error;
     }
   }
@@ -397,7 +367,9 @@ export class ChatGateway
       // Service handles broadcasting the 'messagesRead' event now
       return { success: true, chatId, messageIds };
     } catch (error) {
-      console.error('Read messages error:', error);
+      this.logger.error(
+        `Read messages error (user: ${client.user?.id}): ${error instanceof Error ? error.message : error}`,
+      );
       throw error;
     }
   }
@@ -426,7 +398,9 @@ export class ChatGateway
 
       return result;
     } catch (error) {
-      console.error('Delete message error:', error);
+      this.logger.error(
+        `Delete message error (user: ${client.user?.id}): ${error instanceof Error ? error.message : error}`,
+      );
       throw error;
     }
   }
@@ -460,7 +434,9 @@ export class ChatGateway
 
       return result;
     } catch (error) {
-      console.error('Edit message error:', error);
+      this.logger.error(
+        `Edit message error (user: ${client.user?.id}): ${error instanceof Error ? error.message : error}`,
+      );
       throw error;
     }
   }
@@ -489,7 +465,9 @@ export class ChatGateway
 
       return result;
     } catch (error) {
-      console.error('Clear chat messages error:', error);
+      this.logger.error(
+        `Clear chat messages error (user: ${client.user?.id}): ${error instanceof Error ? error.message : error}`,
+      );
       throw error;
     }
   }
@@ -524,7 +502,9 @@ export class ChatGateway
 
       return { success: true, message: result };
     } catch (error) {
-      console.error('Update message status error:', error);
+      this.logger.error(
+        `Update message status error (user: ${client.user?.id}): ${error instanceof Error ? error.message : error}`,
+      );
       throw error;
     }
   }
@@ -553,7 +533,9 @@ export class ChatGateway
 
       return result;
     } catch (error) {
-      console.error('Delete chat error:', error);
+      this.logger.error(
+        `Delete chat error (user: ${client.user?.id}): ${error instanceof Error ? error.message : error}`,
+      );
       throw error;
     }
   }
@@ -597,12 +579,11 @@ export class ChatGateway
         this.server
           .to(this.adminRoom)
           .emit('newClientMessage', { chatId, message });
-        console.log(`Notified admins: new msg in unassigned chat ${chatId}`);
+        this.logger.verbose(`Notified admins: new msg in unassigned chat ${chatId}`);
       }
     } catch (error) {
-      console.error(
-        `Error checking chat ${chatId} for admin notification:`,
-        error,
+      this.logger.error(
+        `Error checking chat ${chatId} for admin notification: ${error instanceof Error ? error.message : error}`,
       );
     }
   }

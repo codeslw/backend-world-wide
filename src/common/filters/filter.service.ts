@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   FilterConfig,
   FilterOptions,
@@ -10,6 +10,8 @@ import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class FilterService {
+  private readonly logger = new Logger(FilterService.name);
+
   buildFilterQuery(query: any, options: FilterOptions): any {
     const {
       filters,
@@ -127,11 +129,9 @@ export class FilterService {
       const searchValue = query.search.trim();
 
       // Defensive check: ensure we only use valid field names for the query
-      console.log(
-        '🔍 FilterService - Applying search with fields:',
-        searchFields,
+      this.logger.verbose(
+        `Applying search on fields: [${searchFields.join(', ')}] for value: "${searchValue}"`,
       );
-      console.log('🔍 FilterService - Search value:', searchValue);
 
       // Filter out any potentially invalid fields (basic validation)
       const validSearchFields = searchFields.filter(
@@ -142,14 +142,9 @@ export class FilterService {
           /^[a-zA-Z][a-zA-Z0-9_]*$/.test(field), // Only valid identifier names
       );
 
-      console.log(
-        '🔍 FilterService - Valid search fields after filtering:',
-        validSearchFields,
-      );
-
       if (validSearchFields.length === 0) {
-        console.warn(
-          '🚨 FilterService - No valid search fields found, skipping search',
+        this.logger.warn(
+          'No valid search fields found after validation — skipping search filter',
         );
         return where;
       }
@@ -170,9 +165,8 @@ export class FilterService {
         where.AND = searchConditions;
       }
 
-      console.log(
-        '🔍 FilterService - Final search conditions:',
-        JSON.stringify(searchConditions, null, 2),
+      this.logger.verbose(
+        `Search conditions built: ${JSON.stringify(searchConditions)}`,
       );
     }
 
@@ -263,17 +257,12 @@ export class FilterService {
         },
       };
     } catch (error) {
-      // If there's an error with the query, log it and return empty results
-      console.error('Error in pagination query:', error);
-      return {
-        data: [],
-        meta: {
-          total: 0,
-          page,
-          limit,
-          totalPages: 0,
-        },
-      };
+      this.logger.error(
+        `Pagination query failed for model: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      // Rethrow so the global exception filter can handle it properly
+      throw error;
     }
   }
 }

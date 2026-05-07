@@ -1,9 +1,11 @@
-import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class SwaggerAuthMiddleware implements NestMiddleware {
+  private readonly logger = new Logger(SwaggerAuthMiddleware.name);
+
   constructor(private configService: ConfigService) {}
 
   use(req: Request, res: Response, next: NextFunction) {
@@ -12,8 +14,8 @@ export class SwaggerAuthMiddleware implements NestMiddleware {
 
     // Skip authentication if credentials are not set
     if (!swaggerUser || !swaggerPassword) {
-      console.log(
-        'Swagger Auth Middleware - Skipping authentication (credentials not set)',
+      this.logger.warn(
+        'Swagger credentials not configured — authentication bypassed',
       );
       return next();
     }

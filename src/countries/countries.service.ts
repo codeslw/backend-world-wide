@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../db/prisma.service';
 import { CreateCountryDto } from './dto/create-country.dto';
 import { UpdateCountryDto } from './dto/update-country.dto';
@@ -19,6 +19,8 @@ import { Inject } from '@nestjs/common';
 
 @Injectable()
 export class CountriesService {
+  private readonly logger = new Logger(CountriesService.name);
+
   constructor(
     private prisma: PrismaService,
     private filterService: FilterService,
@@ -37,7 +39,7 @@ export class CountriesService {
         await (this.cacheManager as any).store.reset();
       }
     } catch (e) {
-      console.warn('Cache clearing failed', e);
+      this.logger.warn(`Cache clearing failed: ${e instanceof Error ? e.message : e}`);
     }
   }
 
@@ -566,7 +568,10 @@ export class CountriesService {
       await this.cacheManager.set(cacheKey, result);
       return result;
     } catch (error) {
-      console.error('Error finding top countries:', error);
+      this.logger.error(
+        `Failed to find main countries: ${error instanceof Error ? error.message : error}`,
+        error instanceof Error ? error.stack : undefined,
+      );
       throw error;
     }
   }
