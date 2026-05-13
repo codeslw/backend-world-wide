@@ -22,6 +22,8 @@ model User {
   partnerStudents    PartnerStudent[]    @relation("PartnerStudents")
   partnerApplications PartnerApplication[] @relation("PartnerApplications")
   // readMessages Message[] @relation("MessageReads")
+  partnerOrganization PartnerOrganization? @relation("OrgOwner")
+  partnerMembership   PartnerMember?       @relation("MemberOf")
 
   @@map("users")
 }
@@ -521,6 +523,63 @@ enum Role {
   ADMIN
   CLIENT
   PARTNER
+}
+
+enum PartnerRole {
+  OWNER
+  MANAGER
+  MEMBER
+}
+
+enum PartnerAction {
+  VIEW_STUDENTS
+  ADD_STUDENT
+  EDIT_STUDENT
+  DELETE_STUDENT
+  UPLOAD_DOCUMENTS
+  DELETE_DOCUMENTS
+  VIEW_APPLICATIONS
+  CREATE_APPLICATION
+  VIEW_APPLICATION_DETAIL
+  INVITE_MEMBERS
+  REMOVE_MEMBERS
+  EDIT_MEMBER_PERMISSIONS
+}
+
+model PartnerOrganization {
+  id        String          @id @default(uuid())
+  ownerId   String          @unique
+  owner     User            @relation("OrgOwner", fields: [ownerId], references: [id])
+  members   PartnerMember[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@map("partner_organizations")
+}
+
+model PartnerMember {
+  id             String              @id @default(uuid())
+  organizationId String
+  organization   PartnerOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId         String              @unique
+  user           User                @relation("MemberOf", fields: [userId], references: [id], onDelete: Cascade)
+  role           PartnerRole         @default(MEMBER)
+  permissions    PartnerPermission[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@map("partner_members")
+}
+
+model PartnerPermission {
+  id       String        @id @default(uuid())
+  memberId String
+  member   PartnerMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  action   PartnerAction
+  granted  Boolean       @default(false)
+
+  @@unique([memberId, action])
+  @@map("partner_permissions")
 }
 
 enum UniversityType {
