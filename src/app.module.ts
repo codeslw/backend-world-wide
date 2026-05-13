@@ -30,6 +30,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { AgencyServicesModule } from './agency-services/agency-services.module';
 import { PartnerStudentsModule } from './partner-students/partner-students.module';
 import { PartnerApplicationsModule } from './partner-applications/partner-applications.module';
+import { StudentDocumentsModule } from './student-documents/student-documents.module';
 import { ApplicationProcessModule } from './application-process/application-process.module';
 import { StudyLanguagesModule } from './study-languages/study-languages.module';
 import { ReviewsModule } from './reviews/reviews.module';
@@ -66,6 +67,7 @@ import { ReviewsModule } from './reviews/reviews.module';
     CampusesModule,
     PartnerStudentsModule,
     PartnerApplicationsModule,
+    StudentDocumentsModule,
     ApplicationProcessModule,
     StudyLanguagesModule,
     ReviewsModule,
