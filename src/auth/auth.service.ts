@@ -11,6 +11,8 @@ import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { PrismaService } from '../db/prisma.service';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { PartnerOrganizationsService } from '../partner-organizations/partner-organizations.service';
+import { Role } from '../common/enum/roles.enum';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +21,7 @@ export class AuthService {
     private jwtService: JwtService,
     private prisma: PrismaService,
     private configService: ConfigService,
+    private partnerOrgsService: PartnerOrganizationsService,
   ) {}
 
   async login(loginDto: LoginDto) {
@@ -30,7 +33,31 @@ export class AuthService {
       });
     }
 
-    const payload = { email: user.email, sub: user.id, role: user.role };
+    let organizationId: string | null = null;
+    let partnerRole: string | null = null;
+    let permissions: string[] = [];
+
+    if (user.role === Role.PARTNER) {
+      const org = await this.partnerOrgsService.getOrCreateForOwner(user.id);
+      organizationId = org.id;
+      partnerRole = 'OWNER';
+    } else {
+      const membership = await this.partnerOrgsService.findByMemberUserId(user.id);
+      if (membership) {
+        organizationId = membership.organizationId;
+        partnerRole = membership.role;
+        permissions = membership.permissions
+          .filter((p) => p.granted)
+          .map((p) => p.action);
+      }
+    }
+
+    const payload = {
+      email: user.email,
+      sub: user.id,
+      role: user.role,
+      ...(organizationId && { organizationId, partnerRole, permissions }),
+    };
     const accessToken = this.jwtService.sign(payload, {
       expiresIn: this.configService.get('JWT_ACCESS_EXPIRATION', '15m'),
     });

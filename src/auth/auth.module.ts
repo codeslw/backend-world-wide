@@ -6,10 +6,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
 import { PrismaService } from '../db/prisma.service';
+import { PartnerOrganizationsModule } from '../partner-organizations/partner-organizations.module';
 
 @Module({
   imports: [
     UsersModule,
+    PartnerOrganizationsModule,
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
