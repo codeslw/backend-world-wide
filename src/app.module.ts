@@ -34,6 +34,8 @@ import { StudentDocumentsModule } from './student-documents/student-documents.mo
 import { ApplicationProcessModule } from './application-process/application-process.module';
 import { StudyLanguagesModule } from './study-languages/study-languages.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { PartnerOrganizationsModule } from './partner-organizations/partner-organizations.module';
+import { PartnerMembersModule } from './partner-members/partner-members.module';
 
 @Module({
   imports: [
@@ -71,6 +73,8 @@ import { ReviewsModule } from './reviews/reviews.module';
     ApplicationProcessModule,
     StudyLanguagesModule,
     ReviewsModule,
+    PartnerOrganizationsModule,
+    PartnerMembersModule,
     DbModule,
   ],
 
