@@ -1,6 +1,7 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../db/prisma.service';
 import { CreateStudentDocumentDto } from './dto/create-student-document.dto';
+import { EntityNotFoundException, ForbiddenActionException } from '../common/exceptions/app.exceptions';
 
 @Injectable()
 export class StudentDocumentsService {
@@ -10,8 +11,8 @@ export class StudentDocumentsService {
     const student = await this.prisma.partnerStudent.findUnique({
       where: { id: dto.studentId },
     });
-    if (!student) throw new NotFoundException('Student not found');
-    if (student.partnerId !== partnerId) throw new ForbiddenException('Access denied');
+    if (!student) throw new EntityNotFoundException('StudentDocument', dto.studentId);
+    if (student.partnerId !== partnerId) throw new ForbiddenActionException('Access denied');
 
     return this.prisma.studentDocument.create({ data: dto });
   }
@@ -20,8 +21,8 @@ export class StudentDocumentsService {
     const student = await this.prisma.partnerStudent.findUnique({
       where: { id: studentId },
     });
-    if (!student) throw new NotFoundException('Student not found');
-    if (student.partnerId !== partnerId) throw new ForbiddenException('Access denied');
+    if (!student) throw new EntityNotFoundException('StudentDocument', studentId);
+    if (student.partnerId !== partnerId) throw new ForbiddenActionException('Access denied');
 
     return this.prisma.studentDocument.findMany({
       where: { studentId },
@@ -34,8 +35,8 @@ export class StudentDocumentsService {
       where: { id },
       include: { student: true },
     });
-    if (!doc) throw new NotFoundException('Document not found');
-    if (doc.student.partnerId !== partnerId) throw new ForbiddenException('Access denied');
+    if (!doc) throw new EntityNotFoundException('StudentDocument', id);
+    if (doc.student.partnerId !== partnerId) throw new ForbiddenActionException('Access denied');
 
     return this.prisma.studentDocument.delete({ where: { id } });
   }
