@@ -87,19 +87,19 @@ export class PartnerApplicationsService {
 
   async findAllByPartner(
     partnerId: string,
-    options?: { skip?: number; take?: number },
+    options?: { skip?: number; take?: number; studentId?: string },
   ) {
-    const { skip = 0, take = 50 } = options || {};
+    const { skip = 0, take = 50, studentId } = options || {};
 
     const [applications, total] = await Promise.all([
       this.prisma.partnerApplication.findMany({
-        where: { partnerId },
+        where: { partnerId, ...(studentId ? { partnerStudentId: studentId } : {}) },
         skip,
         take,
         orderBy: { createdAt: 'desc' },
         include: this.includeRelations,
       }),
-      this.prisma.partnerApplication.count({ where: { partnerId } }),
+      this.prisma.partnerApplication.count({ where: { partnerId, ...(studentId ? { partnerStudentId: studentId } : {}) } }),
     ]);
 
     return {
@@ -304,6 +304,11 @@ export class PartnerApplicationsService {
       universityId: application.universityId,
       universityName: application.university?.name,
       countryName: application.university?.country?.nameEn,
+      studentName: application.partnerStudent
+        ? `${application.partnerStudent.firstName} ${application.partnerStudent.lastName}`.trim()
+        : undefined,
+      studentEmail: application.partnerStudent?.email,
+      universityLogoUrl: (application.university as any)?.logo || undefined,
       programId: application.programId,
       programName:
         application.program?.titleEn ||

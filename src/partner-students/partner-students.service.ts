@@ -23,6 +23,9 @@ export class PartnerStudentsService {
     return this.prisma.partnerStudent.findMany({
       where: { partnerId },
       orderBy: { createdAt: 'desc' },
+      include: {
+        _count: { select: { partnerApplications: true, studentDocuments: true } },
+      },
     });
   }
 

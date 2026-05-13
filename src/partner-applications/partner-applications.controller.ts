@@ -74,15 +74,18 @@ export class PartnerApplicationsController {
   @ApiResponse({ status: 200, type: PaginatedPartnerApplicationResponseDto })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'studentId', required: false, type: String })
   findMyApplications(
     @Req() req: RequestWithUser,
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    @Query('studentId') studentId?: string,
   ) {
     const skip = ((page || 1) - 1) * (limit || 50);
     return this.partnerApplicationsService.findAllByPartner(req.user.userId, {
       skip,
       take: limit || 50,
+      studentId,
     });
   }
 

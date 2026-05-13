@@ -24,6 +24,15 @@ export class PartnerApplicationResponseDto {
   @ApiPropertyOptional({ description: 'Country name' })
   countryName?: string;
 
+  @ApiPropertyOptional({ description: 'Student full name' })
+  studentName?: string;
+
+  @ApiPropertyOptional({ description: 'Student email' })
+  studentEmail?: string;
+
+  @ApiPropertyOptional({ description: 'University logo URL' })
+  universityLogoUrl?: string;
+
   @ApiProperty({ description: 'Program ID' })
   programId: string;
 
