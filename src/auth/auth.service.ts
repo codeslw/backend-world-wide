@@ -38,10 +38,7 @@ export class AuthService {
     let permissions: string[] = [];
 
     if (user.role === Role.PARTNER) {
-      const org = await this.partnerOrgsService.getOrCreateForOwner(user.id);
-      organizationId = org.id;
-      partnerRole = 'OWNER';
-    } else {
+      // Check if this user is a member of someone else's org first
       const membership = await this.partnerOrgsService.findByMemberUserId(user.id);
       if (membership) {
         organizationId = membership.organizationId;
@@ -49,6 +46,11 @@ export class AuthService {
         permissions = membership.permissions
           .filter((p) => p.granted)
           .map((p) => p.action);
+      } else {
+        // Not a member → they are (or will be) an owner
+        const org = await this.partnerOrgsService.getOrCreateForOwner(user.id);
+        organizationId = org.id;
+        partnerRole = 'OWNER';
       }
     }
 
@@ -173,11 +175,30 @@ export class AuthService {
         throw new UnauthorizedException('Refresh token has been revoked');
       }
 
+      // Resolve partner claims for the refreshed token
+      let organizationId: string | null = null;
+      let partnerRole: string | null = null;
+      let permissions: string[] = [];
+
+      if (tokenRecord.user.role === Role.PARTNER) {
+        const membership = await this.partnerOrgsService.findByMemberUserId(tokenRecord.user.id);
+        if (membership) {
+          organizationId = membership.organizationId;
+          partnerRole = membership.role;
+          permissions = membership.permissions.filter((p) => p.granted).map((p) => p.action);
+        } else {
+          const org = await this.partnerOrgsService.getOrCreateForOwner(tokenRecord.user.id);
+          organizationId = org.id;
+          partnerRole = 'OWNER';
+        }
+      }
+
       // Generate new access token
       const accessPayload = {
         email: tokenRecord.user.email,
         sub: tokenRecord.user.id,
         role: tokenRecord.user.role,
+        ...(organizationId && { organizationId, partnerRole, permissions }),
       };
 
       const accessToken = this.jwtService.sign(accessPayload, {
