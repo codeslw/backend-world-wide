@@ -24,7 +24,7 @@ export class PartnerMembersController {
   @ApiResponse({ status: 200, type: [PartnerMemberResponseDto] })
   @Get()
   findAll(@Req() req) {
-    return this.partnerMembersService.findAll(req.user.userId);
+    return this.partnerMembersService.findAll(req.user.organizationId);
   }
 
   @Roles(Role.PARTNER)
@@ -32,7 +32,7 @@ export class PartnerMembersController {
   @ApiResponse({ status: 201, type: PartnerMemberResponseDto })
   @Post()
   create(@Req() req, @Body() dto: CreatePartnerMemberDto) {
-    return this.partnerMembersService.create(req.user.userId, dto);
+    return this.partnerMembersService.create(req.user.organizationId, dto);
   }
 
   @Roles(Role.PARTNER)
@@ -40,20 +40,20 @@ export class PartnerMembersController {
   @ApiResponse({ status: 200 })
   @Delete(':id')
   remove(@Req() req, @Param('id') id: string) {
-    return this.partnerMembersService.remove(req.user.userId, id);
+    return this.partnerMembersService.remove(req.user.organizationId, id);
   }
 
   @Roles(Role.PARTNER)
   @ApiOperation({ summary: 'Get permissions for a member' })
   @Get(':id/permissions')
   getPermissions(@Req() req, @Param('id') id: string) {
-    return this.partnerMembersService.getPermissions(req.user.userId, id);
+    return this.partnerMembersService.getPermissions(req.user.organizationId, id);
   }
 
   @Roles(Role.PARTNER)
   @ApiOperation({ summary: 'Set permissions for a MEMBER (Owner only)' })
   @Put(':id/permissions')
   setPermissions(@Req() req, @Param('id') id: string, @Body() dto: SetPermissionsDto) {
-    return this.partnerMembersService.setPermissions(req.user.userId, id, dto);
+    return this.partnerMembersService.setPermissions(req.user.organizationId, id, dto);
   }
 }
