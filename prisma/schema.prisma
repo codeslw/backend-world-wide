@@ -569,6 +569,7 @@ model PartnerMember {
   updatedAt      DateTime            @updatedAt
 
   @@map("partner_members")
+  @@index([organizationId])
 }
 
 model PartnerPermission {
@@ -580,6 +581,7 @@ model PartnerPermission {
 
   @@unique([memberId, action])
   @@map("partner_permissions")
+  @@index([memberId])
 }
 
 enum UniversityType {
