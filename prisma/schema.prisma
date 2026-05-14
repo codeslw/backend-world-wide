@@ -547,12 +547,25 @@ enum PartnerAction {
 }
 
 model PartnerOrganization {
-  id        String          @id @default(uuid())
-  ownerId   String          @unique
-  owner     User            @relation("OrgOwner", fields: [ownerId], references: [id])
-  members   PartnerMember[]
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  id                 String          @id @default(uuid())
+  ownerId            String          @unique
+  owner              User            @relation("OrgOwner", fields: [ownerId], references: [id])
+  members            PartnerMember[]
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  name               String?
+  logoUrl            String?
+  website            String?
+  phone              String?
+  email              String?
+  description        String?
+  registrationNumber String?
+  country            String?
+  city               String?
+  address            String?
+  linkedinUrl        String?
+  instagramUrl       String?
+  facebookUrl        String?
 
   @@map("partner_organizations")
 }
