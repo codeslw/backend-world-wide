@@ -36,6 +36,7 @@ import { StudyLanguagesModule } from './study-languages/study-languages.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { PartnerOrganizationsModule } from './partner-organizations/partner-organizations.module';
 import { PartnerMembersModule } from './partner-members/partner-members.module';
+import { PartnerCompanyModule } from './partner-company/partner-company.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { PartnerMembersModule } from './partner-members/partner-members.module';
     ReviewsModule,
     PartnerOrganizationsModule,
     PartnerMembersModule,
+    PartnerCompanyModule,
     DbModule,
   ],
 
