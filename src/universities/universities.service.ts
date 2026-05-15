@@ -485,7 +485,7 @@ export class UniversitiesService {
   async findMainUniversities(
     lang: string = 'uz',
   ): Promise<MainUniversityResponseDto[]> {
-    const cacheKey = `universities:main:${lang}`;
+    const cacheKey = `universities:main:v2:${lang}`;
     const cached =
       await this.cacheManager.get<MainUniversityResponseDto[]>(cacheKey);
     if (cached) return cached;
@@ -513,7 +513,6 @@ export class UniversitiesService {
             },
           },
           universityPrograms: {
-            take: 5,
             include: {
               program: {
                 select: {

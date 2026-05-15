@@ -226,31 +226,54 @@ export class UniversitiesMapper {
     lang: string = 'uz',
   ): MainUniversityResponseDto {
     const langSuffix = this.getLangSuffix(lang);
+    const programs = university.universityPrograms || [];
+
+    const tuitionFees = programs
+      .map((p) => p.tuitionFee)
+      .filter((f): f is number => typeof f === 'number' && f > 0);
+    const minTuitionFee = tuitionFees.length ? Math.min(...tuitionFees) : 0;
+    const maxTuitionFee = tuitionFees.length ? Math.max(...tuitionFees) : 0;
+    const tuitionFeeCurrency = programs.find((p) => p.tuitionFeeCurrency)?.tuitionFeeCurrency ?? null;
+
+    const bachelorCount = programs.filter((p) => p.studyLevel === StudyLevel.BACHELOR).length;
+    const masterCount = programs.filter((p) => p.studyLevel === StudyLevel.MASTER).length;
+    const phdCount = programs.filter((p) => p.studyLevel === StudyLevel.PHD).length;
 
     return {
       id: university.id,
       name: university.name,
       country: this.localizeCountry(university.country, langSuffix),
       city: this.localizeCity(university.city, langSuffix),
-      programs:
-        university.universityPrograms?.map((up) => ({
-          programId: up.programId,
-          title: this.getLocalizedField(up.program, 'title', langSuffix),
-          tuitionFee: up.tuitionFee,
-          tuitionFeeType: up.tuitionFeeType,
-          tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
-          studyLevel: up.studyLevel as StudyLevel,
-          intakes:
-            up.intakes?.map((api) => ({
-              id: api.intake.id,
-              month: api.intake.month,
-              year: api.intake.year,
-              deadline: api.intake.deadline.toISOString(),
-            })) || [],
-        })) || [],
+      programs: programs.slice(0, 5).map((up) => ({
+        programId: up.programId,
+        title: this.getLocalizedField(up.program, 'title', langSuffix),
+        tuitionFee: up.tuitionFee,
+        tuitionFeeType: up.tuitionFeeType,
+        tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
+        studyLevel: up.studyLevel as StudyLevel,
+        intakes:
+          up.intakes?.map((api) => ({
+            id: api.intake.id,
+            month: api.intake.month,
+            year: api.intake.year,
+            deadline: api.intake.deadline.toISOString(),
+          })) || [],
+      })),
       ranking: university.ranking,
       established: university.established,
       photoUrl: university.photoUrl,
+      logoUrl: university.logoUrl,
+      type: university.type,
+      avgApplicationFee: university.avgApplicationFee,
+      applicationFeeCurrency: university.applicationFeeCurrency,
+      isAdmissionFeeRefundable: university.isAdmissionFeeRefundable,
+      hasScholarship: university.hasScholarship,
+      bachelorCount,
+      masterCount,
+      phdCount,
+      minTuitionFee,
+      maxTuitionFee,
+      tuitionFeeCurrency: tuitionFeeCurrency as string,
     };
   }
 

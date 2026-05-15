@@ -55,4 +55,40 @@ export class MainUniversityResponseDto {
 
   @ApiProperty({ description: 'University photo URL' })
   photoUrl?: string;
+
+  @ApiProperty({ description: 'University logo URL' })
+  logoUrl?: string;
+
+  @ApiProperty({ description: 'University type (PUBLIC or PRIVATE)' })
+  type?: string;
+
+  @ApiProperty({ description: 'Average application fee' })
+  avgApplicationFee?: number;
+
+  @ApiProperty({ description: 'Application fee currency' })
+  applicationFeeCurrency?: string;
+
+  @ApiProperty({ description: 'Whether admission fee is refundable' })
+  isAdmissionFeeRefundable?: boolean;
+
+  @ApiProperty({ description: 'Whether scholarships are available' })
+  hasScholarship?: boolean;
+
+  @ApiProperty({ description: 'Number of bachelor programs' })
+  bachelorCount?: number;
+
+  @ApiProperty({ description: 'Number of master programs' })
+  masterCount?: number;
+
+  @ApiProperty({ description: 'Number of PhD programs' })
+  phdCount?: number;
+
+  @ApiProperty({ description: 'Minimum tuition fee across programs' })
+  minTuitionFee?: number;
+
+  @ApiProperty({ description: 'Maximum tuition fee across programs' })
+  maxTuitionFee?: number;
+
+  @ApiProperty({ description: 'Tuition fee currency' })
+  tuitionFeeCurrency?: string;
 }
