@@ -1,30 +1,28 @@
-import { NestFactory, Reflector } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { BadRequestException, Logger, LogLevel, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Request, Response, NextFunction } from 'express';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { SwaggerAuthMiddleware } from './common/middleware/swagger-auth.middleware';
 import { ConfigService } from '@nestjs/config';
+import { AppLoggerService } from './common/logger/app-logger.service';
 import * as compression from 'compression';
 
-const logger = new Logger('Bootstrap');
-
 async function bootstrap() {
-  const isProduction = process.env.NODE_ENV === 'production';
-  const logLevels: LogLevel[] = isProduction
-    ? ['error', 'warn', 'log']
-    : ['error', 'warn', 'log', 'debug', 'verbose'];
-
   const app = await NestFactory.create(AppModule, {
-    logger: logLevels,
+    bufferLogs: true,
   });
+  const logger = app.get(AppLoggerService);
+  app.useLogger(logger);
 
   // Enable gzip/brotli compression for all responses
-  app.use(compression({
-    threshold: 1024, // Only compress responses > 1KB
-    level: 6,
-  }));
+  app.use(
+    compression({
+      threshold: 1024, // Only compress responses > 1KB
+      level: 6,
+    }),
+  );
   const configService = app.get(ConfigService);
 
   // Apply global validation pipe with detailed error messages
@@ -59,7 +57,7 @@ async function bootstrap() {
   );
 
   // Apply global exception filter
-  app.useGlobalFilters(new GlobalExceptionFilter());
+  app.useGlobalFilters(new GlobalExceptionFilter(logger));
 
   // Apply base context for apis api/v1
   app.setGlobalPrefix('api/v1');
@@ -133,8 +131,14 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  logger.log(`Application is running on: http://localhost:${port}`);
-  logger.log(`Environment: ${process.env.NODE_ENV ?? 'development'}`);
+  logger.log(
+    `Application is running on: http://localhost:${port}`,
+    'Bootstrap',
+  );
+  logger.log(
+    `Environment: ${process.env.NODE_ENV ?? 'development'}`,
+    'Bootstrap',
+  );
 }
 
 bootstrap();

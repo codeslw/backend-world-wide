@@ -4,15 +4,15 @@ import {
   ArgumentsHost,
   HttpException,
   HttpStatus,
-  Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { ErrorResponse } from '../exceptions/app.exceptions';
+import { AppLoggerService } from '../logger/app-logger.service';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
-  private readonly logger = new Logger(GlobalExceptionFilter.name);
+  constructor(private readonly logger: AppLoggerService) {}
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -106,15 +106,21 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       this.logger.error(
         `${logContext} — ${errorResponse.message}`,
         stack ?? 'No stack trace available',
+        GlobalExceptionFilter.name,
       );
     } else if (statusCode >= 400) {
-      this.logger.warn(`${logContext} — ${errorResponse.message}`);
+      this.logger.warn(
+        `${logContext} — ${errorResponse.message}`,
+        GlobalExceptionFilter.name,
+      );
     } else {
-      this.logger.log(`${logContext} — ${errorResponse.message}`);
+      this.logger.log(
+        `${logContext} — ${errorResponse.message}`,
+        GlobalExceptionFilter.name,
+      );
     }
 
     // Send response
     response.status(errorResponse.statusCode).json(errorResponse);
   }
 }
-

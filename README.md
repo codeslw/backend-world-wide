@@ -119,6 +119,13 @@ DIGITAL_OCEAN_BUCKET=your_digital_ocean_bucket
 DIGITAL_OCEAN_ENDPOINT=your_digital_ocean_endpoint
 ```
 
+Optional logging configuration:
+
+```
+LOG_LEVEL=info      # error, warn, info/log, debug, verbose/trace
+LOG_FORMAT=json     # json for production log collectors, pretty for local dev
+```
+
 > **Important**: The `JWT_SECRET` is critical for authentication to work. If it's not set or is using the default value, the application will fail to start with a "JwtStrategy requires a secret or key" error.
 
 ### Data Persistence
