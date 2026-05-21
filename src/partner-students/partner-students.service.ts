@@ -2,6 +2,39 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../db/prisma.service';
 import { CreatePartnerStudentDto } from './dto/create-partner-student.dto';
 import { UpdatePartnerStudentDto } from './dto/update-partner-student.dto';
+import { PartnerApplicationStatus } from '@prisma/client';
+
+const STAGE_BY_STATUS: Record<PartnerApplicationStatus, string> = {
+  DRAFT: 'Ready to Apply',
+  SUBMITTED: 'Offer Issued',
+  UNDER_REVIEW: 'Offer Issued',
+  DOCUMENTS_REQUIRED: 'Ready for Visa',
+  CONDITIONAL_OFFER: 'Ready for Enrollment',
+  ACCEPTED: 'Ready for Enrollment',
+  REJECTED: 'Created',
+  WITHDRAWN: 'Created',
+  ENROLLED: 'Done',
+};
+
+const STAGE_RANK: Record<string, number> = {
+  Created: 0,
+  'Ready to Apply': 1,
+  'Offer Issued': 2,
+  'Ready for Visa': 3,
+  'Ready for Enrollment': 4,
+  Done: 5,
+};
+
+function deriveCurrentStage(partnerApplications?: Array<{ status: PartnerApplicationStatus; createdAt?: Date }>) {
+  if (!partnerApplications || partnerApplications.length === 0) {
+    return 'Created';
+  }
+
+  const derivedStages = partnerApplications.map((app) => STAGE_BY_STATUS[app.status] ?? 'Ready to Apply');
+  return derivedStages.reduce((best, stage) => {
+    return STAGE_RANK[stage] > STAGE_RANK[best] ? stage : best;
+  }, 'Created');
+}
 
 @Injectable()
 export class PartnerStudentsService {
@@ -20,13 +53,22 @@ export class PartnerStudentsService {
   }
 
   async findAllByPartner(partnerId: string) {
-    return this.prisma.partnerStudent.findMany({
+    const students = await this.prisma.partnerStudent.findMany({
       where: { partnerId },
       orderBy: { createdAt: 'desc' },
       include: {
         _count: { select: { partnerApplications: true, studentDocuments: true } },
+        partnerApplications: {
+          select: { id: true, status: true, createdAt: true, updatedAt: true },
+          orderBy: { createdAt: 'desc' },
+        },
       },
     });
+
+    return students.map((student) => ({
+      ...student,
+      currentStage: deriveCurrentStage(student.partnerApplications as any),
+    }));
   }
 
   async findAll() {
@@ -41,17 +83,40 @@ export class PartnerStudentsService {
   }
 
   async findOne(id: string, partnerId?: string) {
-    const whereCondition: any = { id };
-    if (partnerId) {
-      whereCondition.partnerId = partnerId;
-    }
-    const student = await this.prisma.partnerStudent.findUnique({
-      where: whereCondition,
-    });
+    const student = partnerId
+      ? await this.prisma.partnerStudent.findFirst({
+          where: { id, partnerId },
+          include: {
+            _count: { select: { partnerApplications: true, studentDocuments: true } },
+            partnerApplications: {
+              include: {
+                university: { select: { id: true, name: true } },
+                program: { select: { id: true, titleEn: true } },
+              },
+              orderBy: { createdAt: 'desc' },
+            },
+          },
+        })
+      : await this.prisma.partnerStudent.findUnique({
+          where: { id },
+          include: {
+            _count: { select: { partnerApplications: true, studentDocuments: true } },
+            partnerApplications: {
+              include: {
+                university: { select: { id: true, name: true } },
+                program: { select: { id: true, titleEn: true } },
+              },
+              orderBy: { createdAt: 'desc' },
+            },
+          },
+        });
     if (!student) {
       throw new NotFoundException(`Student not found`);
     }
-    return student;
+    return {
+      ...student,
+      currentStage: deriveCurrentStage(student.partnerApplications as any),
+    };
   }
 
   async update(id: string, updateStudentDto: UpdatePartnerStudentDto, partnerId?: string) {
