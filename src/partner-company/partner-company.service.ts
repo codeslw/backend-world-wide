@@ -16,7 +16,7 @@ export class PartnerCompanyService {
       where: { id: organizationId },
     });
     if (!org) throw new EntityNotFoundException('PartnerOrganization', organizationId);
-    return org;
+    return this.normalizeLogoUrl(org);
   }
 
   async updateProfile(organizationId: string, partnerRole: string, dto: UpdateCompanyProfileDto) {
@@ -50,6 +50,20 @@ export class PartnerCompanyService {
       data: { logoUrl },
     });
 
-    return { logoUrl };
+    return { logoUrl: this.normalizeLogoUrl({ logoUrl }).logoUrl };
+  }
+
+  private normalizeLogoUrl<T extends { logoUrl: string | null }>(entity: T) {
+    if (!entity.logoUrl) {
+      return entity;
+    }
+
+    return {
+      ...entity,
+      logoUrl: entity.logoUrl.replace(
+        /^https:\/\/([^/]+)\.https?:\/\//,
+        'https://$1.',
+      ),
+    };
   }
 }

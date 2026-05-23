@@ -129,7 +129,8 @@ export class DigitalOceanService {
   }
 
   getPublicUrl(key: string): string {
-    return `https://${this.bucket}.${this.endpoint}/${key}`;
+    const normalizedEndpoint = this.endpoint.replace(/^https?:\/\//, '');
+    return `https://${this.bucket}.${normalizedEndpoint}/${key}`;
   }
 
   /**
