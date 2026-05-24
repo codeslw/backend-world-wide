@@ -6,7 +6,7 @@ import { Socket } from 'socket.io';
 import { WsException } from '@nestjs/websockets';
 import { Role } from '../common/enum/roles.enum';
 import { ChatService } from './chat.service';
-import { Role as PrismaRole, ChatStatus } from '@prisma/client';
+import { Role as PrismaRole, ChatStatus, MessageStatus } from '@prisma/client';
 
 interface AuthenticatedSocket extends Socket {
   user: {
@@ -44,10 +44,11 @@ describe('ChatGateway', () => {
   const mockChat = {
     id: 'chat-id',
     clientId: '1',
-    adminId: null,
+    adminId: null as any,
     status: ChatStatus.ACTIVE,
     createdAt: new Date(),
     updatedAt: new Date(),
+    partnerApplicationId: null as any,
   };
 
   const mockPrismaService = {
@@ -164,6 +165,10 @@ describe('ChatGateway', () => {
             senderId: '1',
             replyToId: null,
             fileUrl: null,
+            readByClient: false,
+            readByAdmin: false,
+            isEdited: false,
+            status: MessageStatus.SENT,
           },
         ],
         meta: {
@@ -252,6 +257,8 @@ describe('ChatGateway', () => {
         fileUrl: null,
         readByClient: false,
         readByAdmin: false,
+        isEdited: false,
+        status: MessageStatus.SENT,
       };
 
       jest.spyOn(prismaService.chat, 'findUnique').mockResolvedValue(mockChat);
@@ -376,6 +383,11 @@ describe('ChatGateway', () => {
         replyToId: null,
         fileUrl: null,
         readBy: [],
+        status: MessageStatus.SENT,
+        readByClient: false,
+        readByAdmin: false,
+        isEdited: false,
+        editedAt: null,
       };
 
       gateway.notifyNewMessage(chatId, message);
