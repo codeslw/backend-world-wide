@@ -422,7 +422,7 @@ export class ChatService {
     if (
       chat.status === ChatStatus.PENDING &&
       chat.clientId === userId &&
-      userRole === PrismaRole.CLIENT
+      (userRole === PrismaRole.CLIENT || userRole === PrismaRole.PARTNER)
     ) {
       try {
         this.logger.verbose(
@@ -519,7 +519,7 @@ export class ChatService {
       !(
         chat.status === ChatStatus.PENDING &&
         chat.clientId === userId &&
-        userRole === PrismaRole.CLIENT
+        (userRole === PrismaRole.CLIENT || userRole === PrismaRole.PARTNER)
       )
     ) {
       throw new ForbiddenException(
