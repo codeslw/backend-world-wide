@@ -275,6 +275,19 @@ export class ChatService {
           },
         },
         _count: { select: { messages: true } },
+        partnerApplication: {
+          select: {
+            id: true,
+            status: true,
+            intakeSeason: true,
+            intakeYear: true,
+            partnerStudent: {
+              select: { firstName: true, lastName: true, email: true },
+            },
+            university: { select: { name: true } },
+            program: { select: { titleEn: true } },
+          },
+        },
       },
     });
 
@@ -301,6 +314,7 @@ export class ChatService {
       const lastMessageDto = chat.messages[0]
         ? mapMessageToDto(chat.messages[0], userId)
         : null;
+      const app = chat.partnerApplication as any;
       return {
         id: chat.id,
         client: chat.client,
@@ -310,6 +324,21 @@ export class ChatService {
         updatedAt: chat.updatedAt,
         messages: lastMessageDto ? [lastMessageDto] : [],
         unreadCount: unreadCountMap.get(chat.id) || 0,
+        partnerApplicationId: chat.partnerApplicationId,
+        partnerApplication: app
+          ? {
+              id: app.id,
+              status: app.status,
+              intakeSeason: app.intakeSeason,
+              intakeYear: app.intakeYear,
+              studentName: app.partnerStudent
+                ? `${app.partnerStudent.firstName} ${app.partnerStudent.lastName}`
+                : null,
+              studentEmail: app.partnerStudent?.email ?? null,
+              universityName: app.university?.name ?? null,
+              programName: app.program?.titleEn ?? null,
+            }
+          : null,
       };
     });
   }
