@@ -334,7 +334,13 @@ export class ChatService {
         take: limit,
         include: {
           client: {
-            select: { id: true, email: true, role: true, profile: true },
+            select: {
+              id: true,
+              email: true,
+              role: true,
+              profile: true,
+              partnerOrganization: { select: { name: true } },
+            },
           },
           admin: {
             select: { id: true, email: true, role: true, profile: true },
@@ -394,6 +400,7 @@ export class ChatService {
         createdAt: chat.createdAt,
         updatedAt: chat.updatedAt,
         client: chat.client,
+        partnerOrgName: (chat.client as any)?.partnerOrganization?.name ?? null,
         admin: chat.admin as PartialAdminInfo | null,
         messages: lastMessageDto ? [lastMessageDto] : [],
         unreadCount: unreadCountMap.get(chat.id) || 0,
