@@ -53,6 +53,26 @@ export class PartnerCompanyService {
     return { logoUrl: this.normalizeLogoUrl({ logoUrl }).logoUrl };
   }
 
+  async uploadRegistrationCertificate(organizationId: string, partnerRole: string, file: Express.Multer.File) {
+    if (partnerRole === 'MEMBER') {
+      throw new ForbiddenActionException('Only Owner or Manager can upload registration certificate');
+    }
+    const org = await this.prisma.partnerOrganization.findUnique({
+      where: { id: organizationId },
+    });
+    if (!org) throw new EntityNotFoundException('PartnerOrganization', organizationId);
+
+    const key = await this.digitalOcean.uploadFile(file, 'certificates');
+    const registrationCertificateUrl = this.digitalOcean.getPublicUrl(key);
+
+    await this.prisma.partnerOrganization.update({
+      where: { id: organizationId },
+      data: { registrationCertificateUrl },
+    });
+
+    return { registrationCertificateUrl };
+  }
+
   private normalizeLogoUrl<T extends { logoUrl: string | null }>(entity: T) {
     if (!entity.logoUrl) {
       return entity;

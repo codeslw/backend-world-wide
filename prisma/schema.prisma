@@ -573,9 +573,10 @@ model PartnerOrganization {
   country            String?
   city               String?
   address            String?
-  linkedinUrl        String?
-  instagramUrl       String?
-  facebookUrl        String?
+  linkedinUrl                 String?
+  instagramUrl                String?
+  facebookUrl                 String?
+  registrationCertificateUrl  String?
 
   @@map("partner_organizations")
 }

@@ -49,4 +49,16 @@ export class PartnerCompanyController {
       file,
     );
   }
+
+  @Post('registration-certificate')
+  @ApiOperation({ summary: 'Upload company registration certificate (Owner or Manager only)' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadRegistrationCertificate(@Req() req, @UploadedFile() file: Express.Multer.File) {
+    return this.partnerCompanyService.uploadRegistrationCertificate(
+      req.user.organizationId,
+      req.user.partnerRole,
+      file,
+    );
+  }
 }
