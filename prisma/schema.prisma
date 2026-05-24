@@ -311,9 +311,10 @@ model Chat {
   status               ChatStatus @default(ACTIVE)
   createdAt            DateTime   @default(now())
   updatedAt            DateTime   @updatedAt
-  admin                User?      @relation("AdminChats", fields: [adminId], references: [id])
-  client               User       @relation("ClientChats", fields: [clientId], references: [id])
+  admin                User?               @relation("AdminChats", fields: [adminId], references: [id])
+  client               User                @relation("ClientChats", fields: [clientId], references: [id])
   messages             Message[]
+  partnerApplication   PartnerApplication? @relation(fields: [partnerApplicationId], references: [id])
 
   @@index([clientId])
   @@index([adminId])
@@ -864,6 +865,8 @@ model PartnerApplication {
   @@index([status])
   @@index([universityId])
   @@index([programId])
+  chats              Chat[]
+
   @@index([createdAt])
   @@map("partner_applications")
 }

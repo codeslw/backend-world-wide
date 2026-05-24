@@ -140,7 +140,9 @@ export class ChatService {
         client: { connect: { id: userId } },
         status: ChatStatus.PENDING, // Chats start as PENDING
         ...(createChatDto.partnerApplicationId && {
-          partnerApplicationId: createChatDto.partnerApplicationId,
+          partnerApplication: {
+            connect: { id: createChatDto.partnerApplicationId },
+          },
         }),
       },
       include: {
@@ -310,6 +312,117 @@ export class ChatService {
         unreadCount: unreadCountMap.get(chat.id) || 0,
       };
     });
+  }
+
+  async getPartnerChats(
+    adminId: string,
+    options: { page?: number; limit?: number; status?: ChatStatus } = {},
+  ) {
+    const { page = 1, limit = 20, status } = options;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.ChatWhereInput = {
+      partnerApplicationId: { not: null },
+      ...(status ? { status } : {}),
+    };
+
+    const [chatsPrisma, total] = await Promise.all([
+      this.prisma.chat.findMany({
+        where,
+        orderBy: { updatedAt: 'desc' },
+        skip,
+        take: limit,
+        include: {
+          client: {
+            select: { id: true, email: true, role: true, profile: true },
+          },
+          admin: {
+            select: { id: true, email: true, role: true, profile: true },
+          },
+          messages: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            include: {
+              sender: {
+                select: { id: true, email: true, role: true, profile: true },
+              },
+            },
+          },
+          partnerApplication: {
+            select: {
+              id: true,
+              status: true,
+              intakeSeason: true,
+              intakeYear: true,
+              partnerStudent: {
+                select: { firstName: true, lastName: true, email: true },
+              },
+              university: { select: { name: true } },
+              program: { select: { titleEn: true } },
+            },
+          },
+        },
+      }),
+      this.prisma.chat.count({ where }),
+    ]);
+
+    const chatIds = chatsPrisma.map((c) => c.id);
+    const unreadCounts =
+      chatIds.length > 0
+        ? await this.prisma.message.groupBy({
+            by: ['chatId'],
+            where: {
+              chatId: { in: chatIds },
+              senderId: { not: adminId },
+              readByAdmin: false,
+            },
+            _count: { id: true },
+          })
+        : [];
+    const unreadCountMap = new Map(
+      unreadCounts.map((item) => [item.chatId, item._count.id]),
+    );
+
+    const data = chatsPrisma.map((chat) => {
+      const lastMessageDto = chat.messages[0]
+        ? mapMessageToDto(chat.messages[0], adminId)
+        : null;
+      const app = chat.partnerApplication as any;
+      return {
+        id: chat.id,
+        status: chat.status,
+        createdAt: chat.createdAt,
+        updatedAt: chat.updatedAt,
+        client: chat.client,
+        admin: chat.admin as PartialAdminInfo | null,
+        messages: lastMessageDto ? [lastMessageDto] : [],
+        unreadCount: unreadCountMap.get(chat.id) || 0,
+        partnerApplication: app
+          ? {
+              id: app.id,
+              status: app.status,
+              intakeSeason: app.intakeSeason,
+              intakeYear: app.intakeYear,
+              studentName: app.partnerStudent
+                ? `${app.partnerStudent.firstName} ${app.partnerStudent.lastName}`
+                : null,
+              studentEmail: app.partnerStudent?.email ?? null,
+              universityName: app.university?.name ?? null,
+              programName: app.program?.titleEn ?? null,
+            }
+          : null,
+      };
+    });
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async assignAdminToChat(chatId: string, adminId: string) {

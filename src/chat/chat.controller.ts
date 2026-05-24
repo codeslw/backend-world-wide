@@ -128,6 +128,25 @@ export class ChatController implements OnModuleInit {
     );
   }
 
+  @Get('partner-chats')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Get all partner-application chats (Admin only)' })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'status', required: false, enum: ChatStatus })
+  async getPartnerChats(
+    @Request() req,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: ChatStatus,
+  ) {
+    return this.chatService.getPartnerChats(req.user.userId, {
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 20,
+      status,
+    });
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a specific chat by ID' })
   @ApiParam({ name: 'id', description: 'Chat ID', type: String })
