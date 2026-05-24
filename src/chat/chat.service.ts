@@ -120,10 +120,28 @@ export class ChatService {
   // --- Chat Methods ---
 
   async createChat(userId: string, createChatDto: CreateChatDto) {
+    // If partnerApplicationId given, find existing chat first
+    if (createChatDto.partnerApplicationId) {
+      const existing = await this.prisma.chat.findFirst({
+        where: {
+          partnerApplicationId: createChatDto.partnerApplicationId,
+          clientId: userId,
+        },
+        include: {
+          client: { select: { id: true, email: true, profile: true, role: true } },
+          messages: { orderBy: { createdAt: 'asc' }, take: 1 },
+        },
+      });
+      if (existing) return existing;
+    }
+
     const chat = await this.prisma.chat.create({
       data: {
         client: { connect: { id: userId } },
         status: ChatStatus.PENDING, // Chats start as PENDING
+        ...(createChatDto.partnerApplicationId && {
+          partnerApplicationId: createChatDto.partnerApplicationId,
+        }),
       },
       include: {
         client: {

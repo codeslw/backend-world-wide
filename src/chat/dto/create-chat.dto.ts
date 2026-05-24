@@ -1,8 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsUUID } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class CreateChatDto {
-  @ApiProperty({ description: 'Optional initial message', required: false })
+  @ApiPropertyOptional({ description: 'Optional initial message' })
   @IsOptional()
+  @IsString()
   initialMessage?: string;
+
+  @ApiPropertyOptional({ description: 'Optional: link chat to a partner application' })
+  @IsOptional()
+  @IsUUID()
+  partnerApplicationId?: string;
 }

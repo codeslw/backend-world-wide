@@ -304,19 +304,21 @@ model File {
 }
 
 model Chat {
-  id        String     @id @default(uuid())
-  clientId  String
-  adminId   String?
-  status    ChatStatus @default(ACTIVE)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  admin     User?      @relation("AdminChats", fields: [adminId], references: [id])
-  client    User       @relation("ClientChats", fields: [clientId], references: [id])
-  messages  Message[]
+  id                   String     @id @default(uuid())
+  clientId             String
+  adminId              String?
+  partnerApplicationId String?
+  status               ChatStatus @default(ACTIVE)
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+  admin                User?      @relation("AdminChats", fields: [adminId], references: [id])
+  client               User       @relation("ClientChats", fields: [clientId], references: [id])
+  messages             Message[]
 
   @@index([clientId])
   @@index([adminId])
   @@index([status])
+  @@index([partnerApplicationId])
 }
 
 model Message {
