@@ -268,7 +268,7 @@ export class ChatController implements OnModuleInit {
   }
 
   @Delete(':id/messages/:messageId')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.PARTNER)
   @ApiOperation({ summary: 'Delete a message from a chat' })
   @ApiParam({ name: 'id', description: 'Chat ID', type: String })
   @ApiParam({ name: 'messageId', description: 'Message ID', type: String })
