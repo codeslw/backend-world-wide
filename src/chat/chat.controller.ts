@@ -76,7 +76,7 @@ export class ChatController implements OnModuleInit {
     description: 'Chat created',
     type: ChatResponseDto,
   })
-  @Roles(Role.CLIENT)
+  @Roles(Role.CLIENT, Role.PARTNER)
   async createChat(@Request() req, @Body() createChatDto: CreateChatDto) {
     return this.chatService.createChat(req.user.userId, createChatDto);
   }
