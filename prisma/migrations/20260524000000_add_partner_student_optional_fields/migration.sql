@@ -1,0 +1,20 @@
+-- AlterTable: Make previously required fields optional and add new fields to partner_students
+ALTER TABLE "partner_students"
+  ADD COLUMN "fatherFullName" TEXT,
+  ADD COLUMN "motherFullName" TEXT,
+  ADD COLUMN "previousEducationLevel" TEXT,
+  ADD COLUMN "desiredEducationLevel" TEXT,
+  ADD COLUMN "leadSource" TEXT,
+  ADD COLUMN "studentAgent" TEXT,
+  ADD COLUMN "studentStage" TEXT,
+  ALTER COLUMN "dateOfBirth" DROP NOT NULL,
+  ALTER COLUMN "countryOfCitizenship" DROP NOT NULL,
+  ALTER COLUMN "passportExpiryDate" DROP NOT NULL,
+  ALTER COLUMN "maritalStatus" DROP NOT NULL,
+  ALTER COLUMN "gender" DROP NOT NULL,
+  ALTER COLUMN "streetAddress" DROP NOT NULL,
+  ALTER COLUMN "city" DROP NOT NULL,
+  ALTER COLUMN "country" DROP NOT NULL,
+  ALTER COLUMN "provinceState" DROP NOT NULL,
+  ALTER COLUMN "countryOfEducation" DROP NOT NULL,
+  ALTER COLUMN "highestLevelOfEducation" DROP NOT NULL;

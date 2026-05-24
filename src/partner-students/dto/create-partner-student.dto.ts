@@ -1,9 +1,8 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { MaritalStatus, Gender } from '@prisma/client';
 
 export class CreatePartnerStudentDto {
-  // 1.1 Personal Information
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
@@ -19,19 +18,30 @@ export class CreatePartnerStudentDto {
   @IsOptional()
   middleName?: string;
 
-  @ApiProperty({ example: '2000-01-01' })
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  fatherFullName?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  motherFullName?: string;
+
+  @ApiPropertyOptional()
   @IsDateString()
-  dateOfBirth: string;
+  @IsOptional()
+  dateOfBirth?: string;
 
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
   firstLanguage?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   @IsString()
-  @IsNotEmpty()
-  countryOfCitizenship: string;
+  @IsOptional()
+  countryOfCitizenship?: string;
 
   @ApiPropertyOptional()
   @IsString()
@@ -43,17 +53,20 @@ export class CreatePartnerStudentDto {
   @IsOptional()
   passportPlaceOfBirth?: string;
 
-  @ApiProperty({ example: '2030-01-01' })
+  @ApiPropertyOptional()
   @IsDateString()
-  passportExpiryDate: string;
+  @IsOptional()
+  passportExpiryDate?: string;
 
-  @ApiProperty({ enum: MaritalStatus })
+  @ApiPropertyOptional({ enum: MaritalStatus })
   @IsEnum(MaritalStatus)
-  maritalStatus: MaritalStatus;
+  @IsOptional()
+  maritalStatus?: MaritalStatus;
 
-  @ApiProperty({ enum: Gender })
+  @ApiPropertyOptional({ enum: Gender })
   @IsEnum(Gender)
-  gender: Gender;
+  @IsOptional()
+  gender?: Gender;
 
   @ApiPropertyOptional()
   @IsString()
@@ -65,42 +78,50 @@ export class CreatePartnerStudentDto {
   @IsOptional()
   phone?: string;
 
-  // 1.2 Address
-  @ApiProperty()
+  @ApiPropertyOptional()
   @IsString()
-  @IsNotEmpty()
-  streetAddress: string;
+  @IsOptional()
+  streetAddress?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   @IsString()
-  @IsNotEmpty()
-  city: string;
+  @IsOptional()
+  city?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   @IsString()
-  @IsNotEmpty()
-  country: string;
+  @IsOptional()
+  country?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   @IsString()
-  @IsNotEmpty()
-  provinceState: string;
+  @IsOptional()
+  provinceState?: string;
 
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
   postalZipCode?: string;
 
-  // 2.1 Education details
-  @ApiProperty()
+  @ApiPropertyOptional()
   @IsString()
-  @IsNotEmpty()
-  countryOfEducation: string;
+  @IsOptional()
+  countryOfEducation?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
   @IsString()
-  @IsNotEmpty()
-  highestLevelOfEducation: string;
+  @IsOptional()
+  highestLevelOfEducation?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  previousEducationLevel?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  desiredEducationLevel?: string;
 
   @ApiPropertyOptional()
   @IsString()
@@ -117,24 +138,36 @@ export class CreatePartnerStudentDto {
   gradeAverage?: string;
 
   @ApiPropertyOptional()
-  @IsBoolean()
   @IsOptional()
   graduated?: boolean;
 
-  @ApiPropertyOptional({ description: 'Array of school objects' })
+  @ApiPropertyOptional()
   @IsOptional()
   schools?: any;
 
-  // 3.1 & 3.2 Certificates & Test Scores
-  @ApiPropertyOptional({ description: 'Array of { name, url, type? }' })
+  @ApiPropertyOptional()
   @IsOptional()
   certificates?: any;
 
-  @ApiPropertyOptional({ description: 'Object with test type keys and score/date values' })
+  @ApiPropertyOptional()
   @IsOptional()
   testScores?: any;
 
-  // 4. Additional details
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  leadSource?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  studentAgent?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  studentStage?: string;
+
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()

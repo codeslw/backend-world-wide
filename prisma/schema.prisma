@@ -889,38 +889,45 @@ model PartnerStudent {
   firstName            String
   lastName             String
   middleName           String?
-  dateOfBirth          DateTime
+  fatherFullName       String?
+  motherFullName       String?
+  dateOfBirth          DateTime?
   firstLanguage        String?
-  countryOfCitizenship String
+  countryOfCitizenship String?
   passportNumber       String?
   passportPlaceOfBirth String?
-  passportExpiryDate   DateTime
-  maritalStatus        MaritalStatus
-  gender               Gender
+  passportExpiryDate   DateTime?
+  maritalStatus        MaritalStatus?
+  gender               Gender?
   email                String?
   phone                String?
 
   // 1.2 Address
-  streetAddress        String
-  city                 String
-  country              String
-  provinceState        String
+  streetAddress        String?
+  city                 String?
+  country              String?
+  provinceState        String?
   postalZipCode        String?
 
   // 2.1 Education details
-  countryOfEducation      String
-  highestLevelOfEducation String
+  countryOfEducation      String?
+  highestLevelOfEducation String?
+  previousEducationLevel  String?
+  desiredEducationLevel   String?
   gradingScheme           String?
   gradeScaleOutOf         String?
   gradeAverage            String?
   graduated               Boolean?
-  schools                 Json?    // Array of school objects
+  schools                 Json?
 
   // 3.1 & 3.2 Certificates & Test Scores
-  certificates         Json? // Array of { name, url, type? }
-  testScores           Json? // { ielts, ieltsDate, toefl, toeflDate, duolingo, sat, act, gre, gmat }
+  certificates         Json?
+  testScores           Json?
 
   // 4. Additional details
+  leadSource           String?
+  studentAgent         String?
+  studentStage         String?
   emergencyName        String?
   emergencyPhone       String?
   emergencyRelation    String?

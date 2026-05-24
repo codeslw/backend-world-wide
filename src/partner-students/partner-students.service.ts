@@ -43,8 +43,10 @@ export class PartnerStudentsService {
   async create(partnerId: string, createStudentDto: CreatePartnerStudentDto) {
     const { dateOfBirth, passportExpiryDate, ...rest } = createStudentDto;
 
-    // Strip undefined fields so Prisma doesn't see partner: undefined
-    const data: any = { partnerId, dateOfBirth: new Date(dateOfBirth), passportExpiryDate: new Date(passportExpiryDate) };
+    const data: any = { partnerId };
+    if (dateOfBirth) data.dateOfBirth = new Date(dateOfBirth);
+    if (passportExpiryDate) data.passportExpiryDate = new Date(passportExpiryDate);
+
     for (const [k, v] of Object.entries(rest)) {
       if (v !== undefined) data[k] = v;
     }
@@ -61,6 +63,11 @@ export class PartnerStudentsService {
         partnerApplications: {
           select: { id: true, status: true, createdAt: true, updatedAt: true },
           orderBy: { createdAt: 'desc' },
+        },
+        partner: {
+          select: {
+            profile: { select: { firstName: true, lastName: true } },
+          },
         },
       },
     });
