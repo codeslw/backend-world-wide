@@ -74,7 +74,7 @@ export class PartnerStudentsService {
 
     return students.map((student) => ({
       ...student,
-      currentStage: deriveCurrentStage(student.partnerApplications as any),
+      currentStage: deriveCurrentStage(student.partnerApplications as Array<{ status: PartnerApplicationStatus; createdAt?: Date }>),
     }));
   }
 
@@ -122,7 +122,7 @@ export class PartnerStudentsService {
     }
     return {
       ...student,
-      currentStage: deriveCurrentStage(student.partnerApplications as any),
+      currentStage: deriveCurrentStage(student.partnerApplications as Array<{ status: PartnerApplicationStatus; createdAt?: Date }>),
     };
   }
 

@@ -59,13 +59,13 @@ export class CreatePartnerStudentDto {
   passportExpiryDate?: string;
 
   @ApiPropertyOptional({ enum: MaritalStatus })
-  @IsEnum(MaritalStatus)
   @IsOptional()
+  @IsEnum(MaritalStatus)
   maritalStatus?: MaritalStatus;
 
   @ApiPropertyOptional({ enum: Gender })
-  @IsEnum(Gender)
   @IsOptional()
+  @IsEnum(Gender)
   gender?: Gender;
 
   @ApiPropertyOptional()
@@ -135,6 +135,7 @@ export class CreatePartnerStudentDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsString()
   gradeAverage?: string;
 
   @ApiPropertyOptional()
@@ -143,15 +144,15 @@ export class CreatePartnerStudentDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  schools?: any;
+  schools?: unknown;
 
   @ApiPropertyOptional()
   @IsOptional()
-  certificates?: any;
+  certificates?: unknown;
 
   @ApiPropertyOptional()
   @IsOptional()
-  testScores?: any;
+  testScores?: unknown;
 
   @ApiPropertyOptional()
   @IsString()
