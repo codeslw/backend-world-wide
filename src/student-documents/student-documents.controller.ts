@@ -15,27 +15,30 @@ export class StudentDocumentsController {
   constructor(private readonly service: StudentDocumentsService) {}
 
   @Post()
-  @Roles(Role.PARTNER)
+  @Roles(Role.PARTNER, Role.ADMIN)
   @ApiOperation({ summary: 'Save a document record for a student' })
   @ApiResponse({ status: 201, description: 'Document successfully created' })
   create(@Req() req, @Body() dto: CreateStudentDocumentDto): Promise<any> {
-    return this.service.create(req.user.userId, dto);
+    const partnerId = req.user.role === Role.ADMIN ? undefined : req.user.userId;
+    return this.service.create(partnerId, dto);
   }
 
   @Get()
-  @Roles(Role.PARTNER)
+  @Roles(Role.PARTNER, Role.ADMIN)
   @ApiOperation({ summary: 'List documents for a student' })
   @ApiQuery({ name: 'studentId', required: true, type: String })
   @ApiResponse({ status: 200, description: 'List of student documents' })
   findByStudent(@Req() req, @Query('studentId') studentId: string): Promise<any[]> {
-    return this.service.findByStudent(req.user.userId, studentId);
+    const partnerId = req.user.role === Role.ADMIN ? undefined : req.user.userId;
+    return this.service.findByStudent(partnerId, studentId);
   }
 
   @Delete(':id')
-  @Roles(Role.PARTNER)
+  @Roles(Role.PARTNER, Role.ADMIN)
   @ApiOperation({ summary: 'Delete a student document' })
   @ApiResponse({ status: 200, description: 'Document successfully deleted' })
   remove(@Req() req, @Param('id') id: string): Promise<any> {
-    return this.service.remove(req.user.userId, id);
+    const partnerId = req.user.role === Role.ADMIN ? undefined : req.user.userId;
+    return this.service.remove(partnerId, id);
   }
 }

@@ -7,22 +7,22 @@ import { EntityNotFoundException, ForbiddenActionException } from '../common/exc
 export class StudentDocumentsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(partnerId: string, dto: CreateStudentDocumentDto) {
+  async create(partnerId: string | undefined, dto: CreateStudentDocumentDto) {
     const student = await this.prisma.partnerStudent.findUnique({
       where: { id: dto.studentId },
     });
     if (!student) throw new EntityNotFoundException('StudentDocument', dto.studentId);
-    if (student.partnerId !== partnerId) throw new ForbiddenActionException('Access denied');
+    if (partnerId && student.partnerId !== partnerId) throw new ForbiddenActionException('Access denied');
 
     return this.prisma.studentDocument.create({ data: dto });
   }
 
-  async findByStudent(partnerId: string, studentId: string) {
+  async findByStudent(partnerId: string | undefined, studentId: string) {
     const student = await this.prisma.partnerStudent.findUnique({
       where: { id: studentId },
     });
     if (!student) throw new EntityNotFoundException('StudentDocument', studentId);
-    if (student.partnerId !== partnerId) throw new ForbiddenActionException('Access denied');
+    if (partnerId && student.partnerId !== partnerId) throw new ForbiddenActionException('Access denied');
 
     return this.prisma.studentDocument.findMany({
       where: { studentId },
@@ -30,13 +30,13 @@ export class StudentDocumentsService {
     });
   }
 
-  async remove(partnerId: string, id: string) {
+  async remove(partnerId: string | undefined, id: string) {
     const doc = await this.prisma.studentDocument.findUnique({
       where: { id },
       include: { student: true },
     });
     if (!doc) throw new EntityNotFoundException('StudentDocument', id);
-    if (doc.student.partnerId !== partnerId) throw new ForbiddenActionException('Access denied');
+    if (partnerId && doc.student.partnerId !== partnerId) throw new ForbiddenActionException('Access denied');
 
     return this.prisma.studentDocument.delete({ where: { id } });
   }
