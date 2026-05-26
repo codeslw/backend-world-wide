@@ -15,6 +15,9 @@ import { AgencyServiceDto } from './agency-service.dto';
 
 // DTO for representing program details within the university response
 class UniversityProgramResponseDto {
+  @ApiProperty({ description: 'University-program relationship ID' })
+  id: string;
+
   @ApiProperty({ description: 'Program ID' })
   programId: string;
 
@@ -168,7 +171,9 @@ export class UniversityResponseDto {
   })
   additionalPhotoUrls?: string[];
 
-  @ApiPropertyOptional({ description: 'YouTube video URL for university preview' })
+  @ApiPropertyOptional({
+    description: 'YouTube video URL for university preview',
+  })
   youtubeVideoUrl?: string;
 
   @ApiProperty({ description: 'Whether this university is featured as main' })

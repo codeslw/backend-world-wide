@@ -90,6 +90,7 @@ export class UniversitiesMapper {
       updatedAt: university.updatedAt.toISOString(),
       universityPrograms:
         university.universityPrograms?.map((up) => ({
+          id: up.id,
           programId: up.programId,
           titleUz: up.program?.titleUz,
           titleRu: up.program?.titleRu,
@@ -100,7 +101,11 @@ export class UniversitiesMapper {
           studyLevel: up.studyLevel as StudyLevel,
           duration: up.duration,
           scholarshipAppliedTutionFee: up.scholarshipAppliedTutionFee,
-          studyLanguage: this.getLocalizedField(up.studyLanguage, 'name', langSuffix),
+          studyLanguage: this.getLocalizedField(
+            up.studyLanguage,
+            'name',
+            langSuffix,
+          ),
           studyLanguageId: up.studyLanguageId,
           intakes:
             up.intakes?.map((api) => ({
@@ -233,11 +238,18 @@ export class UniversitiesMapper {
       .filter((f): f is number => typeof f === 'number' && f > 0);
     const minTuitionFee = tuitionFees.length ? Math.min(...tuitionFees) : 0;
     const maxTuitionFee = tuitionFees.length ? Math.max(...tuitionFees) : 0;
-    const tuitionFeeCurrency = programs.find((p) => p.tuitionFeeCurrency)?.tuitionFeeCurrency ?? null;
+    const tuitionFeeCurrency =
+      programs.find((p) => p.tuitionFeeCurrency)?.tuitionFeeCurrency ?? null;
 
-    const bachelorCount = programs.filter((p) => p.studyLevel === StudyLevel.BACHELOR).length;
-    const masterCount = programs.filter((p) => p.studyLevel === StudyLevel.MASTER).length;
-    const phdCount = programs.filter((p) => p.studyLevel === StudyLevel.PHD).length;
+    const bachelorCount = programs.filter(
+      (p) => p.studyLevel === StudyLevel.BACHELOR,
+    ).length;
+    const masterCount = programs.filter(
+      (p) => p.studyLevel === StudyLevel.MASTER,
+    ).length;
+    const phdCount = programs.filter(
+      (p) => p.studyLevel === StudyLevel.PHD,
+    ).length;
 
     return {
       id: university.id,
@@ -318,7 +330,11 @@ export class UniversitiesMapper {
         studyLevel: up.studyLevel as StudyLevel,
         duration: up.duration,
         scholarshipAppliedTutionFee: up.scholarshipAppliedTutionFee,
-        studyLanguage: this.getLocalizedField(up.studyLanguage, 'name', langSuffix),
+        studyLanguage: this.getLocalizedField(
+          up.studyLanguage,
+          'name',
+          langSuffix,
+        ),
         studyLanguageId: up.studyLanguageId,
         intakes:
           up.intakes?.map((api) => ({
@@ -334,7 +350,7 @@ export class UniversitiesMapper {
             title: s.title,
             amount: s.amount,
             isAutoApplied: s.isAutoApplied,
-          isVisible: s.isVisible,
+            isVisible: s.isVisible,
             nationalities: s.nationalities,
             programLevels: s.programLevels,
             overview: s.overview,
@@ -355,7 +371,11 @@ export class UniversitiesMapper {
   }
 
   toProgramDetailsDto(
-    up: UniversityProgram & { program: Program; scholarships?: Scholarship[]; studyLanguage?: any },
+    up: UniversityProgram & {
+      program: Program;
+      scholarships?: Scholarship[];
+      studyLanguage?: any;
+    },
     lang: string = 'uz',
   ): ProgramDetailsDto {
     const langSuffix = this.getLangSuffix(lang);
@@ -372,7 +392,11 @@ export class UniversitiesMapper {
       studyLevel: up.studyLevel as StudyLevel,
       duration: up.duration,
       scholarshipAppliedTutionFee: up.scholarshipAppliedTutionFee,
-      studyLanguage: this.getLocalizedField(up.studyLanguage, 'name', langSuffix),
+      studyLanguage: this.getLocalizedField(
+        up.studyLanguage,
+        'name',
+        langSuffix,
+      ),
       studyLanguageId: up.studyLanguageId,
       scholarships:
         up.scholarships?.map((s) => ({
@@ -439,12 +463,13 @@ export class UniversitiesMapper {
       description: this.getLocalizedField(city, 'description', langSuffix),
       createdAt: city.createdAt || new Date(),
       updatedAt: city.updatedAt || new Date(),
-      country: city.country ? this.localizeCountry(city.country, langSuffix) : undefined,
+      country: city.country
+        ? this.localizeCountry(city.country, langSuffix)
+        : undefined,
     };
   }
 
   private formatDate(date: Date | null): string | null {
     return date ? date.toISOString().split('T')[0] : null;
   }
-
 }

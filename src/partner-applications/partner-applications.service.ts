@@ -42,11 +42,12 @@ export class PartnerApplicationsService {
       );
     }
 
-    // Verify university-program relationship exists
+    // Verify university-program relationship exists. The partner UI submits the
+    // university_programs.id, but accepting the raw Program id keeps older clients working.
     const universityProgram = await this.prisma.universityProgram.findFirst({
       where: {
-        id: dto.programId,
         universityId: dto.universityId,
+        OR: [{ id: dto.programId }, { programId: dto.programId }],
       },
       include: {
         university: true,
@@ -63,6 +64,30 @@ export class PartnerApplicationsService {
 
     const { university, program } = universityProgram;
 
+    const existingApplication = await this.prisma.partnerApplication.findFirst({
+      where: {
+        partnerId,
+        partnerStudentId: dto.partnerStudentId,
+        universityId: dto.universityId,
+        programId: program.id,
+        intakeSeason: dto.intakeSeason,
+        intakeYear: dto.intakeYear,
+        status: {
+          notIn: [
+            PartnerApplicationStatus.REJECTED,
+            PartnerApplicationStatus.WITHDRAWN,
+          ],
+        },
+      },
+      select: { id: true },
+    });
+
+    if (existingApplication) {
+      throw new InvalidDataException(
+        'An active application already exists for this student, program, and intake',
+      );
+    }
+
     const application = await this.prisma.partnerApplication.create({
       data: {
         partner: { connect: { id: partnerId } },
@@ -75,7 +100,9 @@ export class PartnerApplicationsService {
         gpa: dto.gpa,
         prerequisites: dto.prerequisites,
         notes: dto.notes,
-        backupPrograms: dto.backupPrograms ? JSON.stringify(dto.backupPrograms) : '[]',
+        backupPrograms: dto.backupPrograms
+          ? JSON.stringify(dto.backupPrograms)
+          : '[]',
         status: PartnerApplicationStatus.SUBMITTED,
         submittedAt: new Date(),
       },
@@ -93,13 +120,21 @@ export class PartnerApplicationsService {
 
     const [applications, total] = await Promise.all([
       this.prisma.partnerApplication.findMany({
-        where: { partnerId, ...(studentId ? { partnerStudentId: studentId } : {}) },
+        where: {
+          partnerId,
+          ...(studentId ? { partnerStudentId: studentId } : {}),
+        },
         skip,
         take,
         orderBy: { createdAt: 'desc' },
         include: this.includeRelations,
       }),
-      this.prisma.partnerApplication.count({ where: { partnerId, ...(studentId ? { partnerStudentId: studentId } : {}) } }),
+      this.prisma.partnerApplication.count({
+        where: {
+          partnerId,
+          ...(studentId ? { partnerStudentId: studentId } : {}),
+        },
+      }),
     ]);
 
     return {
@@ -125,8 +160,16 @@ export class PartnerApplicationsService {
     if (status) where.status = status;
     if (search) {
       where.OR = [
-        { partnerStudent: { firstName: { contains: search, mode: 'insensitive' } } },
-        { partnerStudent: { lastName: { contains: search, mode: 'insensitive' } } },
+        {
+          partnerStudent: {
+            firstName: { contains: search, mode: 'insensitive' },
+          },
+        },
+        {
+          partnerStudent: {
+            lastName: { contains: search, mode: 'insensitive' },
+          },
+        },
         { university: { name: { contains: search, mode: 'insensitive' } } },
         { program: { titleEn: { contains: search, mode: 'insensitive' } } },
       ];
@@ -210,11 +253,17 @@ export class PartnerApplicationsService {
       data: {
         ...(dto.intakeSeason && { intakeSeason: dto.intakeSeason }),
         ...(dto.intakeYear && { intakeYear: dto.intakeYear }),
-        ...(dto.englishProficiency !== undefined && { englishProficiency: dto.englishProficiency }),
+        ...(dto.englishProficiency !== undefined && {
+          englishProficiency: dto.englishProficiency,
+        }),
         ...(dto.gpa !== undefined && { gpa: dto.gpa }),
-        ...(dto.prerequisites !== undefined && { prerequisites: dto.prerequisites }),
+        ...(dto.prerequisites !== undefined && {
+          prerequisites: dto.prerequisites,
+        }),
         ...(dto.notes !== undefined && { notes: dto.notes }),
-        ...(dto.backupPrograms && { backupPrograms: JSON.stringify(dto.backupPrograms) }),
+        ...(dto.backupPrograms && {
+          backupPrograms: JSON.stringify(dto.backupPrograms),
+        }),
       },
       include: this.includeRelations,
     });
@@ -234,10 +283,7 @@ export class PartnerApplicationsService {
       throw new EntityNotFoundException('PartnerApplication', id);
     }
 
-    if (
-      dto.status === PartnerApplicationStatus.REJECTED &&
-      !dto.reason
-    ) {
+    if (dto.status === PartnerApplicationStatus.REJECTED && !dto.reason) {
       throw new InvalidDataException(
         'Rejection reason is required when status is REJECTED',
       );
