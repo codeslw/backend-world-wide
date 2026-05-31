@@ -47,6 +47,8 @@ export class FilesService {
       // 3) Return saved DB row with a presigned URL for client consumption
       return {
         ...savedFile,
+        storageKey: key,
+        publicUrl: this.digitalOceanService.getPublicUrl(key),
         url: await this.digitalOceanService.getPresignedUrl(key),
       };
     } catch (dbError) {
@@ -90,6 +92,8 @@ export class FilesService {
 
         results.push({
           ...saved,
+          storageKey: key,
+          publicUrl: this.digitalOceanService.getPublicUrl(key),
           url: await this.digitalOceanService.getPresignedUrl(key),
         });
       }
@@ -142,6 +146,8 @@ export class FilesService {
 
     return {
       ...file,
+      storageKey: file.url,
+      publicUrl: this.digitalOceanService.getPublicUrl(file.url),
       url: await this.digitalOceanService.getPresignedUrl(file.url),
     };
   }

@@ -37,6 +37,7 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { PartnerOrganizationsModule } from './partner-organizations/partner-organizations.module';
 import { PartnerMembersModule } from './partner-members/partner-members.module';
 import { PartnerCompanyModule } from './partner-company/partner-company.module';
+import { SiteSettingsModule } from './site-settings/site-settings.module';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { PartnerCompanyModule } from './partner-company/partner-company.module';
     PartnerOrganizationsModule,
     PartnerMembersModule,
     PartnerCompanyModule,
+    SiteSettingsModule,
     DbModule,
   ],
 
