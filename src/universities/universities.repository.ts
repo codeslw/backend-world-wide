@@ -169,6 +169,12 @@ export class UniversitiesRepository {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
         { website: { contains: search, mode: 'insensitive' } },
+        { city: { nameEn: { contains: search, mode: 'insensitive' } } },
+        { city: { nameRu: { contains: search, mode: 'insensitive' } } },
+        { city: { nameUz: { contains: search, mode: 'insensitive' } } },
+        { country: { nameEn: { contains: search, mode: 'insensitive' } } },
+        { country: { nameRu: { contains: search, mode: 'insensitive' } } },
+        { country: { nameUz: { contains: search, mode: 'insensitive' } } },
       ];
     }
 
@@ -291,6 +297,12 @@ export class UniversitiesRepository {
         { program: { titleUz: { contains: search, mode: 'insensitive' } } },
         { program: { titleRu: { contains: search, mode: 'insensitive' } } },
         { program: { titleEn: { contains: search, mode: 'insensitive' } } },
+        { university: { city: { nameEn: { contains: search, mode: 'insensitive' } } } },
+        { university: { city: { nameRu: { contains: search, mode: 'insensitive' } } } },
+        { university: { city: { nameUz: { contains: search, mode: 'insensitive' } } } },
+        { university: { country: { nameEn: { contains: search, mode: 'insensitive' } } } },
+        { university: { country: { nameRu: { contains: search, mode: 'insensitive' } } } },
+        { university: { country: { nameUz: { contains: search, mode: 'insensitive' } } } },
       ];
     }
 
