@@ -16,7 +16,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { ReviewsService } from './reviews.service';
-import { CreateReviewDto } from './dto/create-review.dto';
+import { CreateReviewDto, ReviewTypeDto } from './dto/create-review.dto';
 import { ReviewResponseDto } from './dto/review-response.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -36,18 +36,20 @@ export class ReviewsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all reviews sorted by rating (public)' })
+  @ApiOperation({ summary: 'Get all result items sorted by section order (public)' })
+  @ApiQuery({ name: 'type', required: false, enum: ReviewTypeDto })
   @ApiResponse({ status: 200, type: [ReviewResponseDto] })
-  findAll() {
-    return this.reviewsService.findAll();
+  findAll(@Query('type') type?: ReviewTypeDto) {
+    return this.reviewsService.findAll(type);
   }
 
   @Get('top')
-  @ApiOperation({ summary: 'Get top N reviews by rating (public)' })
+  @ApiOperation({ summary: 'Get top N result items (public)' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'type', required: false, enum: ReviewTypeDto })
   @ApiResponse({ status: 200, type: [ReviewResponseDto] })
-  findTop(@Query('limit') limit?: string) {
-    return this.reviewsService.findTop(limit ? parseInt(limit) : 3);
+  findTop(@Query('limit') limit?: string, @Query('type') type?: ReviewTypeDto) {
+    return this.reviewsService.findTop(limit ? parseInt(limit) : 3, type);
   }
 
   @Delete(':id')

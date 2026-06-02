@@ -872,18 +872,35 @@ model PartnerApplication {
 }
 
 model Review {
-  id          String   @id @default(uuid())
-  fullName    String
-  phoneNumber String?
-  rating      Int
-  content     String?
-  videoUrl    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                 String     @id @default(uuid())
+  type               ReviewType @default(STUDENT_TESTIMONIAL)
+  fullName           String
+  phoneNumber        String?
+  rating             Int        @default(5)
+  content            String?
+  videoUrl           String?
+  imageUrl           String?
+  country            String?
+  destinationCountry String?
+  degree             String?
+  university         String?
+  ranking            String?
+  scholarshipAmount  String?
+  sortOrder          Int        @default(0)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
 
+  @@index([type])
+  @@index([sortOrder])
   @@index([rating])
   @@index([createdAt])
   @@map("reviews")
+}
+
+enum ReviewType {
+  STUDENT_SUCCESS_VISA
+  STUDENT_TESTIMONIAL
+  UNIVERSITY_OFFER
 }
 
 model PartnerStudent {

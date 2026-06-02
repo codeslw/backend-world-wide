@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../db/prisma.service';
-import { CreateReviewDto } from './dto/create-review.dto';
+import { CreateReviewDto, ReviewTypeDto } from './dto/create-review.dto';
 import { Review } from '@prisma/client';
 
 @Injectable()
@@ -8,18 +8,26 @@ export class ReviewsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateReviewDto): Promise<Review> {
-    return this.prisma.review.create({ data: dto });
-  }
-
-  async findAll(): Promise<Review[]> {
-    return this.prisma.review.findMany({
-      orderBy: [{ rating: 'desc' }, { createdAt: 'desc' }],
+    return this.prisma.review.create({
+      data: {
+        ...dto,
+        type: dto.type ?? ReviewTypeDto.STUDENT_TESTIMONIAL,
+        rating: dto.rating ?? 5,
+      },
     });
   }
 
-  async findTop(limit = 3): Promise<Review[]> {
+  async findAll(type?: ReviewTypeDto): Promise<Review[]> {
     return this.prisma.review.findMany({
-      orderBy: [{ rating: 'desc' }, { createdAt: 'desc' }],
+      where: type ? { type } : undefined,
+      orderBy: [{ sortOrder: 'asc' }, { rating: 'desc' }, { createdAt: 'desc' }],
+    });
+  }
+
+  async findTop(limit = 3, type?: ReviewTypeDto): Promise<Review[]> {
+    return this.prisma.review.findMany({
+      where: type ? { type } : undefined,
+      orderBy: [{ sortOrder: 'asc' }, { rating: 'desc' }, { createdAt: 'desc' }],
       take: limit,
     });
   }
