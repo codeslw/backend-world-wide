@@ -36,20 +36,49 @@ export class ReviewsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all result items sorted by section order (public)' })
+  @ApiOperation({
+    summary: 'Get all result items sorted by section order (public)',
+  })
   @ApiQuery({ name: 'type', required: false, enum: ReviewTypeDto })
+  @ApiQuery({ name: 'country', required: false, type: String })
+  @ApiQuery({ name: 'year', required: false, type: Number })
+  @ApiQuery({ name: 'program', required: false, type: String })
   @ApiResponse({ status: 200, type: [ReviewResponseDto] })
-  findAll(@Query('type') type?: ReviewTypeDto) {
-    return this.reviewsService.findAll(type);
+  findAll(
+    @Query('type') type?: ReviewTypeDto,
+    @Query('country') country?: string,
+    @Query('year') year?: string,
+    @Query('program') program?: string,
+  ) {
+    return this.reviewsService.findAll({
+      type,
+      country,
+      year: year ? parseInt(year) : undefined,
+      program,
+    });
   }
 
   @Get('top')
   @ApiOperation({ summary: 'Get top N result items (public)' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'type', required: false, enum: ReviewTypeDto })
+  @ApiQuery({ name: 'country', required: false, type: String })
+  @ApiQuery({ name: 'year', required: false, type: Number })
+  @ApiQuery({ name: 'program', required: false, type: String })
   @ApiResponse({ status: 200, type: [ReviewResponseDto] })
-  findTop(@Query('limit') limit?: string, @Query('type') type?: ReviewTypeDto) {
-    return this.reviewsService.findTop(limit ? parseInt(limit) : 3, type);
+  findTop(
+    @Query('limit') limit?: string,
+    @Query('type') type?: ReviewTypeDto,
+    @Query('country') country?: string,
+    @Query('year') year?: string,
+    @Query('program') program?: string,
+  ) {
+    return this.reviewsService.findTop(limit ? parseInt(limit) : 3, {
+      type,
+      country,
+      year: year ? parseInt(year) : undefined,
+      program,
+    });
   }
 
   @Delete(':id')

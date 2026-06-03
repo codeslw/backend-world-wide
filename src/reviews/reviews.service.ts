@@ -1,8 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../db/prisma.service';
 import { CreateReviewDto, ReviewTypeDto } from './dto/create-review.dto';
-import { Review } from '@prisma/client';
+import { Prisma, Review } from '@prisma/client';
 import { DigitalOceanService } from '../digital-ocean/digital-ocean.service';
+
+export interface ReviewFilters {
+  type?: ReviewTypeDto;
+  country?: string;
+  year?: number;
+  program?: string;
+}
 
 @Injectable()
 export class ReviewsService {
@@ -24,19 +31,27 @@ export class ReviewsService {
     return this.normalizeReviewImage(review);
   }
 
-  async findAll(type?: ReviewTypeDto): Promise<Review[]> {
+  async findAll(filters: ReviewFilters = {}): Promise<Review[]> {
     const reviews = await this.prisma.review.findMany({
-      where: type ? { type } : undefined,
-      orderBy: [{ sortOrder: 'asc' }, { rating: 'desc' }, { createdAt: 'desc' }],
+      where: this.buildWhere(filters),
+      orderBy: [
+        { sortOrder: 'asc' },
+        { rating: 'desc' },
+        { createdAt: 'desc' },
+      ],
     });
 
     return reviews.map((review) => this.normalizeReviewImage(review));
   }
 
-  async findTop(limit = 3, type?: ReviewTypeDto): Promise<Review[]> {
+  async findTop(limit = 3, filters: ReviewFilters = {}): Promise<Review[]> {
     const reviews = await this.prisma.review.findMany({
-      where: type ? { type } : undefined,
-      orderBy: [{ sortOrder: 'asc' }, { rating: 'desc' }, { createdAt: 'desc' }],
+      where: this.buildWhere(filters),
+      orderBy: [
+        { sortOrder: 'asc' },
+        { rating: 'desc' },
+        { createdAt: 'desc' },
+      ],
       take: limit,
     });
 
@@ -54,5 +69,32 @@ export class ReviewsService {
       ...review,
       imageUrl: this.digitalOceanService.normalizeToPublicUrl(review.imageUrl),
     };
+  }
+
+  private buildWhere(filters: ReviewFilters): Prisma.ReviewWhereInput {
+    const where: Prisma.ReviewWhereInput = {};
+
+    if (filters.type) where.type = filters.type;
+
+    if (filters.country?.trim()) {
+      const country = filters.country.trim();
+      where.OR = [
+        { country: { equals: country, mode: 'insensitive' } },
+        { destinationCountry: { equals: country, mode: 'insensitive' } },
+      ];
+    }
+
+    if (filters.program?.trim()) {
+      where.degree = { equals: filters.program.trim(), mode: 'insensitive' };
+    }
+
+    if (filters.year && Number.isInteger(filters.year)) {
+      where.createdAt = {
+        gte: new Date(Date.UTC(filters.year, 0, 1)),
+        lt: new Date(Date.UTC(filters.year + 1, 0, 1)),
+      };
+    }
+
+    return where;
   }
 }
