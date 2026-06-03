@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../db/prisma.service';
 import { CreateReviewDto, ReviewTypeDto } from './dto/create-review.dto';
+import { UpdateReviewDto } from './dto/update-review.dto';
 import { Prisma, Review } from '@prisma/client';
 import { DigitalOceanService } from '../digital-ocean/digital-ocean.service';
 
@@ -56,6 +57,24 @@ export class ReviewsService {
     });
 
     return reviews.map((review) => this.normalizeReviewImage(review));
+  }
+
+  async update(id: string, dto: UpdateReviewDto): Promise<Review> {
+    const review = await this.prisma.review.findUnique({ where: { id } });
+    if (!review) throw new NotFoundException(`Review with ID ${id} not found`);
+
+    const updated = await this.prisma.review.update({
+      where: { id },
+      data: {
+        ...dto,
+        imageUrl:
+          dto.imageUrl === undefined
+            ? undefined
+            : this.digitalOceanService.normalizeToPublicUrl(dto.imageUrl),
+      },
+    });
+
+    return this.normalizeReviewImage(updated);
   }
 
   async remove(id: string): Promise<Review> {

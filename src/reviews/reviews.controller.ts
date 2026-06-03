@@ -1,12 +1,13 @@
 import {
   Controller,
-  Get,
-  Post,
-  Delete,
   Body,
+  Delete,
+  Get,
   Param,
-  UseGuards,
+  Patch,
+  Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,6 +18,7 @@ import {
 } from '@nestjs/swagger';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto, ReviewTypeDto } from './dto/create-review.dto';
+import { UpdateReviewDto } from './dto/update-review.dto';
 import { ReviewResponseDto } from './dto/review-response.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -79,6 +81,16 @@ export class ReviewsController {
       year: year ? parseInt(year) : undefined,
       program,
     });
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Update a review/result item (admin only)' })
+  @ApiResponse({ status: 200, type: ReviewResponseDto })
+  update(@Param('id') id: string, @Body() dto: UpdateReviewDto) {
+    return this.reviewsService.update(id, dto);
   }
 
   @Delete(':id')
