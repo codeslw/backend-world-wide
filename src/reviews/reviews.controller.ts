@@ -3,6 +3,7 @@ import {
   Body,
   Delete,
   Get,
+  Headers,
   Param,
   Patch,
   Post,
@@ -14,12 +15,14 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiHeader,
   ApiQuery,
 } from '@nestjs/swagger';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto, ReviewTypeDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { ReviewResponseDto } from './dto/review-response.dto';
+import { ReviewFilterOptionsResponseDto } from './dto/review-filter-options.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -58,6 +61,18 @@ export class ReviewsController {
       year: year ? parseInt(year) : undefined,
       program,
     });
+  }
+
+  @Get('filter-options')
+  @ApiOperation({ summary: 'Get result page filter options (public)' })
+  @ApiHeader({
+    name: 'Accept-Language',
+    enum: ['uz', 'ru', 'en'],
+    description: 'Language preference',
+  })
+  @ApiResponse({ status: 200, type: ReviewFilterOptionsResponseDto })
+  getFilterOptions(@Headers('Accept-Language') lang: string = 'uz') {
+    return this.reviewsService.getFilterOptions(lang);
   }
 
   @Get('top')
