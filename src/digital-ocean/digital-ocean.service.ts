@@ -130,7 +130,59 @@ export class DigitalOceanService {
 
   getPublicUrl(key: string): string {
     const normalizedEndpoint = this.endpoint.replace(/^https?:\/\//, '');
-    return `https://${this.bucket}.${normalizedEndpoint}/${key}`;
+    return `https://${this.bucket}.${normalizedEndpoint}/${this.encodeKey(key)}`;
+  }
+
+  getStorageKey(value: string): string {
+    try {
+      const parsedUrl = new URL(value);
+      const endpointHost = new URL(this.endpoint).hostname;
+      const isManagedUrl =
+        parsedUrl.hostname === endpointHost ||
+        parsedUrl.hostname === `${this.bucket}.${endpointHost}`;
+
+      if (!isManagedUrl) {
+        return value;
+      }
+
+      const path = this.decodeKey(parsedUrl.pathname.replace(/^\/+/, ''));
+      return path.startsWith(`${this.bucket}/`)
+        ? path.substring(this.bucket.length + 1)
+        : path;
+    } catch {
+      const key = value.replace(/^\/+/, '');
+      return key.startsWith(`${this.bucket}/`)
+        ? key.substring(this.bucket.length + 1)
+        : key;
+    }
+  }
+
+  normalizeToPublicUrl(value?: string | null): string | null {
+    if (!value) {
+      return null;
+    }
+
+    const key = this.getStorageKey(value);
+    if (/^https?:\/\//i.test(key)) {
+      return value;
+    }
+
+    return this.getPublicUrl(key);
+  }
+
+  private encodeKey(key: string): string {
+    return key
+      .split('/')
+      .map((segment) => encodeURIComponent(this.decodeKey(segment)))
+      .join('/');
+  }
+
+  private decodeKey(key: string): string {
+    try {
+      return decodeURIComponent(key);
+    } catch {
+      return key;
+    }
   }
 
   /**
