@@ -9,6 +9,7 @@ import {
   IsEnum,
   IsArray,
   IsUUID,
+  IsBoolean,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { UniversityType } from '../../common/enum/university-type.enum';
@@ -290,6 +291,18 @@ export class UniversityFilterDto {
   @Max(4.5)
   @Type(() => Number)
   maxGpa?: number;
+
+  @ApiProperty({ description: 'Filter by scholarship availability', required: false })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  hasScholarship?: boolean;
+
+  @ApiProperty({ description: 'Filter by full (100%) scholarship availability', required: false })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  hasFullScholarship?: boolean;
 
   @ApiProperty({ description: 'Page number', required: false })
   @IsOptional()

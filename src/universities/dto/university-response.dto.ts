@@ -215,6 +215,18 @@ export class UniversityResponseDto {
   })
   hasScholarship?: boolean;
 
+  @ApiPropertyOptional({
+    description: 'Whether this university has a full (100%) scholarship',
+  })
+  hasFullScholarship?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Additional expenses for the university',
+    type: 'array',
+    items: { type: 'object', properties: { label: { type: 'string' }, amount: { type: 'string' } } },
+  })
+  additionalExpenses?: { label: string; amount: string }[];
+
   @ApiProperty({
     description: 'Scholarships for this university',
     type: [ScholarshipResponseDto],

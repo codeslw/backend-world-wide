@@ -191,6 +191,7 @@ export class UniversitiesService {
                 nameUz: true,
                 nameRu: true,
                 nameEn: true,
+                photoUrl: true,
               },
             },
             city: {
@@ -588,6 +589,7 @@ export class UniversitiesService {
                     nameUz: true,
                     nameRu: true,
                     nameEn: true,
+                    photoUrl: true,
                   },
                 },
                 city: {
@@ -723,6 +725,39 @@ export class UniversitiesService {
     } catch (error) {
       throw new BadRequestException('Error finding programs by university');
     }
+  }
+
+  async findAllUniversityPrograms(lang: string = 'uz') {
+    const cacheKey = `universities:allPrograms:${lang}`;
+    const cached = await this.cacheManager.get<any>(cacheKey);
+    if (cached) return cached;
+
+    const langSuffix = lang.charAt(0).toUpperCase() + lang.slice(1);
+    const universityPrograms = await this.prisma.universityProgram.findMany({
+      distinct: ['programId'],
+      select: {
+        programId: true,
+        program: {
+          select: {
+            id: true,
+            titleUz: true,
+            titleRu: true,
+            titleEn: true,
+          },
+        },
+      },
+    });
+
+    const result = universityPrograms.map((up) => ({
+      id: up.programId,
+      title: (up.program as any)?.[`title${langSuffix}`] || (up.program as any)?.titleUz || '',
+      titleUz: (up.program as any)?.titleUz || '',
+      titleRu: (up.program as any)?.titleRu || '',
+      titleEn: (up.program as any)?.titleEn || '',
+    }));
+
+    await this.cacheManager.set(cacheKey, result);
+    return result;
   }
 
   private async updateUniversityPrograms(

@@ -218,14 +218,16 @@ export class ScholarshipsService {
   }
 
   private async updateUniversityScholarshipStatus(universityId: string) {
-    const count = await this.prisma.scholarship.count({
-      where: { universityId },
-    });
+    const [count, fullCount] = await Promise.all([
+      this.prisma.scholarship.count({ where: { universityId } }),
+      this.prisma.scholarship.count({ where: { universityId, isFullScholarship: true } }),
+    ]);
 
     await this.prisma.university.update({
       where: { id: universityId },
       data: {
         hasScholarship: count > 0,
+        hasFullScholarship: fullCount > 0,
         scholarshipRequirements: [],
       },
     });

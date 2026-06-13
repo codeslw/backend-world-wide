@@ -257,6 +257,25 @@ export class CreateUniversityDto {
   hasScholarship?: boolean;
 
   @ApiPropertyOptional({
+    description: 'Whether the university offers full (100%) scholarships',
+    example: false,
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  hasFullScholarship?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Additional expenses for the university (e.g. housing, insurance)',
+    example: [{ label: 'Housing', amount: '500 EUR/month' }],
+    type: 'array',
+    items: { type: 'object', properties: { label: { type: 'string' }, amount: { type: 'string' } } },
+  })
+  @IsOptional()
+  @IsArray()
+  additionalExpenses?: { label: string; amount: string }[];
+
+  @ApiPropertyOptional({
     description: 'List of general scholarship requirements',
     example: ['IELTS 7.0', 'GPA 3.5'],
     type: [String],

@@ -137,6 +137,9 @@ export class UniversityByProgramResponseDto {
   @ApiPropertyOptional({ description: 'University photo URL' })
   photoUrl?: string;
 
+  @ApiPropertyOptional({ description: 'University logo URL' })
+  logoUrl?: string;
+
   @ApiPropertyOptional({
     description: 'Winter intake deadline (YYYY-MM-DD)',
     type: String,

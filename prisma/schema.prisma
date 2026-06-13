@@ -170,6 +170,8 @@ model University {
   universityPrograms      UniversityProgram[]
   applications            Application[]
   hasScholarship          Boolean                 @default(false)
+  hasFullScholarship      Boolean                 @default(false)
+  additionalExpenses      Json                    @default("[]")
   scholarshipRequirements String[]                @default([])
   scholarships            Scholarship[]
   admissionRequirements   AdmissionRequirement[]
@@ -489,6 +491,9 @@ model Scholarship {
 
   // Auto-application flag
   isAutoApplied Boolean @default(false)
+
+  // Full scholarship flag (100% tuition covered)
+  isFullScholarship Boolean @default(false)
 
   // Visibility flag — controls whether scholarship appears in public listing
   isVisible Boolean @default(true)

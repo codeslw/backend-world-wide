@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UniversityType } from '../../common/enum/university-type.enum';
 import { Currency } from '../../common/enum/currency.enum';
 
@@ -62,6 +62,12 @@ export class UniversityListItemDto {
 
   @ApiProperty({ description: 'Whether this university has a scholarship' })
   hasScholarship: boolean;
+
+  @ApiPropertyOptional({ description: 'Whether this university has a full (100%) scholarship' })
+  hasFullScholarship?: boolean;
+
+  @ApiPropertyOptional({ description: 'Country flag / photo URL' })
+  countryPhotoUrl?: string;
 }
 
 import { PaginatedResponseDto } from '../../common/dto/pagination-response.dto';

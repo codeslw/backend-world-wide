@@ -13,6 +13,9 @@ export class ScholarshipResponseDto {
   @ApiProperty()
   isAutoApplied: boolean;
 
+  @ApiPropertyOptional({ default: false })
+  isFullScholarship?: boolean;
+
   @ApiProperty({ default: true })
   isVisible: boolean;
 

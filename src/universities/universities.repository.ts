@@ -42,6 +42,8 @@ export class UniversitiesRepository {
       maxIeltsListening,
       minGpa,
       maxGpa,
+      hasScholarship,
+      hasFullScholarship,
     } = filterDto;
 
     const where: Prisma.UniversityWhereInput = {};
@@ -50,6 +52,8 @@ export class UniversitiesRepository {
     if (cityId) where.cityId = cityId;
     if (universityId) where.id = universityId;
     if (type) where.type = type;
+    if (hasScholarship === true) where.hasScholarship = true;
+    if (hasFullScholarship === true) where.hasFullScholarship = true;
 
     // Numeric ranges
     if (minRanking !== undefined || maxRanking !== undefined) {

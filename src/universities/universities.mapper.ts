@@ -139,6 +139,8 @@ export class UniversitiesMapper {
           lastUpdated: s.lastUpdated,
         })) || [],
       hasScholarship: university.hasScholarship ?? false,
+      hasFullScholarship: (university as any).hasFullScholarship ?? false,
+      additionalExpenses: ((university as any).additionalExpenses as any) || [],
       admissionRequirements: university.admissionRequirements?.map((req) => ({
         ...req,
         languageRequirements:
@@ -222,7 +224,9 @@ export class UniversitiesMapper {
       masterCount,
       phdCount,
       hasScholarship: university.hasScholarship ?? false,
+      hasFullScholarship: (university as any).hasFullScholarship ?? false,
       isAdmissionFeeRefundable: university.isAdmissionFeeRefundable ?? false,
+      countryPhotoUrl: (university.country as any)?.photoUrl || undefined,
     };
   }
 
@@ -315,6 +319,7 @@ export class UniversitiesMapper {
       avgApplicationFee: university.avgApplicationFee,
       applicationFeeCurrency: university.applicationFeeCurrency as Currency,
       photoUrl: university.photoUrl,
+      logoUrl: university.logoUrl,
       winterIntakeDeadline: this.formatDate(university.winterIntakeDeadline),
       autumnIntakeDeadline: this.formatDate(university.autumnIntakeDeadline),
       country: this.localizeCountry(university.country, langSuffix),
@@ -365,6 +370,7 @@ export class UniversitiesMapper {
           })) || [],
         campuses: (up.campuses as any) || [],
       },
+      hasFullScholarship: (university as any).hasFullScholarship ?? false,
       createdAt: university.createdAt.toISOString(),
       updatedAt: university.updatedAt.toISOString(),
     };

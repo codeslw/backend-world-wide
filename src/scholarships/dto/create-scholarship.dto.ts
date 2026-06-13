@@ -36,6 +36,15 @@ export class CreateScholarshipDto {
   isAutoApplied?: boolean;
 
   @ApiPropertyOptional({
+    description: 'Is this a full (100%) scholarship?',
+    example: false,
+    default: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  isFullScholarship?: boolean;
+
+  @ApiPropertyOptional({
     description: 'Is visible in the public scholarship listing? (Still shown on university detail page)',
     example: true,
     default: true,

@@ -125,6 +125,16 @@ export class UniversitiesController {
     return this.universitiesService.findAll(filterDto, effectiveLang);
   }
 
+  //GET /universities/all-programs
+  @Get('all-programs')
+  async findAllUniversityPrograms(
+    @Headers('Accept-Language') lang: string = 'uz',
+  ) {
+    const validLangs = ['uz', 'ru', 'en'];
+    const effectiveLang = validLangs.includes(lang) ? lang : 'uz';
+    return this.universitiesService.findAllUniversityPrograms(effectiveLang);
+  }
+
   //GET /universities/:id
   @Get(':id')
   @ApiUniversityById()
