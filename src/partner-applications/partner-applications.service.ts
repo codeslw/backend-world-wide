@@ -10,10 +10,14 @@ import {
   ForbiddenActionException,
   InvalidDataException,
 } from '../common/exceptions/app.exceptions';
+import { PartnerOrganizationsService } from '../partner-organizations/partner-organizations.service';
 
 @Injectable()
 export class PartnerApplicationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly partnerOrgs: PartnerOrganizationsService,
+  ) {}
 
   private readonly includeRelations = {
     partnerStudent: true,
@@ -21,6 +25,16 @@ export class PartnerApplicationsService {
       include: { country: true },
     },
     program: true,
+    partner: {
+      select: {
+        id: true,
+        email: true,
+        partnerOrganization: { select: { id: true, name: true } },
+        partnerMembership: {
+          select: { organization: { select: { id: true, name: true } } },
+        },
+      },
+    },
   };
 
   async create(
@@ -113,28 +127,29 @@ export class PartnerApplicationsService {
   }
 
   async findAllByPartner(
-    partnerId: string,
+    userId: string,
     options?: { skip?: number; take?: number; studentId?: string },
   ) {
     const { skip = 0, take = 50, studentId } = options || {};
 
+    // Org-wide visibility, gated by VIEW_STUDENTS for plain members.
+    const visiblePartnerIds =
+      await this.partnerOrgs.resolveVisiblePartnerIds(userId);
+
+    const where = {
+      partnerId: { in: visiblePartnerIds },
+      ...(studentId ? { partnerStudentId: studentId } : {}),
+    };
+
     const [applications, total] = await Promise.all([
       this.prisma.partnerApplication.findMany({
-        where: {
-          partnerId,
-          ...(studentId ? { partnerStudentId: studentId } : {}),
-        },
+        where,
         skip,
         take,
         orderBy: { createdAt: 'desc' },
         include: this.includeRelations,
       }),
-      this.prisma.partnerApplication.count({
-        where: {
-          partnerId,
-          ...(studentId ? { partnerStudentId: studentId } : {}),
-        },
-      }),
+      this.prisma.partnerApplication.count({ where }),
     ]);
 
     return {
@@ -181,10 +196,7 @@ export class PartnerApplicationsService {
         skip,
         take,
         orderBy: { createdAt: 'desc' },
-        include: {
-          ...this.includeRelations,
-          partner: { select: { id: true, email: true } },
-        },
+        include: this.includeRelations,
       }),
       this.prisma.partnerApplication.count({ where }),
     ]);
@@ -202,7 +214,7 @@ export class PartnerApplicationsService {
 
   async findOne(
     id: string,
-    partnerId?: string,
+    partnerIds?: string[],
   ): Promise<PartnerApplicationResponseDto> {
     const application = await this.prisma.partnerApplication.findUnique({
       where: { id },
@@ -213,7 +225,7 @@ export class PartnerApplicationsService {
       throw new EntityNotFoundException('PartnerApplication', id);
     }
 
-    if (partnerId && application.partnerId !== partnerId) {
+    if (partnerIds && !partnerIds.includes(application.partnerId)) {
       throw new ForbiddenActionException(
         'You do not have permission to access this application',
       );
@@ -224,7 +236,7 @@ export class PartnerApplicationsService {
 
   async update(
     id: string,
-    partnerId: string,
+    partnerIds: string[],
     dto: UpdatePartnerApplicationDto,
   ): Promise<PartnerApplicationResponseDto> {
     const application = await this.prisma.partnerApplication.findUnique({
@@ -235,7 +247,7 @@ export class PartnerApplicationsService {
       throw new EntityNotFoundException('PartnerApplication', id);
     }
 
-    if (application.partnerId !== partnerId) {
+    if (!partnerIds.includes(application.partnerId)) {
       throw new ForbiddenActionException(
         'You do not have permission to update this application',
       );
@@ -248,6 +260,33 @@ export class PartnerApplicationsService {
       );
     }
 
+    return this.applyUpdate(id, dto);
+  }
+
+  /**
+   * Admin edit of a partner-submitted application. Unlike the partner update,
+   * this is not restricted to DRAFT status or to a partner owner.
+   */
+  async adminUpdate(
+    id: string,
+    dto: UpdatePartnerApplicationDto,
+  ): Promise<PartnerApplicationResponseDto> {
+    const application = await this.prisma.partnerApplication.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!application) {
+      throw new EntityNotFoundException('PartnerApplication', id);
+    }
+
+    return this.applyUpdate(id, dto);
+  }
+
+  private async applyUpdate(
+    id: string,
+    dto: UpdatePartnerApplicationDto,
+  ): Promise<PartnerApplicationResponseDto> {
     const updated = await this.prisma.partnerApplication.update({
       where: { id },
       data: {
@@ -314,7 +353,7 @@ export class PartnerApplicationsService {
     return this.mapToDto(updated);
   }
 
-  async remove(id: string, partnerId?: string): Promise<void> {
+  async remove(id: string, partnerIds?: string[]): Promise<void> {
     const application = await this.prisma.partnerApplication.findUnique({
       where: { id },
     });
@@ -323,7 +362,7 @@ export class PartnerApplicationsService {
       throw new EntityNotFoundException('PartnerApplication', id);
     }
 
-    if (partnerId && application.partnerId !== partnerId) {
+    if (partnerIds && !partnerIds.includes(application.partnerId)) {
       throw new ForbiddenActionException(
         'You do not have permission to delete this application',
       );
@@ -342,9 +381,15 @@ export class PartnerApplicationsService {
   }
 
   private mapToDto(application: any): PartnerApplicationResponseDto {
+    const org =
+      application.partner?.partnerOrganization ||
+      application.partner?.partnerMembership?.organization ||
+      null;
     return {
       id: application.id,
       partnerId: application.partnerId,
+      partnerOrganizationId: org?.id ?? null,
+      partnerOrganizationName: org?.name ?? null,
       partnerStudentId: application.partnerStudentId,
       partnerStudent: application.partnerStudent,
       universityId: application.universityId,

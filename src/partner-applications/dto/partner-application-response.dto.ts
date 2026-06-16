@@ -9,6 +9,12 @@ export class PartnerApplicationResponseDto {
   @ApiProperty({ description: 'Partner user ID' })
   partnerId: string;
 
+  @ApiPropertyOptional({ description: 'Partner organization ID' })
+  partnerOrganizationId?: string | null;
+
+  @ApiPropertyOptional({ description: 'Partner organization (agency) name' })
+  partnerOrganizationName?: string | null;
+
   @ApiProperty({ description: 'Partner student ID' })
   partnerStudentId: string;
 

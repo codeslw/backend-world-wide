@@ -14,6 +14,7 @@ import {
   Put,
 } from '@nestjs/common';
 import { PartnerApplicationsService } from './partner-applications.service';
+import { PartnerOrganizationsService } from '../partner-organizations/partner-organizations.service';
 import { CreatePartnerApplicationDto } from './dto/create-partner-application.dto';
 import { UpdatePartnerApplicationDto } from './dto/update-partner-application.dto';
 import { UpdatePartnerApplicationStatusDto } from './dto/update-partner-application-status.dto';
@@ -52,7 +53,16 @@ interface RequestWithUser extends Request {
 export class PartnerApplicationsController {
   constructor(
     private readonly partnerApplicationsService: PartnerApplicationsService,
+    private readonly partnerOrgs: PartnerOrganizationsService,
   ) {}
+
+  /** Visible partner User ids for a partner request; undefined for admins. */
+  private async visiblePartnerIds(
+    req: RequestWithUser,
+  ): Promise<string[] | undefined> {
+    if (req.user.role !== Role.PARTNER) return undefined;
+    return this.partnerOrgs.resolveVisiblePartnerIds(req.user.userId);
+  }
 
   @Post()
   @Roles(Role.PARTNER)
@@ -70,7 +80,9 @@ export class PartnerApplicationsController {
 
   @Get('my')
   @Roles(Role.PARTNER)
-  @ApiOperation({ summary: 'Get all applications submitted by the current partner' })
+  @ApiOperation({
+    summary: 'Get all applications submitted by the current partner',
+  })
   @ApiResponse({ status: 200, type: PaginatedPartnerApplicationResponseDto })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -107,7 +119,10 @@ export class PartnerApplicationsController {
     return this.partnerApplicationsService.findAll({
       skip,
       take: limit || 50,
-      status: (status as any) === 'undefined' || status === ('' as any) ? undefined : status,
+      status:
+        (status as any) === 'undefined' || status === ('' as any)
+          ? undefined
+          : status,
       search: search === 'undefined' || search === '' ? undefined : search,
     });
   }
@@ -117,24 +132,29 @@ export class PartnerApplicationsController {
   @ApiOperation({ summary: 'Get a partner application by ID' })
   @ApiResponse({ status: 200, type: PartnerApplicationResponseDto })
   @ApiResponse({ status: 404, type: ErrorResponseDto })
-  findOne(@Param('id') id: string, @Req() req: RequestWithUser) {
-    const partnerId =
-      req.user.role === Role.PARTNER ? req.user.userId : undefined;
-    return this.partnerApplicationsService.findOne(id, partnerId);
+  async findOne(@Param('id') id: string, @Req() req: RequestWithUser) {
+    const partnerIds = await this.visiblePartnerIds(req);
+    return this.partnerApplicationsService.findOne(id, partnerIds);
   }
 
   @Patch(':id')
-  @Roles(Role.PARTNER)
-  @ApiOperation({ summary: 'Update a partner application (DRAFT only)' })
+  @Roles(Role.PARTNER, Role.ADMIN)
+  @ApiOperation({
+    summary: 'Update a partner application (partner: DRAFT only; admin: any)',
+  })
   @ApiResponse({ status: 200, type: PartnerApplicationResponseDto })
   @ApiResponse({ status: 403, type: ErrorResponseDto })
   @ApiResponse({ status: 404, type: ErrorResponseDto })
-  update(
+  async update(
     @Param('id') id: string,
     @Body() dto: UpdatePartnerApplicationDto,
     @Req() req: RequestWithUser,
   ) {
-    return this.partnerApplicationsService.update(id, req.user.userId, dto);
+    if (req.user.role === Role.ADMIN) {
+      return this.partnerApplicationsService.adminUpdate(id, dto);
+    }
+    const partnerIds = await this.visiblePartnerIds(req);
+    return this.partnerApplicationsService.update(id, partnerIds!, dto);
   }
 
   @Put(':id/status')
@@ -154,13 +174,14 @@ export class PartnerApplicationsController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Roles(Role.PARTNER, Role.ADMIN)
-  @ApiOperation({ summary: 'Delete a partner application (DRAFT/WITHDRAWN only)' })
+  @ApiOperation({
+    summary: 'Delete a partner application (DRAFT/WITHDRAWN only)',
+  })
   @ApiResponse({ status: 204, description: 'Application deleted' })
   @ApiResponse({ status: 403, type: ErrorResponseDto })
   @ApiResponse({ status: 404, type: ErrorResponseDto })
-  remove(@Param('id') id: string, @Req() req: RequestWithUser) {
-    const partnerId =
-      req.user.role === Role.PARTNER ? req.user.userId : undefined;
-    return this.partnerApplicationsService.remove(id, partnerId);
+  async remove(@Param('id') id: string, @Req() req: RequestWithUser) {
+    const partnerIds = await this.visiblePartnerIds(req);
+    return this.partnerApplicationsService.remove(id, partnerIds);
   }
 }

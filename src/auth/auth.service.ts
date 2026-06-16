@@ -39,7 +39,9 @@ export class AuthService {
 
     if (user.role === Role.PARTNER) {
       // Check if this user is a member of someone else's org first
-      const membership = await this.partnerOrgsService.findByMemberUserId(user.id);
+      const membership = await this.partnerOrgsService.findByMemberUserId(
+        user.id,
+      );
       if (membership) {
         organizationId = membership.organizationId;
         partnerRole = membership.role;
@@ -51,6 +53,14 @@ export class AuthService {
         const org = await this.partnerOrgsService.getOrCreateForOwner(user.id);
         organizationId = org.id;
         partnerRole = 'OWNER';
+      }
+
+      // Block access for organizations whose platform access has been disabled.
+      const orgActive = await this.partnerOrgsService.isUserOrgActive(user.id);
+      if (!orgActive) {
+        throw new UnauthorizedException(
+          "Your organization's platform access has been disabled. Please contact support.",
+        );
       }
     }
 
@@ -181,15 +191,30 @@ export class AuthService {
       let permissions: string[] = [];
 
       if (tokenRecord.user.role === Role.PARTNER) {
-        const membership = await this.partnerOrgsService.findByMemberUserId(tokenRecord.user.id);
+        const membership = await this.partnerOrgsService.findByMemberUserId(
+          tokenRecord.user.id,
+        );
         if (membership) {
           organizationId = membership.organizationId;
           partnerRole = membership.role;
-          permissions = membership.permissions.filter((p) => p.granted).map((p) => p.action);
+          permissions = membership.permissions
+            .filter((p) => p.granted)
+            .map((p) => p.action);
         } else {
-          const org = await this.partnerOrgsService.getOrCreateForOwner(tokenRecord.user.id);
+          const org = await this.partnerOrgsService.getOrCreateForOwner(
+            tokenRecord.user.id,
+          );
           organizationId = org.id;
           partnerRole = 'OWNER';
+        }
+
+        const orgActive = await this.partnerOrgsService.isUserOrgActive(
+          tokenRecord.user.id,
+        );
+        if (!orgActive) {
+          throw new UnauthorizedException(
+            "Your organization's platform access has been disabled.",
+          );
         }
       }
 

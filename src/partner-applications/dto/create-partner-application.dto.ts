@@ -44,7 +44,9 @@ export class CreatePartnerApplicationDto {
   @IsString()
   gpa?: string;
 
-  @ApiPropertyOptional({ description: 'Additional prerequisites or qualifications' })
+  @ApiPropertyOptional({
+    description: 'Additional prerequisites or qualifications',
+  })
   @IsOptional()
   @IsString()
   prerequisites?: string;
@@ -55,7 +57,8 @@ export class CreatePartnerApplicationDto {
   notes?: string;
 
   @ApiPropertyOptional({
-    description: 'Backup programs array of objects with programId, universityId, programTitle, universityName',
+    description:
+      'Backup programs array of objects with programId, universityId, programTitle, universityName',
     type: 'array',
   })
   @IsOptional()

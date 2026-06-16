@@ -12,6 +12,7 @@
     "build": "nest build",
     "build:verbose": "tsc --listFiles --listEmittedFiles",
     "prisma:generate": "prisma generate",
+    "swagger:generate": "ts-node -r tsconfig-paths/register scripts/generate-swagger.ts",
     "prisma:push": "prisma db push",
     "prisma:seed": "ts-node prisma/seed-scholarships.ts",
     "db:seed": "./scripts/db-seed.sh",
