@@ -11,7 +11,6 @@ import { PrismaService } from '../db/prisma.service';
 import { Response } from 'express';
 import axios from 'axios';
 import { lastValueFrom } from 'rxjs';
-import { parse } from 'url';
 import { basename } from 'path';
 
 @Injectable()
@@ -153,6 +152,25 @@ export class FilesService {
   }
 
   /**
+   * Resolve a stored storage key (or a legacy full/presigned URL) into a
+   * stable, non-expiring public URL. Uploaded objects are stored with a
+   * `public-read` ACL, so the public URL is directly accessible and — unlike a
+   * presigned URL — never expires. Used by chat so attachments keep working
+   * after the (formerly 1-hour) presigned link would have expired.
+   */
+  toPublicUrl(keyOrUrl?: string | null): string | null {
+    return this.digitalOceanService.normalizeToPublicUrl(keyOrUrl);
+  }
+
+  /**
+   * Reduce any stored value (key or full/presigned URL) back to a stable
+   * storage key so it can be re-signed or re-served later.
+   */
+  toStorageKey(keyOrUrl: string): string {
+    return this.digitalOceanService.getStorageKey(keyOrUrl);
+  }
+
+  /**
    * Download file by DB id (uses presigned url).
    */
   async downloadFile(id: string, res: Response) {
@@ -222,22 +240,37 @@ export class FilesService {
   }
 
   async downloadFileByUrl(url: string, res: Response): Promise<void> {
+    if (!url || !url.trim()) {
+      throw new BadRequestException('A file url is required');
+    }
+
+    // Reduce the incoming value to a storage key. This both normalizes legacy
+    // presigned/public URLs and prevents SSRF: we never fetch an arbitrary
+    // attacker-controlled URL — only objects from our own bucket, re-signed now.
+    const storageKey = this.digitalOceanService.getStorageKey(url.trim());
+    if (/^https?:\/\//i.test(storageKey)) {
+      throw new BadRequestException('Only managed storage files can be downloaded');
+    }
+
     try {
-      // Use axios directly. This prevents any potential wrappers from
-      // re-encoding the URL and invalidating the signature.
-      const response = await axios.get(url, {
+      const presignedUrl = await this.digitalOceanService.getPresignedUrl(
+        storageKey,
+        60,
+      );
+
+      // Use axios directly so the freshly-signed URL is not re-encoded and its
+      // signature invalidated.
+      const response = await axios.get(presignedUrl, {
         responseType: 'stream',
       });
 
-      const filename = basename(parse(url).pathname || 'downloaded-file');
+      // storageKey is already decoded by getStorageKey — decoding again would
+      // throw URIError on filenames containing a literal '%'.
+      const filename = basename(storageKey) || 'download';
       const contentType =
         response.headers['content-type'] || 'application/octet-stream';
 
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="${filename}"`,
-      );
-      res.setHeader('Content-Type', contentType);
+      this.setDownloadHeaders(res, filename, contentType);
 
       response.data.pipe(res);
     } catch (error) {
@@ -284,11 +317,11 @@ export class FilesService {
         responseType: 'stream',
       });
 
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="${file.filename}"`,
+      this.setDownloadHeaders(
+        res,
+        file.filename,
+        response.headers['content-type'],
       );
-      res.setHeader('Content-Type', response.headers['content-type']);
       response.data.pipe(res);
     } catch (error) {
       this.logger.error(`Failed to stream file for ID ${id}: ${error.message}`);
@@ -296,5 +329,26 @@ export class FilesService {
         'Could not process file download.',
       );
     }
+  }
+
+  /**
+   * Set download response headers with an RFC 5987 `filename*` so non-ASCII
+   * filenames survive, plus an ASCII fallback for legacy clients.
+   */
+  private setDownloadHeaders(
+    res: Response,
+    filename: string,
+    contentType?: string,
+  ): void {
+    const safe = (filename || 'download').replace(/["\r\n]/g, '_');
+    const asciiFallback = safe.replace(/[^\x20-\x7e]/g, '_');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(safe)}`,
+    );
+    res.setHeader(
+      'Content-Type',
+      contentType || 'application/octet-stream',
+    );
   }
 }

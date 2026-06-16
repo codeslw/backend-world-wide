@@ -44,17 +44,20 @@ export interface MessageWithSender extends Message {
   replyTo?: MessageWithSender | null; // Allow replyTo to also have sender info
 }
 
-// Helper function to map Prisma Message to MessageResponseDto structure
+// Helper function to map Prisma Message to MessageResponseDto structure.
+// `resolveFileUrl` converts the stored value (a stable storage key, or a legacy
+// full/presigned URL) into a stable public URL so attachments never expire.
 const mapMessageToDto = (
   message: any,
   currentUserId: string,
+  resolveFileUrl: (value?: string | null) => string | null = (v) => v ?? null,
 ): MessageResponseDto => {
   if (!message) return null;
 
   const isReadByCurrentUser =
     message.readBy?.some((reader) => reader.id === currentUserId) || false;
   const replyToDto = message.replyTo
-    ? mapMessageToDto(message.replyTo, currentUserId)
+    ? mapMessageToDto(message.replyTo, currentUserId, resolveFileUrl)
     : null;
 
   return {
@@ -62,7 +65,7 @@ const mapMessageToDto = (
     chatId: message.chatId,
     sender: message.sender,
     text: message.text,
-    fileUrl: message.fileUrl,
+    fileUrl: resolveFileUrl(message.fileUrl),
     createdAt: message.createdAt,
     replyToId: message.replyToId,
     replyTo: replyToDto,
@@ -91,6 +94,11 @@ export class ChatService {
   setChatGateway(gateway: ChatGateway) {
     this.chatGateway = gateway;
   }
+
+  // Bound resolver so `mapMessageToDto` (a module-level helper) can turn a
+  // stored storage key / legacy URL into a stable public attachment URL.
+  private readonly resolveFileUrl = (value?: string | null): string | null =>
+    this.filesService.toPublicUrl(value);
 
   // Helper to calculate unread count for a specific user in a chat
   private async calculateUnreadCount(
@@ -214,7 +222,7 @@ export class ChatService {
 
     const unreadCount = await this.calculateUnreadCount(chatId, userId);
     const messagesDto = chatPrisma.messages
-      .map((msg) => mapMessageToDto(msg, userId))
+      .map((msg) => mapMessageToDto(msg, userId, this.resolveFileUrl))
       .reverse(); // Reverse back to chronological for display
 
     return {
@@ -312,7 +320,7 @@ export class ChatService {
 
     return chatsPrisma.map((chat) => {
       const lastMessageDto = chat.messages[0]
-        ? mapMessageToDto(chat.messages[0], userId)
+        ? mapMessageToDto(chat.messages[0], userId, this.resolveFileUrl)
         : null;
       const app = chat.partnerApplication as any;
       return {
@@ -420,7 +428,7 @@ export class ChatService {
 
     const data = chatsPrisma.map((chat) => {
       const lastMessageDto = chat.messages[0]
-        ? mapMessageToDto(chat.messages[0], adminId)
+        ? mapMessageToDto(chat.messages[0], adminId, this.resolveFileUrl)
         : null;
       const app = chat.partnerApplication as any;
       return {
@@ -691,7 +699,10 @@ export class ChatService {
       const file = await this.filesService.getFile(fileId);
       if (!file)
         throw new NotFoundException(`File with ID ${fileId} not found.`);
-      messageData.fileUrl = file.url;
+      // Persist the STABLE storage key (not a presigned URL, which expires in
+      // ~1h and would break the attachment afterwards). It is resolved to a
+      // public URL on read via `resolveFileUrl`.
+      messageData.fileUrl = file.storageKey;
     }
 
     // Handle reply
@@ -727,12 +738,19 @@ export class ChatService {
       data: { updatedAt: new Date() },
     });
 
+    // The socket path (`notifyNewMessage`) emits the raw message object, so
+    // resolve the stored key to a public URL in-place before broadcasting and
+    // returning. `resolveFileUrl` is idempotent, so DTO mapping below is safe.
+    if (message.fileUrl) {
+      message.fileUrl = this.resolveFileUrl(message.fileUrl);
+    }
+
     // Notify via WebSocket
     if (this.chatGateway) {
       this.chatGateway.notifyNewMessage(chatId, message as MessageWithSender);
     }
 
-    const messageDto = mapMessageToDto(message, userId);
+    const messageDto = mapMessageToDto(message, userId, this.resolveFileUrl);
 
     return messageDto;
   }
@@ -800,7 +818,7 @@ export class ChatService {
     }
 
     const messagesDto = messagesPrisma.map((msg) =>
-      mapMessageToDto(msg, userId),
+      mapMessageToDto(msg, userId, this.resolveFileUrl),
     );
 
     return {
@@ -890,7 +908,11 @@ export class ChatService {
 
     // Notify via WebSocket about status change
     if (this.chatGateway) {
-      const messageDto = mapMessageToDto(updatedMessage, userId);
+      const messageDto = mapMessageToDto(
+        updatedMessage,
+        userId,
+        this.resolveFileUrl,
+      );
       this.chatGateway.server
         .to(`chat:${message.chatId}`)
         .emit('messageStatusUpdated', {
@@ -901,7 +923,7 @@ export class ChatService {
         });
     }
 
-    return mapMessageToDto(updatedMessage, userId);
+    return mapMessageToDto(updatedMessage, userId, this.resolveFileUrl);
   }
 
   async deleteMessage(messageId: string, userId: string, userRole: PrismaRole) {
@@ -1089,7 +1111,11 @@ export class ChatService {
 
     // Notify via WebSocket about message edit
     if (this.chatGateway) {
-      const messageDto = mapMessageToDto(updatedMessage, userId);
+      const messageDto = mapMessageToDto(
+        updatedMessage,
+        userId,
+        this.resolveFileUrl,
+      );
       this.chatGateway.server
         .to(`chat:${message.chat.id}`)
         .emit('messageEdited', {
@@ -1100,7 +1126,11 @@ export class ChatService {
         });
     }
 
-    const messageDto = mapMessageToDto(updatedMessage, userId);
+    const messageDto = mapMessageToDto(
+      updatedMessage,
+      userId,
+      this.resolveFileUrl,
+    );
     return { success: true, messageId, message: messageDto };
   }
 
