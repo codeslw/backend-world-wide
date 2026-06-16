@@ -77,6 +77,9 @@ export class UniversitiesService {
       const createdUniversity = await this.prisma.university.create({
         data: {
           ...universityData,
+          additionalExpenses:
+            (universityData.additionalExpenses as unknown as Prisma.InputJsonValue) ??
+            undefined,
           country: { connect: { code: countryCode } },
           city: { connect: { id: cityId } },
           agencyService: agencyServiceId
@@ -324,7 +327,12 @@ export class UniversitiesService {
 
     try {
       const updatedUniversity = await this.prisma.$transaction(async (tx) => {
-        const dataToUpdate: Prisma.UniversityUpdateInput = { ...otherFields };
+        const dataToUpdate: Prisma.UniversityUpdateInput = {
+          ...otherFields,
+          additionalExpenses:
+            (otherFields.additionalExpenses as unknown as Prisma.InputJsonValue) ??
+            undefined,
+        };
         if (countryCode !== undefined) {
           dataToUpdate.country = { connect: { code: countryCode } };
         }

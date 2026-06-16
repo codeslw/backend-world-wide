@@ -26,6 +26,16 @@ import { Type } from 'class-transformer';
 import { Currency } from '../../common/enum/currency.enum';
 import { CreateAdmissionRequirementNestedDto } from '../../admission-requirements/dto/create-admission-requirement.dto';
 
+export class AdditionalExpenseDto {
+  @ApiProperty({ description: 'Expense label', example: 'Housing' })
+  @IsString()
+  label: string;
+
+  @ApiProperty({ description: 'Expense amount', example: '500 EUR/month' })
+  @IsString()
+  amount: string;
+}
+
 export class CreateUniversityDto {
   @ApiPropertyOptional({
     description: 'ID of the agency service template for this university',
@@ -273,7 +283,9 @@ export class CreateUniversityDto {
   })
   @IsOptional()
   @IsArray()
-  additionalExpenses?: { label: string; amount: string }[];
+  @ValidateNested({ each: true })
+  @Type(() => AdditionalExpenseDto)
+  additionalExpenses?: AdditionalExpenseDto[];
 
   @ApiPropertyOptional({
     description: 'List of general scholarship requirements',
