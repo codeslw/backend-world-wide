@@ -164,6 +164,12 @@ export class UniversityByProgramResponseDto {
   })
   program: ProgramDetailsDto;
 
+  @ApiPropertyOptional({
+    description: 'Whether the university offers a full scholarship',
+    default: false,
+  })
+  hasFullScholarship?: boolean;
+
   @ApiProperty({ description: 'Timestamp of creation' })
   createdAt: string;
 
