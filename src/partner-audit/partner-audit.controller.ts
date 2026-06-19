@@ -19,6 +19,13 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 export class PartnerAuditController {
   constructor(private readonly auditService: PartnerAuditService) {}
 
+  /** Parse an ISO date string, returning undefined for missing/invalid values. */
+  private parseDate(value?: string): Date | undefined {
+    if (!value) return undefined;
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? undefined : d;
+  }
+
   @Roles(Role.ADMIN)
   @ApiOperation({
     summary: 'List partner audit logs with filters (Admin only)',
@@ -30,8 +37,8 @@ export class PartnerAuditController {
       organizationId: query.organizationId,
       actorId: query.actorId,
       action: query.action,
-      from: query.from ? new Date(query.from) : undefined,
-      to: query.to ? new Date(query.to) : undefined,
+      from: this.parseDate(query.from),
+      to: this.parseDate(query.to),
       search: query.search,
       page: query.page,
       limit: query.limit,
@@ -52,8 +59,8 @@ export class PartnerAuditController {
       organizationId: id,
       actorId: query.actorId,
       action: query.action,
-      from: query.from ? new Date(query.from) : undefined,
-      to: query.to ? new Date(query.to) : undefined,
+      from: this.parseDate(query.from),
+      to: this.parseDate(query.to),
       search: query.search,
       page: query.page,
       limit: query.limit,
