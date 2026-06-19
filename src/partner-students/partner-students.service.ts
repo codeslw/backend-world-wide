@@ -147,7 +147,7 @@ export class PartnerStudentsService {
             partnerApplications: {
               include: {
                 university: { select: { id: true, name: true } },
-                program: { select: { id: true, titleEn: true } },
+                program: { select: { id: true, title: true } },
               },
               orderBy: { createdAt: 'desc' },
             },
@@ -162,7 +162,7 @@ export class PartnerStudentsService {
             partnerApplications: {
               include: {
                 university: { select: { id: true, name: true } },
-                program: { select: { id: true, titleEn: true } },
+                program: { select: { id: true, title: true } },
               },
               orderBy: { createdAt: 'desc' },
             },

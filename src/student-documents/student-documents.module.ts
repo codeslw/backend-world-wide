@@ -3,9 +3,10 @@ import { StudentDocumentsService } from './student-documents.service';
 import { StudentDocumentsController } from './student-documents.controller';
 import { PrismaService } from '../db/prisma.service';
 import { PartnerOrganizationsModule } from '../partner-organizations/partner-organizations.module';
+import { PartnerAuditModule } from '../partner-audit/partner-audit.module';
 
 @Module({
-  imports: [PartnerOrganizationsModule],
+  imports: [PartnerOrganizationsModule, PartnerAuditModule],
   controllers: [StudentDocumentsController],
   providers: [StudentDocumentsService, PrismaService],
 })

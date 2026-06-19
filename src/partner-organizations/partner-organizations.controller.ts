@@ -1,4 +1,12 @@
-import { Controller, Get, Param, Patch, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Body,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -6,6 +14,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { PartnerOrganizationsService } from './partner-organizations.service';
+import { PartnerAuditService } from '../partner-audit/partner-audit.service';
 import { SetPartnerOrgActiveDto } from './dto/set-partner-org-active.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../common/enum/roles.enum';
@@ -19,6 +28,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 export class PartnerOrganizationsController {
   constructor(
     private readonly partnerOrgsService: PartnerOrganizationsService,
+    private readonly audit: PartnerAuditService,
   ) {}
 
   @Roles(Role.ADMIN)
@@ -47,7 +57,22 @@ export class PartnerOrganizationsController {
   })
   @ApiResponse({ status: 200, description: 'Updated partner organization' })
   @Patch(':id/access')
-  setActive(@Param('id') id: string, @Body() dto: SetPartnerOrgActiveDto) {
-    return this.partnerOrgsService.setActive(id, dto.isActive);
+  async setActive(
+    @Req() req,
+    @Param('id') id: string,
+    @Body() dto: SetPartnerOrgActiveDto,
+  ) {
+    const org = await this.partnerOrgsService.setActive(id, dto.isActive);
+    await this.audit.log({
+      action: dto.isActive ? 'ACCESS_ENABLED' : 'ACCESS_DISABLED',
+      actorId: req.user.userId,
+      actorRole: req.user.role,
+      organizationId: id,
+      ipAddress: req.ip,
+      targetType: 'PartnerOrganization',
+      targetId: id,
+      targetLabel: org?.name ?? undefined,
+    });
+    return org;
   }
 }

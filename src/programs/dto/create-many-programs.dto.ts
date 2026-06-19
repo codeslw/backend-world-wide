@@ -10,18 +10,14 @@ export class CreateManyProgramsDto {
     isArray: true,
     example: [
       {
-        titleUz: 'Bakalavr',
-        titleRu: 'Бакалавр',
-        titleEn: 'Bachelor',
+        title: 'Bachelor',
         descriptionUz: 'Bakalavr dasturi',
         descriptionRu: 'Программа бакалавриата',
         descriptionEn: 'Bachelor program',
         parentId: null,
       },
       {
-        titleUz: 'Magistratura',
-        titleRu: 'Магистратура',
-        titleEn: 'Master',
+        title: 'Master',
         descriptionUz: 'Magistratura dasturi',
         descriptionRu: 'Программа магистратуры',
         descriptionEn: 'Master program',

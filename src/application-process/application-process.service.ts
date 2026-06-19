@@ -174,7 +174,7 @@ export class ApplicationProcessService {
     // Create template clone
     const newTemplate = await this.prisma.applicationProcessTemplate.create({
       data: {
-        name: `${source.name} - ${program.titleEn || program.titleRu}`,
+        name: `${source.name} - ${program.title}`,
         description: source.description,
         isDefault: false,
         program: { connect: { id: programId } },

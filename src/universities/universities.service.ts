@@ -526,9 +526,7 @@ export class UniversitiesService {
               program: {
                 select: {
                   id: true,
-                  titleUz: true,
-                  titleRu: true,
-                  titleEn: true,
+                  title: true,
                 },
               },
               intakes: {
@@ -616,9 +614,7 @@ export class UniversitiesService {
             program: {
               select: {
                 id: true,
-                titleUz: true,
-                titleRu: true,
-                titleEn: true,
+                title: true,
                 descriptionUz: true,
                 descriptionRu: true,
                 descriptionEn: true,
@@ -697,9 +693,7 @@ export class UniversitiesService {
             program: {
               select: {
                 id: true,
-                titleUz: true,
-                titleRu: true,
-                titleEn: true,
+                title: true,
                 descriptionUz: true,
                 descriptionRu: true,
                 descriptionEn: true,
@@ -740,7 +734,6 @@ export class UniversitiesService {
     const cached = await this.cacheManager.get<any>(cacheKey);
     if (cached) return cached;
 
-    const langSuffix = lang.charAt(0).toUpperCase() + lang.slice(1);
     const universityPrograms = await this.prisma.universityProgram.findMany({
       distinct: ['programId'],
       select: {
@@ -748,9 +741,7 @@ export class UniversitiesService {
         program: {
           select: {
             id: true,
-            titleUz: true,
-            titleRu: true,
-            titleEn: true,
+            title: true,
           },
         },
       },
@@ -758,10 +749,7 @@ export class UniversitiesService {
 
     const result = universityPrograms.map((up) => ({
       id: up.programId,
-      title: (up.program as any)?.[`title${langSuffix}`] || (up.program as any)?.titleUz || '',
-      titleUz: (up.program as any)?.titleUz || '',
-      titleRu: (up.program as any)?.titleRu || '',
-      titleEn: (up.program as any)?.titleEn || '',
+      title: up.program?.title || '',
     }));
 
     await this.cacheManager.set(cacheKey, result);

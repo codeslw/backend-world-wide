@@ -24,6 +24,7 @@ model User {
   // readMessages Message[] @relation("MessageReads")
   partnerOrganization PartnerOrganization? @relation("OrgOwner")
   partnerMembership   PartnerMember?       @relation("MemberOf")
+  auditLogs           PartnerAuditLog[]    @relation("AuditActor")
 
   @@map("users")
 }
@@ -36,9 +37,7 @@ model Program {
   descriptionEn      String?
   descriptionRu      String?
   descriptionUz      String?
-  titleEn            String?
-  titleRu            String
-  titleUz            String
+  title              String
   parent             Program?            @relation("ProgramToProgram", fields: [parentId], references: [id])
   children           Program[]           @relation("ProgramToProgram")
   universityPrograms     UniversityProgram[]
@@ -586,6 +585,7 @@ model PartnerOrganization {
   instagramUrl                String?
   facebookUrl                 String?
   registrationCertificateUrl  String?
+  auditLogs                   PartnerAuditLog[]
 
   @@map("partner_organizations")
 }
@@ -615,6 +615,64 @@ model PartnerPermission {
   @@unique([memberId, action])
   @@map("partner_permissions")
   @@index([memberId])
+}
+
+enum PartnerAuditAction {
+  // Auth
+  LOGIN
+  // Students
+  STUDENT_CREATED
+  STUDENT_UPDATED
+  STUDENT_DELETED
+  // Documents
+  DOCUMENT_UPLOADED
+  DOCUMENT_DELETED
+  // Applications
+  APPLICATION_CREATED
+  APPLICATION_UPDATED
+  APPLICATION_DELETED
+  APPLICATION_STATUS_CHANGED
+  // Team / members
+  MEMBER_INVITED
+  MEMBER_REMOVED
+  MEMBER_PERMISSIONS_UPDATED
+  // Company profile
+  COMPANY_UPDATED
+  // Admin-initiated
+  ACCESS_ENABLED
+  ACCESS_DISABLED
+}
+
+/// Immutable activity trail of partner actions. `actorId` is the partner User
+/// who performed the action (or the admin, for admin-initiated entries such as
+/// access toggles). `organizationId` denormalizes the partner org so the admin
+/// can filter a single partner's whole history cheaply.
+model PartnerAuditLog {
+  id             String              @id @default(uuid())
+  createdAt      DateTime            @default(now())
+
+  action         PartnerAuditAction
+  actorId        String?
+  actor          User?               @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actorRole      Role?
+  actorName      String? // snapshot of the actor's display name at action time
+  organizationId String?
+  organization   PartnerOrganization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  // What the action targeted (entity kind + id + human label)
+  targetType     String? // e.g. "PartnerStudent", "PartnerApplication", "PartnerMember"
+  targetId       String?
+  targetLabel    String? // e.g. student full name, application id, member email
+
+  // Free-form structured context (before/after, status transition, ip, etc.)
+  metadata       Json?
+  ipAddress      String?
+
+  @@index([organizationId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([action])
+  @@index([createdAt])
+  @@map("partner_audit_logs")
 }
 
 enum UniversityType {

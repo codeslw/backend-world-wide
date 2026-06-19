@@ -9,6 +9,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../common/enum/roles.enum';
 import { PartnerCompanyService } from './partner-company.service';
+import { PartnerAuditService } from '../partner-audit/partner-audit.service';
 import { UpdateCompanyProfileDto } from './dto/update-company-profile.dto';
 import { CompanyProfileResponseDto } from './dto/company-profile-response.dto';
 
@@ -18,7 +19,10 @@ import { CompanyProfileResponseDto } from './dto/company-profile-response.dto';
 @Roles(Role.PARTNER)
 @Controller('partner-company')
 export class PartnerCompanyController {
-  constructor(private readonly partnerCompanyService: PartnerCompanyService) {}
+  constructor(
+    private readonly partnerCompanyService: PartnerCompanyService,
+    private readonly audit: PartnerAuditService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get company profile' })
@@ -30,12 +34,23 @@ export class PartnerCompanyController {
   @Patch()
   @ApiOperation({ summary: 'Update company profile (Owner or Manager only)' })
   @ApiResponse({ status: 200, type: CompanyProfileResponseDto })
-  updateProfile(@Req() req, @Body() dto: UpdateCompanyProfileDto) {
-    return this.partnerCompanyService.updateProfile(
+  async updateProfile(@Req() req, @Body() dto: UpdateCompanyProfileDto) {
+    const result = await this.partnerCompanyService.updateProfile(
       req.user.organizationId,
       req.user.partnerRole,
       dto,
     );
+    await this.audit.log({
+      action: 'COMPANY_UPDATED',
+      actorId: req.user.userId,
+      actorRole: req.user.role,
+      organizationId: req.user.organizationId,
+      ipAddress: req.ip,
+      targetType: 'PartnerOrganization',
+      targetId: req.user.organizationId,
+      metadata: { fields: Object.keys(dto || {}) },
+    });
+    return result;
   }
 
   @Post('logo')

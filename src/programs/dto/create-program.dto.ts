@@ -8,23 +8,11 @@ import {
 } from 'class-validator';
 
 export class CreateProgramDto {
-  @ApiProperty({ description: 'Program title in Uzbek' })
+  @ApiProperty({ description: 'Program title' })
   @IsString()
   @MinLength(3)
   @MaxLength(100)
-  titleUz: string;
-
-  @ApiProperty({ description: 'Program title in Russian' })
-  @IsString()
-  @MinLength(3)
-  @MaxLength(100)
-  titleRu: string;
-
-  @ApiProperty({ description: 'Program title in English', required: false })
-  @IsString()
-  @IsOptional()
-  @MaxLength(100)
-  titleEn?: string;
+  title: string;
 
   @ApiProperty({ description: 'Program description in Uzbek', required: false })
   @IsString()

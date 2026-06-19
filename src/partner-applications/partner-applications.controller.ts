@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { PartnerApplicationsService } from './partner-applications.service';
 import { PartnerOrganizationsService } from '../partner-organizations/partner-organizations.service';
+import { PartnerAuditService } from '../partner-audit/partner-audit.service';
 import { CreatePartnerApplicationDto } from './dto/create-partner-application.dto';
 import { UpdatePartnerApplicationDto } from './dto/update-partner-application.dto';
 import { UpdatePartnerApplicationStatusDto } from './dto/update-partner-application-status.dto';
@@ -54,7 +55,17 @@ export class PartnerApplicationsController {
   constructor(
     private readonly partnerApplicationsService: PartnerApplicationsService,
     private readonly partnerOrgs: PartnerOrganizationsService,
+    private readonly audit: PartnerAuditService,
   ) {}
+
+  private applicationLabel(app: any): string | undefined {
+    if (!app) return undefined;
+    const student = app.partnerStudent;
+    const studentName = student
+      ? [student.firstName, student.lastName].filter(Boolean).join(' ').trim()
+      : '';
+    return studentName || app.id;
+  }
 
   /** Visible partner User ids for a partner request; undefined for admins. */
   private async visiblePartnerIds(
@@ -71,11 +82,25 @@ export class PartnerApplicationsController {
   @ApiResponse({ status: 400, type: ErrorResponseDto })
   @ApiResponse({ status: 401, type: ErrorResponseDto })
   @ApiResponse({ status: 403, type: ErrorResponseDto })
-  create(
+  async create(
     @Req() req: RequestWithUser,
     @Body() dto: CreatePartnerApplicationDto,
   ) {
-    return this.partnerApplicationsService.create(req.user.userId, dto);
+    const app = await this.partnerApplicationsService.create(
+      req.user.userId,
+      dto,
+    );
+    await this.audit.log({
+      action: 'APPLICATION_CREATED',
+      actorId: req.user.userId,
+      actorRole: req.user.role,
+      ipAddress: req.ip,
+      targetType: 'PartnerApplication',
+      targetId: app?.id,
+      targetLabel: this.applicationLabel(app),
+      metadata: { status: app?.status },
+    });
+    return app;
   }
 
   @Get('my')
@@ -164,11 +189,30 @@ export class PartnerApplicationsController {
   @ApiResponse({ status: 200, type: PartnerApplicationResponseDto })
   @ApiResponse({ status: 400, type: ErrorResponseDto })
   @ApiResponse({ status: 404, type: ErrorResponseDto })
-  updateStatus(
+  async updateStatus(
     @Param('id') id: string,
     @Body() dto: UpdatePartnerApplicationStatusDto,
+    @Req() req: RequestWithUser,
   ) {
-    return this.partnerApplicationsService.updateStatus(id, dto);
+    const before = await this.partnerApplicationsService
+      .findOne(id)
+      .catch(() => null);
+    const updated = await this.partnerApplicationsService.updateStatus(id, dto);
+    await this.audit.log({
+      action: 'APPLICATION_STATUS_CHANGED',
+      actorId: req.user.userId,
+      actorRole: req.user.role,
+      ipAddress: req.ip,
+      targetType: 'PartnerApplication',
+      targetId: id,
+      targetLabel: this.applicationLabel(updated ?? before),
+      metadata: {
+        from: (before as any)?.status,
+        to: dto.status,
+        ...(dto.reason && { reason: dto.reason }),
+      },
+    });
+    return updated;
   }
 
   @Delete(':id')
@@ -182,6 +226,20 @@ export class PartnerApplicationsController {
   @ApiResponse({ status: 404, type: ErrorResponseDto })
   async remove(@Param('id') id: string, @Req() req: RequestWithUser) {
     const partnerIds = await this.visiblePartnerIds(req);
-    return this.partnerApplicationsService.remove(id, partnerIds);
+    const before = await this.partnerApplicationsService
+      .findOne(id, partnerIds)
+      .catch(() => null);
+    const result = await this.partnerApplicationsService.remove(id, partnerIds);
+    await this.audit.log({
+      action: 'APPLICATION_DELETED',
+      actorId: req.user.userId,
+      actorRole: req.user.role,
+      ipAddress: req.ip,
+      targetType: 'PartnerApplication',
+      targetId: id,
+      targetLabel: this.applicationLabel(before),
+      metadata: { status: (before as any)?.status },
+    });
+    return result;
   }
 }

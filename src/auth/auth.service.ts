@@ -12,6 +12,7 @@ import { CreateUserDto } from '../users/dto/create-user.dto';
 import { PrismaService } from '../db/prisma.service';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { PartnerOrganizationsService } from '../partner-organizations/partner-organizations.service';
+import { PartnerAuditService } from '../partner-audit/partner-audit.service';
 import { Role } from '../common/enum/roles.enum';
 
 @Injectable()
@@ -22,9 +23,10 @@ export class AuthService {
     private prisma: PrismaService,
     private configService: ConfigService,
     private partnerOrgsService: PartnerOrganizationsService,
+    private audit: PartnerAuditService,
   ) {}
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto, ipAddress?: string) {
     const user = await this.usersService.findByEmail(loginDto.email);
     if (!user || !(await bcrypt.compare(loginDto.password, user.password))) {
       throw new NotFoundException({
@@ -75,6 +77,18 @@ export class AuthService {
     });
 
     const refreshToken = await this.generateRefreshToken(user.id);
+
+    // Record partner logins in the audit trail.
+    if (user.role === Role.PARTNER) {
+      await this.audit.log({
+        action: 'LOGIN',
+        actorId: user.id,
+        actorRole: user.role,
+        organizationId,
+        ipAddress,
+        metadata: { partnerRole },
+      });
+    }
 
     return {
       access_token: accessToken,

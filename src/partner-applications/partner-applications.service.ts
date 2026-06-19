@@ -186,7 +186,7 @@ export class PartnerApplicationsService {
           },
         },
         { university: { name: { contains: search, mode: 'insensitive' } } },
-        { program: { titleEn: { contains: search, mode: 'insensitive' } } },
+        { program: { title: { contains: search, mode: 'insensitive' } } },
       ];
     }
 
@@ -401,10 +401,7 @@ export class PartnerApplicationsService {
       studentEmail: application.partnerStudent?.email,
       universityLogoUrl: (application.university as any)?.logo || undefined,
       programId: application.programId,
-      programName:
-        application.program?.titleEn ||
-        application.program?.titleRu ||
-        'Unknown Program',
+      programName: application.program?.title || 'Unknown Program',
       intakeSeason: application.intakeSeason,
       intakeYear: application.intakeYear,
       status: application.status,

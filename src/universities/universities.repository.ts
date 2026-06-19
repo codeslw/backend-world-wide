@@ -52,8 +52,18 @@ export class UniversitiesRepository {
     if (cityId) where.cityId = cityId;
     if (universityId) where.id = universityId;
     if (type) where.type = type;
-    if (hasScholarship === true) where.hasScholarship = true;
-    if (hasFullScholarship === true) where.hasFullScholarship = true;
+    // Filter on the scholarships relation directly rather than the
+    // denormalized hasScholarship/hasFullScholarship flags, which can drift
+    // out of sync (they are only recalculated on scholarship CRUD and default
+    // to false for imported/seeded universities).
+    if (hasScholarship === true) {
+      where.scholarships = { some: { isVisible: true } };
+    }
+    if (hasFullScholarship === true) {
+      where.scholarships = {
+        some: { isVisible: true, isFullScholarship: true },
+      };
+    }
 
     // Numeric ranges
     if (minRanking !== undefined || maxRanking !== undefined) {
@@ -214,6 +224,9 @@ export class UniversitiesRepository {
       maxIeltsListening,
       minGpa,
       maxGpa,
+      hasScholarship,
+      hasFullScholarship,
+      programs,
     } = filterDto;
 
     const where: Prisma.UniversityProgramWhereInput = {};
@@ -221,9 +234,28 @@ export class UniversitiesRepository {
     if (universityId) where.universityId = universityId;
     if (campusId) where.campuses = { some: { id: campusId } };
 
+    const programIds = programs
+      ? Array.isArray(programs)
+        ? programs
+        : `${programs}`.split(',').filter(Boolean)
+      : [];
+    if (programIds.length > 0) {
+      where.programId = { in: programIds };
+    }
+
     const universityWhere: any = {};
     if (countryCode) universityWhere.countryCode = Number(countryCode);
     if (cityId) universityWhere.cityId = cityId;
+
+    // Scholarship filters via the university's scholarships relation (avoids
+    // relying on the denormalized hasScholarship/hasFullScholarship flags).
+    if (hasFullScholarship === true) {
+      universityWhere.scholarships = {
+        some: { isVisible: true, isFullScholarship: true },
+      };
+    } else if (hasScholarship === true) {
+      universityWhere.scholarships = { some: { isVisible: true } };
+    }
 
     if (minRanking !== undefined || maxRanking !== undefined) {
       universityWhere.ranking = {
@@ -298,9 +330,7 @@ export class UniversitiesRepository {
     if (search) {
       where.OR = [
         { university: { name: { contains: search, mode: 'insensitive' } } },
-        { program: { titleUz: { contains: search, mode: 'insensitive' } } },
-        { program: { titleRu: { contains: search, mode: 'insensitive' } } },
-        { program: { titleEn: { contains: search, mode: 'insensitive' } } },
+        { program: { title: { contains: search, mode: 'insensitive' } } },
         { university: { city: { nameEn: { contains: search, mode: 'insensitive' } } } },
         { university: { city: { nameRu: { contains: search, mode: 'insensitive' } } } },
         { university: { city: { nameUz: { contains: search, mode: 'insensitive' } } } },

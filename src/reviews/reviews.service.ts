@@ -69,8 +69,8 @@ export class ReviewsService {
         orderBy: { nameEn: 'asc' },
       }),
       this.prisma.program.findMany({
-        select: { titleUz: true, titleRu: true, titleEn: true },
-        orderBy: { titleEn: 'asc' },
+        select: { title: true },
+        orderBy: { title: 'asc' },
       }),
       this.prisma.review.findMany({
         select: { createdAt: true, degree: true },

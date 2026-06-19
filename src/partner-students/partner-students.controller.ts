@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { PartnerStudentsService } from './partner-students.service';
 import { PartnerOrganizationsService } from '../partner-organizations/partner-organizations.service';
+import { PartnerAuditService } from '../partner-audit/partner-audit.service';
 import { CreatePartnerStudentDto } from './dto/create-partner-student.dto';
 import { UpdatePartnerStudentDto } from './dto/update-partner-student.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -32,6 +33,7 @@ export class PartnerStudentsController {
   constructor(
     private readonly partnerStudentsService: PartnerStudentsService,
     private readonly partnerOrgs: PartnerOrganizationsService,
+    private readonly audit: PartnerAuditService,
   ) {}
 
   /**
@@ -44,15 +46,37 @@ export class PartnerStudentsController {
     return this.partnerOrgs.resolveVisiblePartnerIds(req.user.userId);
   }
 
+  private studentLabel(student: any): string | undefined {
+    if (!student) return undefined;
+    const name = [student.firstName, student.lastName]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+    return name || student.email || undefined;
+  }
+
   @Roles(Role.PARTNER)
   @ApiOperation({ summary: 'Create a new partner student' })
   @ApiResponse({ status: 201, description: 'Student successfully created' })
   @Post()
-  create(@Req() req, @Body() createPartnerStudentDto: CreatePartnerStudentDto) {
-    return this.partnerStudentsService.create(
+  async create(
+    @Req() req,
+    @Body() createPartnerStudentDto: CreatePartnerStudentDto,
+  ) {
+    const student = await this.partnerStudentsService.create(
       req.user.userId,
       createPartnerStudentDto,
     );
+    await this.audit.log({
+      action: 'STUDENT_CREATED',
+      actorId: req.user.userId,
+      actorRole: req.user.role,
+      ipAddress: req.ip,
+      targetType: 'PartnerStudent',
+      targetId: student?.id,
+      targetLabel: this.studentLabel(student),
+    });
+    return student;
   }
 
   @Roles(Role.PARTNER)
@@ -90,11 +114,21 @@ export class PartnerStudentsController {
     @Body() updatePartnerStudentDto: UpdatePartnerStudentDto,
   ) {
     const partnerIds = await this.visiblePartnerIds(req);
-    return this.partnerStudentsService.update(
+    const student = await this.partnerStudentsService.update(
       id,
       updatePartnerStudentDto,
       partnerIds,
     );
+    await this.audit.log({
+      action: 'STUDENT_UPDATED',
+      actorId: req.user.userId,
+      actorRole: req.user.role,
+      ipAddress: req.ip,
+      targetType: 'PartnerStudent',
+      targetId: id,
+      targetLabel: this.studentLabel(student),
+    });
+    return student;
   }
 
   @Roles(Role.PARTNER, Role.ADMIN)
@@ -103,6 +137,19 @@ export class PartnerStudentsController {
   @Delete(':id')
   async remove(@Req() req, @Param('id') id: string) {
     const partnerIds = await this.visiblePartnerIds(req);
-    return this.partnerStudentsService.remove(id, partnerIds);
+    const existing = await this.partnerStudentsService
+      .findOne(id, partnerIds)
+      .catch(() => null);
+    const result = await this.partnerStudentsService.remove(id, partnerIds);
+    await this.audit.log({
+      action: 'STUDENT_DELETED',
+      actorId: req.user.userId,
+      actorRole: req.user.role,
+      ipAddress: req.ip,
+      targetType: 'PartnerStudent',
+      targetId: id,
+      targetLabel: this.studentLabel(existing),
+    });
+    return result;
   }
 }

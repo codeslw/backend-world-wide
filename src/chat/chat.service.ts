@@ -293,7 +293,7 @@ export class ChatService {
               select: { firstName: true, lastName: true, email: true },
             },
             university: { select: { name: true } },
-            program: { select: { titleEn: true } },
+            program: { select: { title: true } },
           },
         },
       },
@@ -344,7 +344,7 @@ export class ChatService {
                 : null,
               studentEmail: app.partnerStudent?.email ?? null,
               universityName: app.university?.name ?? null,
-              programName: app.program?.titleEn ?? null,
+              programName: app.program?.title ?? null,
             }
           : null,
       };
@@ -401,7 +401,7 @@ export class ChatService {
                 select: { firstName: true, lastName: true, email: true },
               },
               university: { select: { name: true } },
-              program: { select: { titleEn: true } },
+              program: { select: { title: true } },
             },
           },
         },
@@ -452,7 +452,7 @@ export class ChatService {
                 : null,
               studentEmail: app.partnerStudent?.email ?? null,
               universityName: app.university?.name ?? null,
-              programName: app.program?.titleEn ?? null,
+              programName: app.program?.title ?? null,
             }
           : null,
       };

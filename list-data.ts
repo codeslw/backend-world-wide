@@ -11,7 +11,7 @@ async function main() {
 
     const programs = await prisma.universityProgram.findMany({
         take: 5,
-        select: { id: true, program: { select: { titleRu: true } } }
+        select: { id: true, program: { select: { title: true } } }
     });
     console.log('Programs in DB:', JSON.stringify(programs, null, 2));
 }

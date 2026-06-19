@@ -92,9 +92,7 @@ export class UniversitiesMapper {
         university.universityPrograms?.map((up) => ({
           id: up.id,
           programId: up.programId,
-          titleUz: up.program?.titleUz,
-          titleRu: up.program?.titleRu,
-          titleEn: up.program?.titleEn,
+          title: up.program?.title,
           tuitionFee: up.tuitionFee,
           tuitionFeeType: up.tuitionFeeType,
           tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
@@ -262,7 +260,7 @@ export class UniversitiesMapper {
       city: this.localizeCity(university.city, langSuffix),
       programs: programs.slice(0, 5).map((up) => ({
         programId: up.programId,
-        title: this.getLocalizedField(up.program, 'title', langSuffix),
+        title: up.program?.title || '',
         tuitionFee: up.tuitionFee,
         tuitionFeeType: up.tuitionFeeType,
         tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
@@ -327,7 +325,7 @@ export class UniversitiesMapper {
       program: {
         id: up.id,
         programId: program.id,
-        title: this.getLocalizedField(program, 'title', langSuffix),
+        title: program.title || '',
         description: this.getLocalizedField(program, 'description', langSuffix),
         tuitionFee: up.tuitionFee,
         tuitionFeeType: up.tuitionFeeType,
@@ -390,7 +388,7 @@ export class UniversitiesMapper {
     return {
       id: up.id,
       programId: program.id,
-      title: this.getLocalizedField(program, 'title', langSuffix),
+      title: program.title || '',
       description: this.getLocalizedField(program, 'description', langSuffix),
       tuitionFee: up.tuitionFee,
       tuitionFeeType: up.tuitionFeeType,

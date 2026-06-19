@@ -199,7 +199,7 @@ export class StatisticsService {
     const popularPrograms = await this.prisma.program.findMany({
       select: {
         id: true,
-        titleEn: true,
+        title: true,
         _count: {
           select: {
             applications: true,
@@ -237,7 +237,7 @@ export class StatisticsService {
 
     const result: PopularProgramDto[] = popularPrograms.map((program) => ({
       programId: program.id,
-      programTitle: program.titleEn || 'Unknown Program',
+      programTitle: program.title || 'Unknown Program',
       applicationsCount: program._count.applications,
       universitiesCount: program._count.universityPrograms,
       averageTuitionFee: avgTuitionMap.get(program.id) || undefined,

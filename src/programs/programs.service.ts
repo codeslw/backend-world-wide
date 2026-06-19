@@ -46,9 +46,7 @@ export class ProgramsService {
   async create(createProgramDto: CreateProgramDto) {
     try {
       const data = {
-        titleUz: createProgramDto.titleUz,
-        titleRu: createProgramDto.titleRu,
-        titleEn: createProgramDto.titleEn,
+        title: createProgramDto.title,
         descriptionUz: createProgramDto.descriptionUz,
         descriptionRu: createProgramDto.descriptionRu,
         descriptionEn: createProgramDto.descriptionEn,
@@ -119,9 +117,7 @@ export class ProgramsService {
           },
         ],
         searchFields: [
-          'titleUz',
-          'titleRu',
-          'titleEn',
+          'title',
           'descriptionUz',
           'descriptionRu',
           'descriptionEn',
@@ -307,10 +303,7 @@ export class ProgramsService {
     const result = { ...program };
 
     // Set title based on language
-    result.title =
-      program[`title${lang.charAt(0).toUpperCase() + lang.slice(1)}`] ||
-      program.titleUz ||
-      program.titleRu;
+    result.title = program.title;
 
     // Set description based on language
     result.description =

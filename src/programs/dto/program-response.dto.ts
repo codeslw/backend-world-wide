@@ -5,18 +5,7 @@ export class ProgramResponseDto {
   @ApiProperty({ description: 'Program ID' })
   id: string;
 
-  @ApiProperty({ description: 'Program title in Uzbek' })
-  titleUz: string;
-
-  @ApiProperty({ description: 'Program title in Russian' })
-  titleRu: string;
-
-  @ApiProperty({ description: 'Program title in English' })
-  titleEn: string;
-
-  @ApiProperty({
-    description: 'Localized program title based on language preference',
-  })
+  @ApiProperty({ description: 'Program title' })
   title: string;
 
   @ApiProperty({ description: 'Program description in Uzbek' })

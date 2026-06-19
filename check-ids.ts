@@ -20,7 +20,7 @@ async function main() {
 
     console.log('Found Programs count:', foundPrograms.length);
     foundPrograms.forEach(p => {
-        console.log(`- Program ID: ${p.id}, Program Name: ${p.program.titleRu}, University ID: ${p.universityId}, University: ${p.university.name}`);
+        console.log(`- Program ID: ${p.id}, Program Name: ${p.program.title}, University ID: ${p.universityId}, University: ${p.university.name}`);
     });
 
     if (foundPrograms.length < programIds.length) {

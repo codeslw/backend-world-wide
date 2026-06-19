@@ -21,14 +21,8 @@ class UniversityProgramResponseDto {
   @ApiProperty({ description: 'Program ID' })
   programId: string;
 
-  @ApiProperty({ description: 'Program Title (e.g., in Uzbek)' }) // Adjust language as needed
-  titleUz: string;
-
-  @ApiProperty({ description: 'Program Title (e.g., in Russian)' })
-  titleRu: string;
-
-  @ApiProperty({ description: 'Program Title (e.g., in English)' })
-  titleEn: string;
+  @ApiProperty({ description: 'Program Title' })
+  title: string;
 
   @ApiPropertyOptional({
     description:

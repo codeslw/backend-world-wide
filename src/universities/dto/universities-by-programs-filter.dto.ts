@@ -8,8 +8,10 @@ import {
   IsNumber,
   IsUUID,
   IsEnum,
+  IsBoolean,
+  IsArray,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { StudyLevel } from '../../common/enum/study-level.enum';
 import { Currency } from '../../common/enum/currency.enum';
 
@@ -64,6 +66,23 @@ export class UniversitiesByProgramsFilterDto {
   @IsOptional()
   @IsUUID()
   intake?: string;
+
+  @ApiProperty({
+    description: 'Filter by program IDs',
+    required: false,
+    isArray: true,
+    type: [String],
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.split(',').filter((id) => id);
+    }
+    return value;
+  })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  programs?: string[];
 
   @ApiProperty({ description: 'Study language', required: false })
   @IsOptional()
@@ -195,6 +214,24 @@ export class UniversitiesByProgramsFilterDto {
   @Max(4.5)
   @Type(() => Number)
   maxGpa?: number;
+
+  @ApiProperty({
+    description: 'Filter by scholarship availability',
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  hasScholarship?: boolean;
+
+  @ApiProperty({
+    description: 'Filter by full (100%) scholarship availability',
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  hasFullScholarship?: boolean;
 
   @ApiProperty({ description: 'Search query', required: false })
   @IsOptional()

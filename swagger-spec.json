@@ -1223,6 +1223,240 @@
         ]
       }
     },
+    "/api/v1/partner-audit-logs": {
+      "get": {
+        "operationId": "PartnerAuditController_findAll",
+        "parameters": [
+          {
+            "name": "organizationId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by partner organization id",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "actorId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by actor (partner user) id",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "description": "Filter by action type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "LOGIN",
+                "STUDENT_CREATED",
+                "STUDENT_UPDATED",
+                "STUDENT_DELETED",
+                "DOCUMENT_UPLOADED",
+                "DOCUMENT_DELETED",
+                "APPLICATION_CREATED",
+                "APPLICATION_UPDATED",
+                "APPLICATION_DELETED",
+                "APPLICATION_STATUS_CHANGED",
+                "MEMBER_INVITED",
+                "MEMBER_REMOVED",
+                "MEMBER_PERMISSIONS_UPDATED",
+                "COMPANY_UPDATED",
+                "ACCESS_ENABLED",
+                "ACCESS_DISABLED"
+              ]
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Only entries on/after this ISO date",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Only entries on/before this ISO date",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search actor name or target label",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated partner audit logs"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List partner audit logs with filters (Admin only)",
+        "tags": [
+          "partner-audit"
+        ]
+      }
+    },
+    "/api/v1/partner-organizations/{id}/audit-logs": {
+      "get": {
+        "operationId": "PartnerAuditController_findForOrganization",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "organizationId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by partner organization id",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "actorId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by actor (partner user) id",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "description": "Filter by action type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "LOGIN",
+                "STUDENT_CREATED",
+                "STUDENT_UPDATED",
+                "STUDENT_DELETED",
+                "DOCUMENT_UPLOADED",
+                "DOCUMENT_DELETED",
+                "APPLICATION_CREATED",
+                "APPLICATION_UPDATED",
+                "APPLICATION_DELETED",
+                "APPLICATION_STATUS_CHANGED",
+                "MEMBER_INVITED",
+                "MEMBER_REMOVED",
+                "MEMBER_PERMISSIONS_UPDATED",
+                "COMPANY_UPDATED",
+                "ACCESS_ENABLED",
+                "ACCESS_DISABLED"
+              ]
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "Only entries on/after this ISO date",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "description": "Only entries on/before this ISO date",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search actor name or target label",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated partner audit logs"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List audit logs for a single partner organization (Admin only)",
+        "tags": [
+          "partner-audit"
+        ]
+      }
+    },
     "/api/v1/programs": {
       "post": {
         "operationId": "ProgramsController_create",
@@ -3459,6 +3693,18 @@
             }
           },
           {
+            "name": "programs",
+            "required": false,
+            "in": "query",
+            "description": "Filter by program IDs",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "array"
+              }
+            }
+          },
+          {
             "name": "studyLanguage",
             "required": false,
             "in": "query",
@@ -3609,6 +3855,24 @@
             "description": "Maximum GPA required (e.g. 4.5)",
             "schema": {
               "type": "number"
+            }
+          },
+          {
+            "name": "hasScholarship",
+            "required": false,
+            "in": "query",
+            "description": "Filter by scholarship availability",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "hasFullScholarship",
+            "required": false,
+            "in": "query",
+            "description": "Filter by full (100%) scholarship availability",
+            "schema": {
+              "type": "boolean"
             }
           },
           {
@@ -12287,17 +12551,9 @@
       "CreateProgramDto": {
         "type": "object",
         "properties": {
-          "titleUz": {
+          "title": {
             "type": "string",
-            "description": "Program title in Uzbek"
-          },
-          "titleRu": {
-            "type": "string",
-            "description": "Program title in Russian"
-          },
-          "titleEn": {
-            "type": "string",
-            "description": "Program title in English"
+            "description": "Program title"
           },
           "descriptionUz": {
             "type": "string",
@@ -12317,8 +12573,7 @@
           }
         },
         "required": [
-          "titleUz",
-          "titleRu"
+          "title"
         ]
       },
       "ProgramResponseDto": {
@@ -12328,21 +12583,9 @@
             "type": "string",
             "description": "Program ID"
           },
-          "titleUz": {
-            "type": "string",
-            "description": "Program title in Uzbek"
-          },
-          "titleRu": {
-            "type": "string",
-            "description": "Program title in Russian"
-          },
-          "titleEn": {
-            "type": "string",
-            "description": "Program title in English"
-          },
           "title": {
             "type": "string",
-            "description": "Localized program title based on language preference"
+            "description": "Program title"
           },
           "descriptionUz": {
             "type": "string",
@@ -12382,9 +12625,6 @@
         },
         "required": [
           "id",
-          "titleUz",
-          "titleRu",
-          "titleEn",
           "title",
           "descriptionUz",
           "descriptionRu",
@@ -12399,18 +12639,14 @@
             "description": "Array of programs to create",
             "example": [
               {
-                "titleUz": "Bakalavr",
-                "titleRu": "Бакалавр",
-                "titleEn": "Bachelor",
+                "title": "Bachelor",
                 "descriptionUz": "Bakalavr dasturi",
                 "descriptionRu": "Программа бакалавриата",
                 "descriptionEn": "Bachelor program",
                 "parentId": null
               },
               {
-                "titleUz": "Magistratura",
-                "titleRu": "Магистратура",
-                "titleEn": "Master",
+                "title": "Master",
                 "descriptionUz": "Magistratura dasturi",
                 "descriptionRu": "Программа магистратуры",
                 "descriptionEn": "Master program",
@@ -12454,17 +12690,9 @@
       "UpdateProgramDto": {
         "type": "object",
         "properties": {
-          "titleUz": {
+          "title": {
             "type": "string",
-            "description": "Program title in Uzbek"
-          },
-          "titleRu": {
-            "type": "string",
-            "description": "Program title in Russian"
-          },
-          "titleEn": {
-            "type": "string",
-            "description": "Program title in English"
+            "description": "Program title"
           },
           "descriptionUz": {
             "type": "string",
@@ -14203,17 +14431,9 @@
             "type": "string",
             "description": "Program ID"
           },
-          "titleUz": {
+          "title": {
             "type": "string",
-            "description": "Program Title (e.g., in Uzbek)"
-          },
-          "titleRu": {
-            "type": "string",
-            "description": "Program Title (e.g., in Russian)"
-          },
-          "titleEn": {
-            "type": "string",
-            "description": "Program Title (e.g., in English)"
+            "description": "Program Title"
           },
           "duration": {
             "type": "number",
@@ -14336,9 +14556,7 @@
         "required": [
           "id",
           "programId",
-          "titleUz",
-          "titleRu",
-          "titleEn",
+          "title",
           "tuitionFee",
           "tuitionFeeType",
           "tuitionFeeCurrency",

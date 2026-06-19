@@ -4,14 +4,8 @@ export class Program {
   @ApiProperty({ description: 'Unique identifier (UUID)' })
   id: string;
 
-  @ApiProperty({ description: 'Program title in Uzbek' })
-  titleUz: string;
-
-  @ApiProperty({ description: 'Program title in Russian' })
-  titleRu: string;
-
-  @ApiProperty({ description: 'Program title in English', required: false })
-  titleEn?: string;
+  @ApiProperty({ description: 'Program title' })
+  title: string;
 
   @ApiProperty({ description: 'Program description in Uzbek', required: false })
   descriptionUz?: string;

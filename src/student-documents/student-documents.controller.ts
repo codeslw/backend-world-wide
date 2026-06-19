@@ -22,6 +22,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../common/enum/roles.enum';
 import { StudentDocumentsService } from './student-documents.service';
 import { PartnerOrganizationsService } from '../partner-organizations/partner-organizations.service';
+import { PartnerAuditService } from '../partner-audit/partner-audit.service';
 import { CreateStudentDocumentDto } from './dto/create-student-document.dto';
 
 @ApiTags('student-documents')
@@ -32,6 +33,7 @@ export class StudentDocumentsController {
   constructor(
     private readonly service: StudentDocumentsService,
     private readonly partnerOrgs: PartnerOrganizationsService,
+    private readonly audit: PartnerAuditService,
   ) {}
 
   /** Visible partner User ids for a partner request; undefined for admins. */
@@ -49,7 +51,21 @@ export class StudentDocumentsController {
     @Body() dto: CreateStudentDocumentDto,
   ): Promise<any> {
     const partnerIds = await this.visiblePartnerIds(req);
-    return this.service.create(partnerIds, dto);
+    const doc = await this.service.create(partnerIds, dto);
+    await this.audit.log({
+      action: 'DOCUMENT_UPLOADED',
+      actorId: req.user.userId,
+      actorRole: req.user.role,
+      ipAddress: req.ip,
+      targetType: 'StudentDocument',
+      targetId: (doc as any)?.id,
+      targetLabel: (doc as any)?.name ?? (dto as any)?.name,
+      metadata: {
+        studentId: (dto as any)?.studentId,
+        type: (dto as any)?.type,
+      },
+    });
+    return doc;
   }
 
   @Get()
@@ -71,6 +87,15 @@ export class StudentDocumentsController {
   @ApiResponse({ status: 200, description: 'Document successfully deleted' })
   async remove(@Req() req, @Param('id') id: string): Promise<any> {
     const partnerIds = await this.visiblePartnerIds(req);
-    return this.service.remove(partnerIds, id);
+    const result = await this.service.remove(partnerIds, id);
+    await this.audit.log({
+      action: 'DOCUMENT_DELETED',
+      actorId: req.user.userId,
+      actorRole: req.user.role,
+      ipAddress: req.ip,
+      targetType: 'StudentDocument',
+      targetId: id,
+    });
+    return result;
   }
 }

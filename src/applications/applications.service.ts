@@ -450,10 +450,7 @@ export class ApplicationsService {
       // Program information
       preferredProgrammId:
         application.program?.id || application.preferredProgram,
-      preferredProgrammName:
-        application.program?.titleEn ||
-        application.program?.titleRu ||
-        'Unknown Program',
+      preferredProgrammName: application.program?.title || 'Unknown Program',
 
       intakeSeason: application.intakeSeason,
       intakeYear: application.intakeYear,
