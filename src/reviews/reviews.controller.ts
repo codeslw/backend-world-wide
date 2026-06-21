@@ -48,18 +48,21 @@ export class ReviewsController {
   @ApiQuery({ name: 'country', required: false, type: String })
   @ApiQuery({ name: 'year', required: false, type: Number })
   @ApiQuery({ name: 'program', required: false, type: String })
+  @ApiQuery({ name: 'university', required: false, type: String })
   @ApiResponse({ status: 200, type: [ReviewResponseDto] })
   findAll(
     @Query('type') type?: ReviewTypeDto,
     @Query('country') country?: string,
     @Query('year') year?: string,
     @Query('program') program?: string,
+    @Query('university') university?: string,
   ) {
     return this.reviewsService.findAll({
       type,
       country,
       year: year ? parseInt(year) : undefined,
       program,
+      university,
     });
   }
 
@@ -82,6 +85,7 @@ export class ReviewsController {
   @ApiQuery({ name: 'country', required: false, type: String })
   @ApiQuery({ name: 'year', required: false, type: Number })
   @ApiQuery({ name: 'program', required: false, type: String })
+  @ApiQuery({ name: 'university', required: false, type: String })
   @ApiResponse({ status: 200, type: [ReviewResponseDto] })
   findTop(
     @Query('limit') limit?: string,
@@ -89,12 +93,14 @@ export class ReviewsController {
     @Query('country') country?: string,
     @Query('year') year?: string,
     @Query('program') program?: string,
+    @Query('university') university?: string,
   ) {
     return this.reviewsService.findTop(limit ? parseInt(limit) : 3, {
       type,
       country,
       year: year ? parseInt(year) : undefined,
       program,
+      university,
     });
   }
 

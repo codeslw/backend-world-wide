@@ -11,6 +11,7 @@ export interface ReviewFilters {
   country?: string;
   year?: number;
   program?: string;
+  university?: string;
 }
 
 @Injectable()
@@ -73,7 +74,13 @@ export class ReviewsService {
         orderBy: { title: 'asc' },
       }),
       this.prisma.review.findMany({
-        select: { createdAt: true, degree: true },
+        select: {
+          createdAt: true,
+          degree: true,
+          university: true,
+          country: true,
+          destinationCountry: true,
+        },
         orderBy: { createdAt: 'desc' },
       }),
     ]);
@@ -92,6 +99,18 @@ export class ReviewsService {
       reviews.map((review) => review.degree),
     );
 
+    const universityOptions = this.dedupeOptions(
+      reviews.flatMap((review) => {
+        const value = review.university?.trim();
+        if (!value) return [];
+        const country =
+          review.destinationCountry?.trim() ||
+          review.country?.trim() ||
+          undefined;
+        return [{ value, label: value, country }];
+      }),
+    );
+
     const years = Array.from(
       new Set(reviews.map((review) => review.createdAt.getFullYear())),
     )
@@ -106,6 +125,7 @@ export class ReviewsService {
           ...existingDegreeOptions,
         ]),
       ),
+      universities: this.sortOptions(universityOptions),
       years,
     };
   }
@@ -156,6 +176,13 @@ export class ReviewsService {
 
     if (filters.program?.trim()) {
       where.degree = { equals: filters.program.trim(), mode: 'insensitive' };
+    }
+
+    if (filters.university?.trim()) {
+      where.university = {
+        equals: filters.university.trim(),
+        mode: 'insensitive',
+      };
     }
 
     if (filters.year && Number.isInteger(filters.year)) {

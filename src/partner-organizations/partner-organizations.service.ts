@@ -1,6 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../db/prisma.service';
-import { PartnerAction } from '@prisma/client';
+import { PartnerAction, PartnerRole } from '@prisma/client';
+import { SetMemberPermissionsDto } from './dto/set-member-permissions.dto';
+import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
 
 @Injectable()
 export class PartnerOrganizationsService {
@@ -178,6 +184,78 @@ export class PartnerOrganizationsService {
     return this.prisma.partnerOrganization.update({
       where: { id },
       data: { isActive },
+    });
+  }
+
+  /**
+   * Admin: set a MEMBER's permissions for an organization. Upserts
+   * PartnerPermission rows. Only MEMBER role permissions are editable —
+   * OWNER/MANAGER have full access so their permission set is irrelevant.
+   */
+  async setMemberPermissions(
+    organizationId: string,
+    memberId: string,
+    dto: SetMemberPermissionsDto,
+  ) {
+    const member = await this.prisma.partnerMember.findUnique({
+      where: { id: memberId },
+      select: { id: true, organizationId: true, role: true },
+    });
+    if (!member || member.organizationId !== organizationId) {
+      throw new NotFoundException('Partner member not found');
+    }
+    if (member.role !== PartnerRole.MEMBER) {
+      throw new BadRequestException(
+        'Permissions can only be set for MEMBER role',
+      );
+    }
+
+    await Promise.all(
+      dto.permissions.map((p) =>
+        this.prisma.partnerPermission.upsert({
+          where: { memberId_action: { memberId, action: p.action } },
+          update: { granted: p.granted },
+          create: { memberId, action: p.action, granted: p.granted },
+        }),
+      ),
+    );
+
+    return this.prisma.partnerPermission.findMany({ where: { memberId } });
+  }
+
+  /**
+   * Admin: change a member's role between MANAGER and MEMBER. The OWNER role is
+   * immutable and cannot be assigned via this method.
+   */
+  async updateMemberRole(
+    organizationId: string,
+    memberId: string,
+    dto: UpdateMemberRoleDto,
+  ) {
+    const member = await this.prisma.partnerMember.findUnique({
+      where: { id: memberId },
+      select: { id: true, organizationId: true, role: true },
+    });
+    if (!member || member.organizationId !== organizationId) {
+      throw new NotFoundException('Partner member not found');
+    }
+    if (member.role === PartnerRole.OWNER) {
+      throw new BadRequestException('Cannot change the role of the OWNER');
+    }
+
+    return this.prisma.partnerMember.update({
+      where: { id: memberId },
+      data: { role: dto.role as PartnerRole },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            profile: { select: { firstName: true, lastName: true } },
+          },
+        },
+        permissions: true,
+      },
     });
   }
 

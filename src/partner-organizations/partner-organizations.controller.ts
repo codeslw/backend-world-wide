@@ -3,6 +3,7 @@ import {
   Get,
   Param,
   Patch,
+  Put,
   Body,
   UseGuards,
   Req,
@@ -16,6 +17,8 @@ import {
 import { PartnerOrganizationsService } from './partner-organizations.service';
 import { PartnerAuditService } from '../partner-audit/partner-audit.service';
 import { SetPartnerOrgActiveDto } from './dto/set-partner-org-active.dto';
+import { SetMemberPermissionsDto } from './dto/set-member-permissions.dto';
+import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../common/enum/roles.enum';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -74,5 +77,70 @@ export class PartnerOrganizationsController {
       targetLabel: org?.name ?? undefined,
     });
     return org;
+  }
+
+  @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary: "Set a member's permissions (Admin only)",
+  })
+  @ApiResponse({ status: 200, description: 'Updated member permissions' })
+  @Put(':id/members/:memberId/permissions')
+  async setMemberPermissions(
+    @Req() req,
+    @Param('id') id: string,
+    @Param('memberId') memberId: string,
+    @Body() dto: SetMemberPermissionsDto,
+  ) {
+    const permissions = await this.partnerOrgsService.setMemberPermissions(
+      id,
+      memberId,
+      dto,
+    );
+    await this.audit.log({
+      action: 'MEMBER_PERMISSIONS_UPDATED',
+      actorId: req.user.userId,
+      actorRole: req.user.role,
+      organizationId: id,
+      ipAddress: req.ip,
+      targetType: 'PartnerMember',
+      targetId: memberId,
+      metadata: {
+        permissions: dto.permissions.map((p) => ({
+          action: p.action,
+          granted: p.granted,
+        })),
+      },
+    });
+    return permissions;
+  }
+
+  @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary: "Change a member's role (Admin only)",
+  })
+  @ApiResponse({ status: 200, description: 'Updated member' })
+  @Patch(':id/members/:memberId/role')
+  async updateMemberRole(
+    @Req() req,
+    @Param('id') id: string,
+    @Param('memberId') memberId: string,
+    @Body() dto: UpdateMemberRoleDto,
+  ) {
+    const member = await this.partnerOrgsService.updateMemberRole(
+      id,
+      memberId,
+      dto,
+    );
+    await this.audit.log({
+      action: 'MEMBER_PERMISSIONS_UPDATED',
+      actorId: req.user.userId,
+      actorRole: req.user.role,
+      organizationId: id,
+      ipAddress: req.ip,
+      targetType: 'PartnerMember',
+      targetId: memberId,
+      metadata: { roleChangedTo: dto.role },
+    });
+    return member;
   }
 }
