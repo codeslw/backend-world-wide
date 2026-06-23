@@ -1045,3 +1045,143 @@ model StudentDocument {
   @@index([studentId])
   @@map("student_documents")
 }
+
+// ─── About page CMS ──────────────────────────────────────────────────────────
+// Admin-managed "Our Story" content. Singleton page + ordered lists.
+// All localized text stored as Uz/Ru/En triplets; images stored as DO Spaces
+// key and resolved to a public URL on read.
+
+// Singleton: there is a single row holding the page-level narrative copy.
+model AboutPage {
+  id String @id @default(uuid())
+
+  // Dark hero
+  heroTitleUz    String?
+  heroTitleRu    String?
+  heroTitleEn    String?
+  heroSubtitleUz String?
+  heroSubtitleRu String?
+  heroSubtitleEn String?
+  heroImageUrl   String?
+
+  // Intro / "who we are"
+  introHeadingUz String?
+  introHeadingRu String?
+  introHeadingEn String?
+  introBodyUz    String?
+  introBodyRu    String?
+  introBodyEn    String?
+
+  // Operator statement: "TalabaLink is developed & operated by Worldwide Consulting"
+  operatorStatementUz String?
+  operatorStatementRu String?
+  operatorStatementEn String?
+
+  // History highlights surfaced as headline stats
+  foundedYear   Int?    @default(2020)
+  platformLaunch String? @default("2026-01")
+
+  // Section headings (so the whole page is editable, not just data)
+  founderHeadingUz     String?
+  founderHeadingRu     String?
+  founderHeadingEn     String?
+  milestonesHeadingUz  String?
+  milestonesHeadingRu  String?
+  milestonesHeadingEn  String?
+  teamHeadingUz        String?
+  teamHeadingRu        String?
+  teamHeadingEn        String?
+  certificatesHeadingUz String?
+  certificatesHeadingRu String?
+  certificatesHeadingEn String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("about_page")
+}
+
+model Founder {
+  id       String  @id @default(uuid())
+  name     String
+  roleUz   String?
+  roleRu   String?
+  roleEn   String?
+  bioUz    String?
+  bioRu    String?
+  bioEn    String?
+  photoUrl String?
+  // optional contact / social
+  linkedinUrl String?
+  sortOrder Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@map("about_founders")
+}
+
+model Milestone {
+  id            String  @id @default(uuid())
+  // Free-form label so "2020", "Jan 2026", "Q1 2024" all work
+  year          String
+  titleUz       String?
+  titleRu       String?
+  titleEn       String?
+  descriptionUz String?
+  descriptionRu String?
+  descriptionEn String?
+  sortOrder     Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@map("about_milestones")
+}
+
+model TeamMember {
+  id         String  @id @default(uuid())
+  name       String
+  positionUz String?
+  positionRu String?
+  positionEn String?
+  // role/title shown under the position (e.g. responsibilities tagline)
+  roleUz     String?
+  roleRu     String?
+  roleEn     String?
+  // optional department/group label for grouping in the grid
+  groupUz    String?
+  groupRu    String?
+  groupEn    String?
+  photoUrl   String?
+  linkedinUrl String?
+  sortOrder  Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@map("about_team_members")
+}
+
+model Certificate {
+  id        String  @id @default(uuid())
+  titleUz   String?
+  titleRu   String?
+  titleEn   String?
+  issuerUz  String?
+  issuerRu  String?
+  issuerEn  String?
+  imageUrl  String?
+  isFeatured Boolean @default(false)
+  sortOrder Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isFeatured])
+  @@index([sortOrder])
+  @@map("about_certificates")
+}

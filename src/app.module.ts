@@ -39,6 +39,7 @@ import { PartnerMembersModule } from './partner-members/partner-members.module';
 import { PartnerCompanyModule } from './partner-company/partner-company.module';
 import { PartnerAuditModule } from './partner-audit/partner-audit.module';
 import { SiteSettingsModule } from './site-settings/site-settings.module';
+import { AboutModule } from './about/about.module';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { SiteSettingsModule } from './site-settings/site-settings.module';
     PartnerCompanyModule,
     PartnerAuditModule,
     SiteSettingsModule,
+    AboutModule,
     DbModule,
   ],
 
