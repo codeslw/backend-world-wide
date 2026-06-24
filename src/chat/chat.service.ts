@@ -128,11 +128,18 @@ export class ChatService {
   // --- Chat Methods ---
 
   async createChat(userId: string, createChatDto: CreateChatDto) {
-    // If partnerApplicationId given, find existing chat first
-    if (createChatDto.partnerApplicationId) {
+    // Per-application chats are idempotent: at most one chat per (application,
+    // creator). If one already exists, return it instead of creating a duplicate.
+    const applicationScope = createChatDto.partnerApplicationId
+      ? { partnerApplicationId: createChatDto.partnerApplicationId }
+      : createChatDto.applicationId
+        ? { applicationId: createChatDto.applicationId }
+        : null;
+
+    if (applicationScope) {
       const existing = await this.prisma.chat.findFirst({
         where: {
-          partnerApplicationId: createChatDto.partnerApplicationId,
+          ...applicationScope,
           clientId: userId,
         },
         include: {
@@ -150,6 +157,11 @@ export class ChatService {
         ...(createChatDto.partnerApplicationId && {
           partnerApplication: {
             connect: { id: createChatDto.partnerApplicationId },
+          },
+        }),
+        ...(createChatDto.applicationId && {
+          application: {
+            connect: { id: createChatDto.applicationId },
           },
         }),
       },
@@ -466,6 +478,172 @@ export class ChatService {
         limit,
         totalPages: Math.ceil(total / limit),
       },
+    };
+  }
+
+  /**
+   * Admin view of all per-application chats — both partner-submitted and
+   * user-submitted. Each row carries whichever application context applies so a
+   * unified admin inbox can render them together.
+   */
+  async getApplicationChats(
+    adminId: string,
+    options: {
+      page?: number;
+      limit?: number;
+      status?: ChatStatus;
+      kind?: 'partner' | 'user';
+    } = {},
+  ) {
+    const { page = 1, limit = 20, status, kind } = options;
+    const skip = (page - 1) * limit;
+
+    const scopeFilter: Prisma.ChatWhereInput =
+      kind === 'partner'
+        ? { partnerApplicationId: { not: null } }
+        : kind === 'user'
+          ? { applicationId: { not: null } }
+          : {
+              OR: [
+                { partnerApplicationId: { not: null } },
+                { applicationId: { not: null } },
+              ],
+            };
+
+    const where: Prisma.ChatWhereInput = {
+      ...scopeFilter,
+      ...(status ? { status } : {}),
+    };
+
+    const [chatsPrisma, total] = await Promise.all([
+      this.prisma.chat.findMany({
+        where,
+        orderBy: { updatedAt: 'desc' },
+        skip,
+        take: limit,
+        include: {
+          client: {
+            select: {
+              id: true,
+              email: true,
+              role: true,
+              profile: true,
+              partnerOrganization: { select: { name: true } },
+            },
+          },
+          admin: { select: { id: true, email: true, role: true, profile: true } },
+          messages: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            include: {
+              sender: {
+                select: { id: true, email: true, role: true, profile: true },
+              },
+            },
+          },
+          partnerApplication: {
+            select: {
+              id: true,
+              status: true,
+              intakeSeason: true,
+              intakeYear: true,
+              partnerStudent: {
+                select: { firstName: true, lastName: true, email: true },
+              },
+              university: { select: { name: true } },
+              program: { select: { title: true } },
+            },
+          },
+          application: {
+            select: {
+              id: true,
+              applicationStatus: true,
+              intakeSeason: true,
+              intakeYear: true,
+              profile: {
+                select: { firstName: true, lastName: true, email: true },
+              },
+              university: { select: { name: true } },
+              program: { select: { title: true } },
+            },
+          },
+        },
+      }),
+      this.prisma.chat.count({ where }),
+    ]);
+
+    const chatIds = chatsPrisma.map((c) => c.id);
+    const unreadCounts =
+      chatIds.length > 0
+        ? await this.prisma.message.groupBy({
+            by: ['chatId'],
+            where: {
+              chatId: { in: chatIds },
+              senderId: { not: adminId },
+              readByAdmin: false,
+            },
+            _count: { id: true },
+          })
+        : [];
+    const unreadCountMap = new Map(
+      unreadCounts.map((item) => [item.chatId, item._count.id]),
+    );
+
+    const data = chatsPrisma.map((chat) => {
+      const lastMessageDto = chat.messages[0]
+        ? mapMessageToDto(chat.messages[0], adminId, this.resolveFileUrl)
+        : null;
+      const pApp = chat.partnerApplication as any;
+      const uApp = chat.application as any;
+
+      const applicationContext = pApp
+        ? {
+            kind: 'partner' as const,
+            id: pApp.id,
+            status: pApp.status,
+            intakeSeason: pApp.intakeSeason,
+            intakeYear: pApp.intakeYear,
+            studentName: pApp.partnerStudent
+              ? `${pApp.partnerStudent.firstName} ${pApp.partnerStudent.lastName}`.trim()
+              : null,
+            studentEmail: pApp.partnerStudent?.email ?? null,
+            universityName: pApp.university?.name ?? null,
+            programName: pApp.program?.title ?? null,
+          }
+        : uApp
+          ? {
+              kind: 'user' as const,
+              id: uApp.id,
+              status: uApp.applicationStatus,
+              intakeSeason: uApp.intakeSeason,
+              intakeYear: uApp.intakeYear,
+              studentName: uApp.profile
+                ? `${uApp.profile.firstName ?? ''} ${uApp.profile.lastName ?? ''}`.trim() ||
+                  null
+                : null,
+              studentEmail: uApp.profile?.email ?? null,
+              universityName: uApp.university?.name ?? null,
+              programName: uApp.program?.title ?? null,
+            }
+          : null;
+
+      return {
+        id: chat.id,
+        status: chat.status,
+        createdAt: chat.createdAt,
+        updatedAt: chat.updatedAt,
+        client: chat.client,
+        partnerOrgName: (chat.client as any)?.partnerOrganization?.name ?? null,
+        admin: chat.admin as PartialAdminInfo | null,
+        messages: lastMessageDto ? [lastMessageDto] : [],
+        unreadCount: unreadCountMap.get(chat.id) || 0,
+        applicationContext,
+      };
+    });
+
+    return {
+      data,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
     };
   }
 

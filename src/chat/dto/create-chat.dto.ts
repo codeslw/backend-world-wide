@@ -11,4 +11,11 @@ export class CreateChatDto {
   @IsOptional()
   @IsUUID()
   partnerApplicationId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Optional: link chat to a user-submitted application',
+  })
+  @IsOptional()
+  @IsUUID()
+  applicationId?: string;
 }

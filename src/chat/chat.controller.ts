@@ -147,6 +147,36 @@ export class ChatController implements OnModuleInit {
     });
   }
 
+  @Get('application-chats')
+  @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary:
+      'Get all per-application chats — partner and user submitted (Admin only)',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'status', required: false, enum: ChatStatus })
+  @ApiQuery({
+    name: 'kind',
+    required: false,
+    enum: ['partner', 'user'],
+    description: 'Filter to partner- or user-submitted application chats',
+  })
+  async getApplicationChats(
+    @Request() req,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: ChatStatus,
+    @Query('kind') kind?: 'partner' | 'user',
+  ) {
+    return this.chatService.getApplicationChats(req.user.userId, {
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 20,
+      status,
+      kind,
+    });
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a specific chat by ID' })
   @ApiParam({ name: 'id', description: 'Chat ID', type: String })

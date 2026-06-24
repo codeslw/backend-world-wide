@@ -3,7 +3,7 @@ import {
   UseGuards, UseInterceptors, UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -56,6 +56,13 @@ export class PartnerCompanyController {
   @Post('logo')
   @ApiOperation({ summary: 'Upload company logo (Owner or Manager only)' })
   @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+      required: ['file'],
+    },
+  })
   @UseInterceptors(FileInterceptor('file'))
   uploadLogo(@Req() req, @UploadedFile() file: Express.Multer.File) {
     return this.partnerCompanyService.uploadLogo(
@@ -68,6 +75,13 @@ export class PartnerCompanyController {
   @Post('registration-certificate')
   @ApiOperation({ summary: 'Upload company registration certificate (Owner or Manager only)' })
   @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { file: { type: 'string', format: 'binary' } },
+      required: ['file'],
+    },
+  })
   @UseInterceptors(FileInterceptor('file'))
   uploadRegistrationCertificate(@Req() req, @UploadedFile() file: Express.Multer.File) {
     return this.partnerCompanyService.uploadRegistrationCertificate(

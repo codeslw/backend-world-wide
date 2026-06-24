@@ -1223,6 +1223,100 @@
         ]
       }
     },
+    "/api/v1/partner-organizations/{id}/members/{memberId}/permissions": {
+      "put": {
+        "operationId": "PartnerOrganizationsController_setMemberPermissions",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "memberId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetMemberPermissionsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated member permissions"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set a member's permissions (Admin only)",
+        "tags": [
+          "partner-organizations"
+        ]
+      }
+    },
+    "/api/v1/partner-organizations/{id}/members/{memberId}/role": {
+      "patch": {
+        "operationId": "PartnerOrganizationsController_updateMemberRole",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "memberId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMemberRoleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated member"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Change a member's role (Admin only)",
+        "tags": [
+          "partner-organizations"
+        ]
+      }
+    },
     "/api/v1/partner-audit-logs": {
       "get": {
         "operationId": "PartnerAuditController_findAll",
@@ -5003,6 +5097,69 @@
           }
         ],
         "summary": "Get all partner-application chats (Admin only)",
+        "tags": [
+          "chat"
+        ]
+      }
+    },
+    "/api/v1/chats/application-chats": {
+      "get": {
+        "operationId": "ChatController_getApplicationChats",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "ACTIVE",
+                "CLOSED",
+                "PENDING"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "required": false,
+            "in": "query",
+            "description": "Filter to partner- or user-submitted application chats",
+            "schema": {
+              "enum": [
+                "partner",
+                "user"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all per-application chats — partner and user submitted (Admin only)",
         "tags": [
           "chat"
         ]
@@ -11037,6 +11194,207 @@
         ]
       }
     },
+    "/api/v1/application-documents": {
+      "post": {
+        "operationId": "ApplicationDocumentsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApplicationDocumentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationDocumentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Attach a document to an application",
+        "tags": [
+          "application-documents"
+        ]
+      },
+      "get": {
+        "operationId": "ApplicationDocumentsController_findForApplication",
+        "parameters": [
+          {
+            "name": "partnerApplicationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "applicationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationDocumentResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "List documents for an application",
+        "tags": [
+          "application-documents"
+        ]
+      }
+    },
+    "/api/v1/application-documents/requirements": {
+      "get": {
+        "operationId": "ApplicationDocumentsController_getRequirements",
+        "parameters": [
+          {
+            "name": "partnerApplicationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "applicationId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationRequirementsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Resolved requirements checklist for an application (template + uploads)",
+        "tags": [
+          "application-documents"
+        ]
+      }
+    },
+    "/api/v1/application-documents/{id}/status": {
+      "patch": {
+        "operationId": "ApplicationDocumentsController_updateStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateApplicationDocumentStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationDocumentResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Review (approve/reject) an application document",
+        "tags": [
+          "application-documents"
+        ]
+      }
+    },
+    "/api/v1/application-documents/{id}": {
+      "delete": {
+        "operationId": "ApplicationDocumentsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Delete an application document",
+        "tags": [
+          "application-documents"
+        ]
+      }
+    },
     "/api/v1/reviews": {
       "post": {
         "operationId": "ReviewsController_create",
@@ -11102,6 +11460,14 @@
           },
           {
             "name": "program",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "university",
             "required": false,
             "in": "query",
             "schema": {
@@ -11210,6 +11576,14 @@
           },
           {
             "name": "program",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "university",
             "required": false,
             "in": "query",
             "schema": {
@@ -11544,6 +11918,25 @@
       "post": {
         "operationId": "PartnerCompanyController_uploadLogo",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
@@ -11564,6 +11957,25 @@
       "post": {
         "operationId": "PartnerCompanyController_uploadRegistrationCertificate",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": [
+                  "file"
+                ]
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
@@ -11645,6 +12057,764 @@
         "summary": "Update application title and logo",
         "tags": [
           "site-settings"
+        ]
+      }
+    },
+    "/api/v1/about": {
+      "get": {
+        "operationId": "AboutController_getAbout",
+        "parameters": [
+          {
+            "name": "Accept-Language",
+            "required": false,
+            "in": "header",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "uz",
+                "ru",
+                "en"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get the full localized About page payload in one request (public)",
+        "tags": [
+          "About - Aggregate"
+        ]
+      }
+    },
+    "/api/v1/about/page": {
+      "get": {
+        "operationId": "AboutPageController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get the raw About page content (admin editing)",
+        "tags": [
+          "About - Page Content"
+        ]
+      },
+      "patch": {
+        "operationId": "AboutPageController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAboutPageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Update the About page content (admin only)",
+        "tags": [
+          "About - Page Content"
+        ]
+      }
+    },
+    "/api/v1/about/founders": {
+      "get": {
+        "operationId": "FoundersController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FounderResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List all founders (public)",
+        "tags": [
+          "About - Founders"
+        ]
+      },
+      "post": {
+        "operationId": "FoundersController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFounderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FounderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Create a founder (admin only)",
+        "tags": [
+          "About - Founders"
+        ]
+      }
+    },
+    "/api/v1/about/founders/{id}": {
+      "get": {
+        "operationId": "FoundersController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FounderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get a founder by id (public)",
+        "tags": [
+          "About - Founders"
+        ]
+      },
+      "patch": {
+        "operationId": "FoundersController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFounderDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FounderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Update a founder (admin only)",
+        "tags": [
+          "About - Founders"
+        ]
+      },
+      "delete": {
+        "operationId": "FoundersController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FounderResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Delete a founder (admin only)",
+        "tags": [
+          "About - Founders"
+        ]
+      }
+    },
+    "/api/v1/about/milestones": {
+      "get": {
+        "operationId": "MilestonesController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MilestoneResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List all milestones (public)",
+        "tags": [
+          "About - Milestones"
+        ]
+      },
+      "post": {
+        "operationId": "MilestonesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMilestoneDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MilestoneResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Create a milestone (admin only)",
+        "tags": [
+          "About - Milestones"
+        ]
+      }
+    },
+    "/api/v1/about/milestones/{id}": {
+      "get": {
+        "operationId": "MilestonesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MilestoneResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get a milestone by id (public)",
+        "tags": [
+          "About - Milestones"
+        ]
+      },
+      "patch": {
+        "operationId": "MilestonesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMilestoneDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MilestoneResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Update a milestone (admin only)",
+        "tags": [
+          "About - Milestones"
+        ]
+      },
+      "delete": {
+        "operationId": "MilestonesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MilestoneResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Delete a milestone (admin only)",
+        "tags": [
+          "About - Milestones"
+        ]
+      }
+    },
+    "/api/v1/about/team-members": {
+      "get": {
+        "operationId": "TeamMembersController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TeamMemberResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List all team members (public)",
+        "tags": [
+          "About - Team Members"
+        ]
+      },
+      "post": {
+        "operationId": "TeamMembersController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTeamMemberDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamMemberResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Create a team member (admin only)",
+        "tags": [
+          "About - Team Members"
+        ]
+      }
+    },
+    "/api/v1/about/team-members/{id}": {
+      "get": {
+        "operationId": "TeamMembersController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamMemberResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get a team member by id (public)",
+        "tags": [
+          "About - Team Members"
+        ]
+      },
+      "patch": {
+        "operationId": "TeamMembersController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTeamMemberDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamMemberResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Update a team member (admin only)",
+        "tags": [
+          "About - Team Members"
+        ]
+      },
+      "delete": {
+        "operationId": "TeamMembersController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamMemberResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Delete a team member (admin only)",
+        "tags": [
+          "About - Team Members"
+        ]
+      }
+    },
+    "/api/v1/about/certificates": {
+      "get": {
+        "operationId": "CertificatesController_findAll",
+        "parameters": [
+          {
+            "name": "featured",
+            "required": false,
+            "in": "query",
+            "description": "Filter to only featured (true) or non-featured (false)",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CertificateResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "List certificates (public)",
+        "tags": [
+          "About - Certificates"
+        ]
+      },
+      "post": {
+        "operationId": "CertificatesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCertificateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Create a certificate (admin only)",
+        "tags": [
+          "About - Certificates"
+        ]
+      }
+    },
+    "/api/v1/about/certificates/{id}": {
+      "get": {
+        "operationId": "CertificatesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get a certificate by id (public)",
+        "tags": [
+          "About - Certificates"
+        ]
+      },
+      "patch": {
+        "operationId": "CertificatesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCertificateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Update a certificate (admin only)",
+        "tags": [
+          "About - Certificates"
+        ]
+      },
+      "delete": {
+        "operationId": "CertificatesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CertificateResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Delete a certificate (admin only)",
+        "tags": [
+          "About - Certificates"
         ]
       }
     }
@@ -12546,6 +13716,64 @@
         },
         "required": [
           "isActive"
+        ]
+      },
+      "PermissionItemDto": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "VIEW_STUDENTS",
+              "ADD_STUDENT",
+              "EDIT_STUDENT",
+              "DELETE_STUDENT",
+              "UPLOAD_DOCUMENTS",
+              "DELETE_DOCUMENTS",
+              "VIEW_APPLICATIONS",
+              "CREATE_APPLICATION",
+              "VIEW_APPLICATION_DETAIL",
+              "INVITE_MEMBERS",
+              "REMOVE_MEMBERS",
+              "EDIT_MEMBER_PERMISSIONS"
+            ]
+          },
+          "granted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "action",
+          "granted"
+        ]
+      },
+      "SetMemberPermissionsDto": {
+        "type": "object",
+        "properties": {
+          "permissions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PermissionItemDto"
+            }
+          }
+        },
+        "required": [
+          "permissions"
+        ]
+      },
+      "UpdateMemberRoleDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "MANAGER",
+              "MEMBER"
+            ]
+          }
+        },
+        "required": [
+          "role"
         ]
       },
       "CreateProgramDto": {
@@ -16431,6 +17659,10 @@
           "partnerApplicationId": {
             "type": "string",
             "description": "Optional: link chat to a partner application"
+          },
+          "applicationId": {
+            "type": "string",
+            "description": "Optional: link chat to a user-submitted application"
           }
         }
       },
@@ -19372,6 +20604,280 @@
           }
         }
       },
+      "CreateApplicationDocumentDto": {
+        "type": "object",
+        "properties": {
+          "partnerApplicationId": {
+            "type": "string",
+            "description": "Target partner application id (partner-submitted apps)."
+          },
+          "applicationId": {
+            "type": "string",
+            "description": "Target application id (user-submitted apps)."
+          },
+          "documentTypeId": {
+            "type": "string",
+            "description": "Optional requirement document type this upload fulfils."
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name of the document."
+          },
+          "fileUrl": {
+            "type": "string",
+            "description": "DO Spaces storage key (or legacy URL) of the uploaded file."
+          },
+          "fileSize": {
+            "type": "number",
+            "description": "File size in bytes."
+          },
+          "mimeType": {
+            "type": "string",
+            "description": "MIME type of the file."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "STUDENT_DOC",
+              "REQUIREMENT",
+              "OFFER_LETTER",
+              "ADMIN_DOC",
+              "OTHER"
+            ],
+            "description": "Category of document. Defaults to OTHER."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "IN_REVIEW",
+              "APPROVED",
+              "REJECTED"
+            ],
+            "description": "Initial review status. Defaults to PENDING."
+          }
+        },
+        "required": [
+          "name",
+          "fileUrl"
+        ]
+      },
+      "ApplicationDocumentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "partnerApplicationId": {
+            "type": "string"
+          },
+          "applicationId": {
+            "type": "string"
+          },
+          "documentTypeId": {
+            "type": "string"
+          },
+          "documentTypeName": {
+            "type": "string",
+            "description": "Requirement name, when linked."
+          },
+          "name": {
+            "type": "string"
+          },
+          "fileUrl": {
+            "type": "string",
+            "description": "Stable public URL resolved from the storage key."
+          },
+          "fileSize": {
+            "type": "number"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "STUDENT_DOC",
+              "REQUIREMENT",
+              "OFFER_LETTER",
+              "ADMIN_DOC",
+              "OTHER"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "IN_REVIEW",
+              "APPROVED",
+              "REJECTED"
+            ]
+          },
+          "reviewNote": {
+            "type": "string"
+          },
+          "uploadedById": {
+            "type": "string"
+          },
+          "uploadedByRole": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "CLIENT",
+              "PARTNER"
+            ]
+          },
+          "uploadedByName": {
+            "type": "string",
+            "description": "Uploader display name/email."
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "fileUrl",
+          "kind",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "RequirementItemDto": {
+        "type": "object",
+        "properties": {
+          "documentTypeId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "fileTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "maxSizeMb": {
+            "type": "number"
+          },
+          "status": {
+            "type": "string",
+            "description": "Aggregate status for this requirement derived from its uploads: APPROVED if any upload is approved, REJECTED if all uploads rejected, IN_REVIEW/PENDING if uploads exist but none approved, MISSING if none."
+          },
+          "documents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationDocumentResponseDto"
+            }
+          }
+        },
+        "required": [
+          "documentTypeId",
+          "name",
+          "required",
+          "fileTypes",
+          "maxSizeMb",
+          "status",
+          "documents"
+        ]
+      },
+      "RequirementStepDto": {
+        "type": "object",
+        "properties": {
+          "stepId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "order": {
+            "type": "number"
+          },
+          "statusKey": {
+            "type": "string"
+          },
+          "requirements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequirementItemDto"
+            }
+          }
+        },
+        "required": [
+          "stepId",
+          "name",
+          "order",
+          "statusKey",
+          "requirements"
+        ]
+      },
+      "ApplicationRequirementsResponseDto": {
+        "type": "object",
+        "properties": {
+          "templateId": {
+            "type": "string",
+            "description": "Resolved process template id (program-specific or default)."
+          },
+          "templateName": {
+            "type": "string"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequirementStepDto"
+            }
+          },
+          "otherDocuments": {
+            "description": "Documents on this application not tied to a requirement type.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationDocumentResponseDto"
+            }
+          }
+        },
+        "required": [
+          "steps",
+          "otherDocuments"
+        ]
+      },
+      "UpdateApplicationDocumentStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "IN_REVIEW",
+              "APPROVED",
+              "REJECTED"
+            ]
+          },
+          "reviewNote": {
+            "type": "string",
+            "description": "Optional reviewer note (reason)."
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
       "CreateReviewDto": {
         "type": "object",
         "properties": {
@@ -19534,6 +21040,24 @@
           "label"
         ]
       },
+      "ReviewFilterUniversityOptionDto": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "label"
+        ]
+      },
       "ReviewFilterOptionsResponseDto": {
         "type": "object",
         "properties": {
@@ -19549,6 +21073,12 @@
               "$ref": "#/components/schemas/ReviewFilterOptionDto"
             }
           },
+          "universities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewFilterUniversityOptionDto"
+            }
+          },
           "years": {
             "type": "array",
             "items": {
@@ -19559,6 +21089,7 @@
         "required": [
           "countries",
           "programs",
+          "universities",
           "years"
         ]
       },
@@ -19739,35 +21270,6 @@
           "role"
         ]
       },
-      "PermissionItemDto": {
-        "type": "object",
-        "properties": {
-          "action": {
-            "type": "string",
-            "enum": [
-              "VIEW_STUDENTS",
-              "ADD_STUDENT",
-              "EDIT_STUDENT",
-              "DELETE_STUDENT",
-              "UPLOAD_DOCUMENTS",
-              "DELETE_DOCUMENTS",
-              "VIEW_APPLICATIONS",
-              "CREATE_APPLICATION",
-              "VIEW_APPLICATION_DETAIL",
-              "INVITE_MEMBERS",
-              "REMOVE_MEMBERS",
-              "EDIT_MEMBER_PERMISSIONS"
-            ]
-          },
-          "granted": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "action",
-          "granted"
-        ]
-      },
       "SetPermissionsDto": {
         "type": "object",
         "properties": {
@@ -19900,6 +21402,687 @@
           "appTitle",
           "updatedAt"
         ]
+      },
+      "UpdateAboutPageDto": {
+        "type": "object",
+        "properties": {
+          "heroTitleUz": {
+            "type": "string"
+          },
+          "heroTitleRu": {
+            "type": "string"
+          },
+          "heroTitleEn": {
+            "type": "string"
+          },
+          "heroSubtitleUz": {
+            "type": "string"
+          },
+          "heroSubtitleRu": {
+            "type": "string"
+          },
+          "heroSubtitleEn": {
+            "type": "string"
+          },
+          "heroImageUrl": {
+            "type": "string",
+            "description": "Hero image URL or storage key"
+          },
+          "introHeadingUz": {
+            "type": "string"
+          },
+          "introHeadingRu": {
+            "type": "string"
+          },
+          "introHeadingEn": {
+            "type": "string"
+          },
+          "introBodyUz": {
+            "type": "string"
+          },
+          "introBodyRu": {
+            "type": "string"
+          },
+          "introBodyEn": {
+            "type": "string"
+          },
+          "operatorStatementUz": {
+            "type": "string"
+          },
+          "operatorStatementRu": {
+            "type": "string"
+          },
+          "operatorStatementEn": {
+            "type": "string"
+          },
+          "foundedYear": {
+            "type": "number",
+            "description": "Year the company was founded"
+          },
+          "platformLaunch": {
+            "type": "string",
+            "description": "Platform launch label, e.g. \"2026-01\""
+          },
+          "founderHeadingUz": {
+            "type": "string"
+          },
+          "founderHeadingRu": {
+            "type": "string"
+          },
+          "founderHeadingEn": {
+            "type": "string"
+          },
+          "milestonesHeadingUz": {
+            "type": "string"
+          },
+          "milestonesHeadingRu": {
+            "type": "string"
+          },
+          "milestonesHeadingEn": {
+            "type": "string"
+          },
+          "teamHeadingUz": {
+            "type": "string"
+          },
+          "teamHeadingRu": {
+            "type": "string"
+          },
+          "teamHeadingEn": {
+            "type": "string"
+          },
+          "certificatesHeadingUz": {
+            "type": "string"
+          },
+          "certificatesHeadingRu": {
+            "type": "string"
+          },
+          "certificatesHeadingEn": {
+            "type": "string"
+          }
+        }
+      },
+      "FounderResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "roleUz": {
+            "type": "string"
+          },
+          "roleRu": {
+            "type": "string"
+          },
+          "roleEn": {
+            "type": "string"
+          },
+          "bioUz": {
+            "type": "string"
+          },
+          "bioRu": {
+            "type": "string"
+          },
+          "bioEn": {
+            "type": "string"
+          },
+          "photoUrl": {
+            "type": "string"
+          },
+          "linkedinUrl": {
+            "type": "string"
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "sortOrder",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateFounderDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Founder full name"
+          },
+          "roleUz": {
+            "type": "string",
+            "description": "Role/title (Uzbek)"
+          },
+          "roleRu": {
+            "type": "string",
+            "description": "Role/title (Russian)"
+          },
+          "roleEn": {
+            "type": "string",
+            "description": "Role/title (English)"
+          },
+          "bioUz": {
+            "type": "string",
+            "description": "Biography / story (Uzbek, HTML allowed)"
+          },
+          "bioRu": {
+            "type": "string",
+            "description": "Biography / story (Russian, HTML allowed)"
+          },
+          "bioEn": {
+            "type": "string",
+            "description": "Biography / story (English, HTML allowed)"
+          },
+          "photoUrl": {
+            "type": "string",
+            "description": "Photo URL or storage key"
+          },
+          "linkedinUrl": {
+            "type": "string",
+            "description": "LinkedIn profile URL"
+          },
+          "sortOrder": {
+            "type": "number",
+            "description": "Manual ordering"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateFounderDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Founder full name"
+          },
+          "roleUz": {
+            "type": "string",
+            "description": "Role/title (Uzbek)"
+          },
+          "roleRu": {
+            "type": "string",
+            "description": "Role/title (Russian)"
+          },
+          "roleEn": {
+            "type": "string",
+            "description": "Role/title (English)"
+          },
+          "bioUz": {
+            "type": "string",
+            "description": "Biography / story (Uzbek, HTML allowed)"
+          },
+          "bioRu": {
+            "type": "string",
+            "description": "Biography / story (Russian, HTML allowed)"
+          },
+          "bioEn": {
+            "type": "string",
+            "description": "Biography / story (English, HTML allowed)"
+          },
+          "photoUrl": {
+            "type": "string",
+            "description": "Photo URL or storage key"
+          },
+          "linkedinUrl": {
+            "type": "string",
+            "description": "LinkedIn profile URL"
+          },
+          "sortOrder": {
+            "type": "number",
+            "description": "Manual ordering"
+          }
+        }
+      },
+      "MilestoneResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "year": {
+            "type": "string"
+          },
+          "titleUz": {
+            "type": "string"
+          },
+          "titleRu": {
+            "type": "string"
+          },
+          "titleEn": {
+            "type": "string"
+          },
+          "descriptionUz": {
+            "type": "string"
+          },
+          "descriptionRu": {
+            "type": "string"
+          },
+          "descriptionEn": {
+            "type": "string"
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "year",
+          "sortOrder",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateMilestoneDto": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "string",
+            "description": "Year/date label, free-form (e.g. \"2020\", \"Jan 2026\")"
+          },
+          "titleUz": {
+            "type": "string",
+            "description": "Title (Uzbek)"
+          },
+          "titleRu": {
+            "type": "string",
+            "description": "Title (Russian)"
+          },
+          "titleEn": {
+            "type": "string",
+            "description": "Title (English)"
+          },
+          "descriptionUz": {
+            "type": "string",
+            "description": "Description (Uzbek)"
+          },
+          "descriptionRu": {
+            "type": "string",
+            "description": "Description (Russian)"
+          },
+          "descriptionEn": {
+            "type": "string",
+            "description": "Description (English)"
+          },
+          "sortOrder": {
+            "type": "number",
+            "description": "Manual ordering"
+          }
+        },
+        "required": [
+          "year"
+        ]
+      },
+      "UpdateMilestoneDto": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "string",
+            "description": "Year/date label, free-form (e.g. \"2020\", \"Jan 2026\")"
+          },
+          "titleUz": {
+            "type": "string",
+            "description": "Title (Uzbek)"
+          },
+          "titleRu": {
+            "type": "string",
+            "description": "Title (Russian)"
+          },
+          "titleEn": {
+            "type": "string",
+            "description": "Title (English)"
+          },
+          "descriptionUz": {
+            "type": "string",
+            "description": "Description (Uzbek)"
+          },
+          "descriptionRu": {
+            "type": "string",
+            "description": "Description (Russian)"
+          },
+          "descriptionEn": {
+            "type": "string",
+            "description": "Description (English)"
+          },
+          "sortOrder": {
+            "type": "number",
+            "description": "Manual ordering"
+          }
+        }
+      },
+      "TeamMemberResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "positionUz": {
+            "type": "string"
+          },
+          "positionRu": {
+            "type": "string"
+          },
+          "positionEn": {
+            "type": "string"
+          },
+          "roleUz": {
+            "type": "string"
+          },
+          "roleRu": {
+            "type": "string"
+          },
+          "roleEn": {
+            "type": "string"
+          },
+          "groupUz": {
+            "type": "string"
+          },
+          "groupRu": {
+            "type": "string"
+          },
+          "groupEn": {
+            "type": "string"
+          },
+          "photoUrl": {
+            "type": "string"
+          },
+          "linkedinUrl": {
+            "type": "string"
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "sortOrder",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateTeamMemberDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Team member full name"
+          },
+          "positionUz": {
+            "type": "string",
+            "description": "Position (Uzbek)"
+          },
+          "positionRu": {
+            "type": "string",
+            "description": "Position (Russian)"
+          },
+          "positionEn": {
+            "type": "string",
+            "description": "Position (English)"
+          },
+          "roleUz": {
+            "type": "string",
+            "description": "Role / title tagline (Uzbek)"
+          },
+          "roleRu": {
+            "type": "string",
+            "description": "Role / title tagline (Russian)"
+          },
+          "roleEn": {
+            "type": "string",
+            "description": "Role / title tagline (English)"
+          },
+          "groupUz": {
+            "type": "string",
+            "description": "Department/group label (Uzbek)"
+          },
+          "groupRu": {
+            "type": "string",
+            "description": "Department/group label (Russian)"
+          },
+          "groupEn": {
+            "type": "string",
+            "description": "Department/group label (English)"
+          },
+          "photoUrl": {
+            "type": "string",
+            "description": "Photo URL or storage key"
+          },
+          "linkedinUrl": {
+            "type": "string",
+            "description": "LinkedIn profile URL"
+          },
+          "sortOrder": {
+            "type": "number",
+            "description": "Manual ordering"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateTeamMemberDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Team member full name"
+          },
+          "positionUz": {
+            "type": "string",
+            "description": "Position (Uzbek)"
+          },
+          "positionRu": {
+            "type": "string",
+            "description": "Position (Russian)"
+          },
+          "positionEn": {
+            "type": "string",
+            "description": "Position (English)"
+          },
+          "roleUz": {
+            "type": "string",
+            "description": "Role / title tagline (Uzbek)"
+          },
+          "roleRu": {
+            "type": "string",
+            "description": "Role / title tagline (Russian)"
+          },
+          "roleEn": {
+            "type": "string",
+            "description": "Role / title tagline (English)"
+          },
+          "groupUz": {
+            "type": "string",
+            "description": "Department/group label (Uzbek)"
+          },
+          "groupRu": {
+            "type": "string",
+            "description": "Department/group label (Russian)"
+          },
+          "groupEn": {
+            "type": "string",
+            "description": "Department/group label (English)"
+          },
+          "photoUrl": {
+            "type": "string",
+            "description": "Photo URL or storage key"
+          },
+          "linkedinUrl": {
+            "type": "string",
+            "description": "LinkedIn profile URL"
+          },
+          "sortOrder": {
+            "type": "number",
+            "description": "Manual ordering"
+          }
+        }
+      },
+      "CertificateResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "titleUz": {
+            "type": "string"
+          },
+          "titleRu": {
+            "type": "string"
+          },
+          "titleEn": {
+            "type": "string"
+          },
+          "issuerUz": {
+            "type": "string"
+          },
+          "issuerRu": {
+            "type": "string"
+          },
+          "issuerEn": {
+            "type": "string"
+          },
+          "imageUrl": {
+            "type": "string"
+          },
+          "isFeatured": {
+            "type": "boolean"
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "isFeatured",
+          "sortOrder",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "CreateCertificateDto": {
+        "type": "object",
+        "properties": {
+          "titleUz": {
+            "type": "string",
+            "description": "Certificate title (Uzbek)"
+          },
+          "titleRu": {
+            "type": "string",
+            "description": "Certificate title (Russian)"
+          },
+          "titleEn": {
+            "type": "string",
+            "description": "Certificate title (English)"
+          },
+          "issuerUz": {
+            "type": "string",
+            "description": "Issuing organization (Uzbek)"
+          },
+          "issuerRu": {
+            "type": "string",
+            "description": "Issuing organization (Russian)"
+          },
+          "issuerEn": {
+            "type": "string",
+            "description": "Issuing organization (English)"
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "Certificate image URL or storage key"
+          },
+          "isFeatured": {
+            "type": "boolean",
+            "description": "Whether to feature this certificate prominently",
+            "default": false
+          },
+          "sortOrder": {
+            "type": "number",
+            "description": "Manual ordering"
+          }
+        }
+      },
+      "UpdateCertificateDto": {
+        "type": "object",
+        "properties": {
+          "titleUz": {
+            "type": "string",
+            "description": "Certificate title (Uzbek)"
+          },
+          "titleRu": {
+            "type": "string",
+            "description": "Certificate title (Russian)"
+          },
+          "titleEn": {
+            "type": "string",
+            "description": "Certificate title (English)"
+          },
+          "issuerUz": {
+            "type": "string",
+            "description": "Issuing organization (Uzbek)"
+          },
+          "issuerRu": {
+            "type": "string",
+            "description": "Issuing organization (Russian)"
+          },
+          "issuerEn": {
+            "type": "string",
+            "description": "Issuing organization (English)"
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "Certificate image URL or storage key"
+          },
+          "isFeatured": {
+            "type": "boolean",
+            "description": "Whether to feature this certificate prominently",
+            "default": false
+          },
+          "sortOrder": {
+            "type": "number",
+            "description": "Manual ordering"
+          }
+        }
       }
     }
   }

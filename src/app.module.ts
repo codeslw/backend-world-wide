@@ -32,6 +32,7 @@ import { PartnerStudentsModule } from './partner-students/partner-students.modul
 import { PartnerApplicationsModule } from './partner-applications/partner-applications.module';
 import { StudentDocumentsModule } from './student-documents/student-documents.module';
 import { ApplicationProcessModule } from './application-process/application-process.module';
+import { ApplicationDocumentsModule } from './application-documents/application-documents.module';
 import { StudyLanguagesModule } from './study-languages/study-languages.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { PartnerOrganizationsModule } from './partner-organizations/partner-organizations.module';
@@ -75,6 +76,7 @@ import { AboutModule } from './about/about.module';
     PartnerApplicationsModule,
     StudentDocumentsModule,
     ApplicationProcessModule,
+    ApplicationDocumentsModule,
     StudyLanguagesModule,
     ReviewsModule,
     PartnerOrganizationsModule,

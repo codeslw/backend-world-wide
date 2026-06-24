@@ -25,6 +25,7 @@ model User {
   partnerOrganization PartnerOrganization? @relation("OrgOwner")
   partnerMembership   PartnerMember?       @relation("MemberOf")
   auditLogs           PartnerAuditLog[]    @relation("AuditActor")
+  uploadedDocuments   ApplicationDocument[] @relation("UploadedDocuments")
 
   @@map("users")
 }
@@ -309,6 +310,11 @@ model Chat {
   clientId             String
   adminId              String?
   partnerApplicationId String?
+  // Links a chat to a user-submitted Application (CLIENT applications). A chat is
+  // scoped to at most one application context: either partnerApplicationId (for
+  // partner-submitted apps) or applicationId (for user-submitted apps), or
+  // neither (the general client<->admin support chat).
+  applicationId        String?
   status               ChatStatus @default(ACTIVE)
   createdAt            DateTime   @default(now())
   updatedAt            DateTime   @updatedAt
@@ -316,11 +322,13 @@ model Chat {
   client               User                @relation("ClientChats", fields: [clientId], references: [id])
   messages             Message[]
   partnerApplication   PartnerApplication? @relation(fields: [partnerApplicationId], references: [id])
+  application          Application?        @relation(fields: [applicationId], references: [id])
 
   @@index([clientId])
   @@index([adminId])
   @@index([status])
   @@index([partnerApplicationId])
+  @@index([applicationId])
 }
 
 model Message {
@@ -443,6 +451,8 @@ model Application {
   profile             Profile           @relation(fields: [profileId], references: [id])
   program             Program           @relation(fields: [preferredProgram], references: [id])
   university          University        @relation(fields: [preferredUniversity], references: [id])
+  chats               Chat[]
+  documents           ApplicationDocument[]
 
   @@index([profileId])
   @@index([applicationStatus])
@@ -883,8 +893,71 @@ model ApplicationDocumentType {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  uploadedDocuments ApplicationDocument[]
+
   @@index([stepId])
   @@map("application_document_types")
+}
+
+// ── Per-application documents ──────────────────────────────────────────────────
+// One normalized record per file attached to an application. Polymorphic: it
+// belongs to EITHER a PartnerApplication (partner-submitted) OR an Application
+// (user-submitted), never both. Optionally fulfils a requirement document type
+// (documentTypeId) so the ApplyBoard-style Requirements checklist can show which
+// required items are satisfied/approved/rejected.
+model ApplicationDocument {
+  id                   String   @id @default(uuid())
+
+  // Polymorphic owner — exactly one of these is set.
+  partnerApplicationId String?
+  partnerApplication   PartnerApplication? @relation(fields: [partnerApplicationId], references: [id], onDelete: Cascade)
+  applicationId        String?
+  application          Application?        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  // Optional link to a requirement (process template document type).
+  documentTypeId       String?
+  documentType         ApplicationDocumentType? @relation(fields: [documentTypeId], references: [id], onDelete: SetNull)
+
+  name                 String
+  // DO Spaces object key (resolved to a public URL on read), mirroring the
+  // Message.fileUrl convention.
+  fileUrl              String
+  fileSize             Int?
+  mimeType             String?
+
+  kind                 ApplicationDocumentKind   @default(OTHER)
+  status               ApplicationDocumentStatus @default(PENDING)
+  reviewNote           String?
+
+  // Who uploaded it (partner, client, or admin) + a role snapshot for display.
+  uploadedById         String?
+  uploadedBy           User?    @relation("UploadedDocuments", fields: [uploadedById], references: [id], onDelete: SetNull)
+  uploadedByRole       Role?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([partnerApplicationId])
+  @@index([applicationId])
+  @@index([documentTypeId])
+  @@index([kind])
+  @@index([status])
+  @@map("application_documents")
+}
+
+enum ApplicationDocumentKind {
+  STUDENT_DOC   // a document about/from the student (passport, transcript, etc.)
+  REQUIREMENT   // an upload fulfilling a specific requirement document type
+  OFFER_LETTER  // an offer letter sent by admin/school
+  ADMIN_DOC     // any other document sent by admin through the portal
+  OTHER
+}
+
+enum ApplicationDocumentStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
 }
 
 // ── Partner Applications ──────────────────────────────────────────────────────
@@ -918,8 +991,13 @@ model PartnerApplication {
   // Backup / alternative programs (JSON array of { programId, universityId, programTitle, universityName })
   backupPrograms     Json?    @default("[]")
 
-  // Documents uploaded by partner (JSON array of { documentTypeId, fileName, fileUrl, uploadedAt })
+  // Legacy: documents uploaded by partner stored as JSON. Superseded by the
+  // ApplicationDocument relation below; kept for backward compatibility.
   documents          Json?    @default("[]")
+
+  // Normalized per-application documents (offer letters, requirement uploads,
+  // admin-sent files, student records attached to this application).
+  applicationDocuments ApplicationDocument[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
