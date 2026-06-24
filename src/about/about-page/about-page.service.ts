@@ -3,6 +3,7 @@ import { PrismaService } from '../../db/prisma.service';
 import { AboutPage } from '@prisma/client';
 import { DigitalOceanService } from '../../digital-ocean/digital-ocean.service';
 import { UpdateAboutPageDto } from './dto/update-about-page.dto';
+import { RevalidationService } from '../revalidation.service';
 
 const ABOUT_PAGE_ID = 'global';
 
@@ -13,6 +14,7 @@ export class AboutPageService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly digitalOceanService: DigitalOceanService,
+    private readonly revalidation: RevalidationService,
   ) {}
 
   async ensure(): Promise<AboutPage> {
@@ -36,6 +38,7 @@ export class AboutPageService {
             : this.digitalOceanService.normalizeToPublicUrl(dto.heroImageUrl),
       },
     });
+    this.revalidation.revalidateAbout();
     return this.normalize(updated);
   }
 

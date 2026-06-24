@@ -4,12 +4,14 @@ import { DigitalOceanService } from '../../digital-ocean/digital-ocean.service';
 import { Certificate } from '@prisma/client';
 import { CreateCertificateDto } from './dto/create-certificate.dto';
 import { UpdateCertificateDto } from './dto/update-certificate.dto';
+import { RevalidationService } from '../revalidation.service';
 
 @Injectable()
 export class CertificatesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly digitalOceanService: DigitalOceanService,
+    private readonly revalidation: RevalidationService,
   ) {}
 
   async create(dto: CreateCertificateDto): Promise<Certificate> {
@@ -19,6 +21,7 @@ export class CertificatesService {
         imageUrl: this.digitalOceanService.normalizeToPublicUrl(dto.imageUrl),
       },
     });
+    this.revalidation.revalidateAbout();
     return this.normalize(certificate);
   }
 
@@ -54,6 +57,7 @@ export class CertificatesService {
             : this.digitalOceanService.normalizeToPublicUrl(dto.imageUrl),
       },
     });
+    this.revalidation.revalidateAbout();
     return this.normalize(updated);
   }
 
@@ -62,7 +66,9 @@ export class CertificatesService {
       where: { id },
     });
     if (!existing) throw new NotFoundException(`Certificate ${id} not found`);
-    return this.prisma.certificate.delete({ where: { id } });
+    const removed = await this.prisma.certificate.delete({ where: { id } });
+    this.revalidation.revalidateAbout();
+    return removed;
   }
 
   private normalize(certificate: Certificate): Certificate {

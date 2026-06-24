@@ -4,12 +4,14 @@ import { DigitalOceanService } from '../../digital-ocean/digital-ocean.service';
 import { Founder } from '@prisma/client';
 import { CreateFounderDto } from './dto/create-founder.dto';
 import { UpdateFounderDto } from './dto/update-founder.dto';
+import { RevalidationService } from '../revalidation.service';
 
 @Injectable()
 export class FoundersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly digitalOceanService: DigitalOceanService,
+    private readonly revalidation: RevalidationService,
   ) {}
 
   async create(dto: CreateFounderDto): Promise<Founder> {
@@ -19,6 +21,7 @@ export class FoundersService {
         photoUrl: this.digitalOceanService.normalizeToPublicUrl(dto.photoUrl),
       },
     });
+    this.revalidation.revalidateAbout();
     return this.normalize(founder);
   }
 
@@ -49,13 +52,16 @@ export class FoundersService {
             : this.digitalOceanService.normalizeToPublicUrl(dto.photoUrl),
       },
     });
+    this.revalidation.revalidateAbout();
     return this.normalize(updated);
   }
 
   async remove(id: string): Promise<Founder> {
     const existing = await this.prisma.founder.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException(`Founder ${id} not found`);
-    return this.prisma.founder.delete({ where: { id } });
+    const removed = await this.prisma.founder.delete({ where: { id } });
+    this.revalidation.revalidateAbout();
+    return removed;
   }
 
   private normalize(founder: Founder): Founder {

@@ -4,12 +4,14 @@ import { DigitalOceanService } from '../../digital-ocean/digital-ocean.service';
 import { TeamMember } from '@prisma/client';
 import { CreateTeamMemberDto } from './dto/create-team-member.dto';
 import { UpdateTeamMemberDto } from './dto/update-team-member.dto';
+import { RevalidationService } from '../revalidation.service';
 
 @Injectable()
 export class TeamMembersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly digitalOceanService: DigitalOceanService,
+    private readonly revalidation: RevalidationService,
   ) {}
 
   async create(dto: CreateTeamMemberDto): Promise<TeamMember> {
@@ -19,6 +21,7 @@ export class TeamMembersService {
         photoUrl: this.digitalOceanService.normalizeToPublicUrl(dto.photoUrl),
       },
     });
+    this.revalidation.revalidateAbout();
     return this.normalize(member);
   }
 
@@ -49,13 +52,16 @@ export class TeamMembersService {
             : this.digitalOceanService.normalizeToPublicUrl(dto.photoUrl),
       },
     });
+    this.revalidation.revalidateAbout();
     return this.normalize(updated);
   }
 
   async remove(id: string): Promise<TeamMember> {
     const existing = await this.prisma.teamMember.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException(`Team member ${id} not found`);
-    return this.prisma.teamMember.delete({ where: { id } });
+    const removed = await this.prisma.teamMember.delete({ where: { id } });
+    this.revalidation.revalidateAbout();
+    return removed;
   }
 
   private normalize(member: TeamMember): TeamMember {

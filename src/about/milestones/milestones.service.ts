@@ -3,13 +3,19 @@ import { PrismaService } from '../../db/prisma.service';
 import { Milestone } from '@prisma/client';
 import { CreateMilestoneDto } from './dto/create-milestone.dto';
 import { UpdateMilestoneDto } from './dto/update-milestone.dto';
+import { RevalidationService } from '../revalidation.service';
 
 @Injectable()
 export class MilestonesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly revalidation: RevalidationService,
+  ) {}
 
-  create(dto: CreateMilestoneDto): Promise<Milestone> {
-    return this.prisma.milestone.create({ data: dto });
+  async create(dto: CreateMilestoneDto): Promise<Milestone> {
+    const created = await this.prisma.milestone.create({ data: dto });
+    this.revalidation.revalidateAbout();
+    return created;
   }
 
   findAll(): Promise<Milestone[]> {
@@ -27,12 +33,16 @@ export class MilestonesService {
   async update(id: string, dto: UpdateMilestoneDto): Promise<Milestone> {
     const existing = await this.prisma.milestone.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException(`Milestone ${id} not found`);
-    return this.prisma.milestone.update({ where: { id }, data: dto });
+    const updated = await this.prisma.milestone.update({ where: { id }, data: dto });
+    this.revalidation.revalidateAbout();
+    return updated;
   }
 
   async remove(id: string): Promise<Milestone> {
     const existing = await this.prisma.milestone.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException(`Milestone ${id} not found`);
-    return this.prisma.milestone.delete({ where: { id } });
+    const removed = await this.prisma.milestone.delete({ where: { id } });
+    this.revalidation.revalidateAbout();
+    return removed;
   }
 }

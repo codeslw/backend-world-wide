@@ -3,9 +3,10 @@ import { PrismaService } from '../../db/prisma.service';
 import { DigitalOceanModule } from '../../digital-ocean/digital-ocean.module';
 import { FoundersController } from './founders.controller';
 import { FoundersService } from './founders.service';
+import { RevalidationModule } from '../revalidation.module';
 
 @Module({
-  imports: [DigitalOceanModule],
+  imports: [DigitalOceanModule, RevalidationModule],
   controllers: [FoundersController],
   providers: [FoundersService, PrismaService],
   exports: [FoundersService],
