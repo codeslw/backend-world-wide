@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Req,
+  Query,
 } from '@nestjs/common';
 import { PartnerStudentsService } from './partner-students.service';
 import { PartnerOrganizationsService } from '../partner-organizations/partner-organizations.service';
@@ -21,6 +22,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import {
   ApiBearerAuth,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -90,9 +92,17 @@ export class PartnerStudentsController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get all students (Admin only)' })
   @ApiResponse({ status: 200, description: 'List of all partner students' })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search by student name, partner, citizenship',
+  })
   @Get('all')
-  findAll() {
-    return this.partnerStudentsService.findAll();
+  findAll(@Query('search') search?: string) {
+    return this.partnerStudentsService.findAll(
+      search === 'undefined' || search === '' ? undefined : search,
+    );
   }
 
   @Roles(Role.PARTNER, Role.ADMIN)

@@ -103,8 +103,50 @@ export class PartnerStudentsService {
     }));
   }
 
-  async findAll() {
+  async findAll(search?: string) {
+    const term = search?.trim();
+    const where: any = term
+      ? {
+          OR: [
+            { firstName: { contains: term, mode: 'insensitive' } },
+            { lastName: { contains: term, mode: 'insensitive' } },
+            { middleName: { contains: term, mode: 'insensitive' } },
+            { countryOfCitizenship: { contains: term, mode: 'insensitive' } },
+            // Partner member (creator) name and email
+            {
+              partner: {
+                profile: {
+                  OR: [
+                    { firstName: { contains: term, mode: 'insensitive' } },
+                    { lastName: { contains: term, mode: 'insensitive' } },
+                  ],
+                },
+              },
+            },
+            { partner: { email: { contains: term, mode: 'insensitive' } } },
+            // Partner organization name — direct relation or via membership
+            {
+              partner: {
+                partnerOrganization: {
+                  name: { contains: term, mode: 'insensitive' },
+                },
+              },
+            },
+            {
+              partner: {
+                partnerMembership: {
+                  organization: {
+                    name: { contains: term, mode: 'insensitive' },
+                  },
+                },
+              },
+            },
+          ],
+        }
+      : {};
+
     const students = await this.prisma.partnerStudent.findMany({
+      where,
       include: {
         partner: {
           select: {
