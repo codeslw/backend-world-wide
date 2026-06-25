@@ -187,6 +187,24 @@ export class PartnerApplicationsService {
         },
         { university: { name: { contains: search, mode: 'insensitive' } } },
         { program: { title: { contains: search, mode: 'insensitive' } } },
+        // Partner organization name — resolved via either the direct
+        // partnerOrganization relation or the partnerMembership's organization.
+        {
+          partner: {
+            partnerOrganization: {
+              name: { contains: search, mode: 'insensitive' },
+            },
+          },
+        },
+        {
+          partner: {
+            partnerMembership: {
+              organization: {
+                name: { contains: search, mode: 'insensitive' },
+              },
+            },
+          },
+        },
       ];
     }
 

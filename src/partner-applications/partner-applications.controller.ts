@@ -133,7 +133,13 @@ export class PartnerApplicationsController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'status', required: false, enum: PartnerApplicationStatus })
-  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description:
+      'Search by student name, partner organization, program or university',
+  })
   findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
