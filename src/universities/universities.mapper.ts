@@ -213,6 +213,7 @@ export class UniversitiesMapper {
       photoUrl: university.photoUrl,
       logoUrl: university.logoUrl,
       isMain: university.isMain,
+      isRecommended: (university as any).isRecommended ?? false,
       countryName: countryName || '',
       cityName: cityName || '',
       minTuitionFee,

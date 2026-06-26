@@ -36,6 +36,11 @@ export class UniversityListItemDto {
   @ApiProperty({ description: 'Whether this university is featured as main' })
   isMain: boolean;
 
+  @ApiProperty({
+    description: 'Whether this university is recommended for its country',
+  })
+  isRecommended: boolean;
+
   @ApiProperty({ description: 'Country name' })
   countryName: string;
 

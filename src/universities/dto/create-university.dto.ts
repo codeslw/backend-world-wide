@@ -233,6 +233,16 @@ export class CreateUniversityDto {
   @IsBoolean()
   isMain?: boolean;
 
+  @ApiPropertyOptional({
+    description:
+      'Whether this university is recommended for its country. Recommended universities appear first on the country page.',
+    example: false,
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isRecommended?: boolean;
+
   @ApiProperty({
     description: 'ID of the city where the university is located',
     example: 'a8f6b6e4-9b1a-4b0e-8b0a-7b0c9b0a7b0c',

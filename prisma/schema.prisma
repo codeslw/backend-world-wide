@@ -160,6 +160,7 @@ model University {
   additionalPhotoUrls     String[]                @default([])
   youtubeVideoUrl         String?
   isMain                  Boolean                 @default(false)
+  isRecommended           Boolean                 @default(false)
   cityId                  String
   countryCode             Int
   createdAt               DateTime                @default(now())
@@ -188,6 +189,7 @@ model University {
   @@index([countryCode])
   @@index([cityId])
   @@index([isMain])
+  @@index([isRecommended])
   @@map("universities")
 }
 

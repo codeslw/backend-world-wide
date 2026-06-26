@@ -351,7 +351,9 @@ export class UniversitiesRepository {
       applicationFee: { avgApplicationFee: sortDirection },
       name: { name: sortDirection },
     };
-    return sortFieldMap[sortBy] || { ranking: sortDirection };
+    const secondary = sortFieldMap[sortBy] || { ranking: sortDirection };
+    // Recommended universities always appear first, then the chosen sort.
+    return [{ isRecommended: 'desc' }, secondary];
   }
 
   getUniversityProgramSortConfig(
