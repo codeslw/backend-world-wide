@@ -126,6 +126,12 @@ export class CountriesService {
           hasVegetarianFood: createCountryDto.hasVegetarianFood || false,
         },
       });
+      if (createCountryDto.recommendedUniversityIds !== undefined) {
+        await this.syncRecommendedUniversities(
+          createdCountry.code,
+          createCountryDto.recommendedUniversityIds,
+        );
+      }
       await this.clearCache();
       return createdCountry;
     } catch (error) {
@@ -265,6 +271,10 @@ export class CountriesService {
         where: { code },
         include: {
           cities: true,
+          universities: {
+            where: { isRecommended: true },
+            select: { id: true },
+          },
         },
       });
 
@@ -272,7 +282,11 @@ export class CountriesService {
         throw new EntityNotFoundException('Country', code);
       }
 
-      const result = this.localizeCountry(country, lang);
+      const { universities, ...countryData } = country as any;
+      const result = this.localizeCountry(countryData, lang);
+      result.recommendedUniversityIds = (universities ?? []).map(
+        (u: { id: string }) => u.id,
+      );
       await this.cacheManager.set(cacheKey, result);
       return result;
     } catch (error) {
@@ -448,6 +462,12 @@ export class CountriesService {
         where: { code },
         data: updateData,
       });
+      if (updateCountryDto.recommendedUniversityIds !== undefined) {
+        await this.syncRecommendedUniversities(
+          code,
+          updateCountryDto.recommendedUniversityIds,
+        );
+      }
       await this.clearCache();
       return updatedCountry;
     } catch (error) {
@@ -517,6 +537,39 @@ export class CountriesService {
     }
 
     return result;
+  }
+
+  /**
+   * Sets University.isRecommended for the given country: marks the provided
+   * IDs (that belong to this country) as recommended and unmarks the rest.
+   */
+  private async syncRecommendedUniversities(
+    countryCode: number,
+    universityIds: string[],
+  ): Promise<void> {
+    const ids = Array.from(new Set(universityIds ?? []));
+
+    await this.prisma.$transaction([
+      // Unmark any currently-recommended universities of this country that are
+      // no longer in the list.
+      this.prisma.university.updateMany({
+        where: {
+          countryCode,
+          isRecommended: true,
+          ...(ids.length > 0 ? { id: { notIn: ids } } : {}),
+        },
+        data: { isRecommended: false },
+      }),
+      // Mark the selected universities of this country as recommended.
+      ...(ids.length > 0
+        ? [
+            this.prisma.university.updateMany({
+              where: { countryCode, id: { in: ids } },
+              data: { isRecommended: true },
+            }),
+          ]
+        : []),
+    ]);
   }
 
   private async validateIsMainLimit(): Promise<void> {

@@ -343,7 +343,11 @@ export class UniversitiesRepository {
     return where;
   }
 
-  getSortConfig(sortBy: string, sortDirection: 'asc' | 'desc'): any {
+  getSortConfig(
+    sortBy: string,
+    sortDirection: 'asc' | 'desc',
+    prioritizeRecommended = false,
+  ): any {
     const sortFieldMap: Record<string, any> = {
       ranking: { ranking: sortDirection },
       established: { established: sortDirection },
@@ -351,9 +355,11 @@ export class UniversitiesRepository {
       applicationFee: { avgApplicationFee: sortDirection },
       name: { name: sortDirection },
     };
-    const secondary = sortFieldMap[sortBy] || { ranking: sortDirection };
-    // Recommended universities always appear first, then the chosen sort.
-    return [{ isRecommended: 'desc' }, secondary];
+    const primary = sortFieldMap[sortBy] || { ranking: sortDirection };
+    // When listing within a single country, recommended universities lead.
+    return prioritizeRecommended
+      ? [{ isRecommended: 'desc' }, primary]
+      : primary;
   }
 
   getUniversityProgramSortConfig(

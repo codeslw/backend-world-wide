@@ -78,6 +78,16 @@ export class CreateCountryDto {
   @IsString({ each: true })
   images?: string[];
 
+  @ApiPropertyOptional({
+    description:
+      'IDs of universities recommended for this country. These are marked as recommended and appear first on the country page. Universities of this country not in the list are unmarked.',
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  recommendedUniversityIds?: string[];
+
   // Financial Requirements
   @ApiPropertyOptional({
     description: 'Proof of funds amount required',

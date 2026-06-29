@@ -176,7 +176,14 @@ export class UniversitiesService {
       } = filterDto;
 
       const where = this.repository.buildUniversityWhereClause(filterDto);
-      const orderBy = this.repository.getSortConfig(sortBy, sortDirection);
+      // Recommended-first ordering only when listing within a single country
+      // (e.g. the country page), not in global search/listing.
+      const prioritizeRecommended = filterDto.countryCode !== undefined;
+      const orderBy = this.repository.getSortConfig(
+        sortBy,
+        sortDirection,
+        prioritizeRecommended,
+      );
 
       const skip = (Number(page) - 1) * Number(limit);
       const take = Number(limit);

@@ -43,6 +43,12 @@ export class CountryResponseDto {
   @ApiPropertyOptional({ description: 'Country images', type: [String] })
   images?: string[];
 
+  @ApiPropertyOptional({
+    description: 'IDs of universities recommended for this country',
+    type: [String],
+  })
+  recommendedUniversityIds?: string[];
+
   // Financial
   @ApiPropertyOptional({ description: 'Proof of funds amount description' })
   proofOfFundsAmount?: string;
