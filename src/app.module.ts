@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -41,10 +42,12 @@ import { PartnerCompanyModule } from './partner-company/partner-company.module';
 import { PartnerAuditModule } from './partner-audit/partner-audit.module';
 import { SiteSettingsModule } from './site-settings/site-settings.module';
 import { AboutModule } from './about/about.module';
+import { CurrenciesModule } from './currencies/currencies.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     CacheModule.register({ isGlobal: true, ttl: 600000 }), // 10 minutes default TTL
     ThrottlerModule.forRoot([{
       ttl: 60000,   // 1 minute window
@@ -85,6 +88,7 @@ import { AboutModule } from './about/about.module';
     PartnerAuditModule,
     SiteSettingsModule,
     AboutModule,
+    CurrenciesModule,
     DbModule,
   ],
 
