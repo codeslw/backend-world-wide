@@ -62,6 +62,54 @@ export class PartnerApplicationsService {
       );
     }
 
+    // The application is owned by the student's partner, not necessarily the
+    // exact team member submitting it — keeps ownership consistent org-wide.
+    return this.persistApplication(dto, {
+      ownerPartnerId: student.partnerId,
+      dedupePartnerIds: visiblePartnerIds,
+    });
+  }
+
+  /**
+   * Admin creates an application on behalf of a partner student. The resulting
+   * application is still owned by the student's partner; `createdByAdminId`
+   * records that an admin acted. No org-membership check — admins may act on
+   * any student.
+   */
+  async adminCreate(
+    adminId: string,
+    dto: CreatePartnerApplicationDto,
+  ): Promise<PartnerApplicationResponseDto> {
+    const student = await this.prisma.partnerStudent.findUnique({
+      where: { id: dto.partnerStudentId },
+      select: { id: true, partnerId: true },
+    });
+
+    if (!student) {
+      throw new EntityNotFoundException('PartnerStudent', dto.partnerStudentId);
+    }
+
+    return this.persistApplication(dto, {
+      ownerPartnerId: student.partnerId,
+      dedupePartnerIds: [student.partnerId],
+      createdByAdminId: adminId,
+    });
+  }
+
+  /**
+   * Shared creation path: validates the university-program relationship, guards
+   * against duplicate active applications, and persists the row owned by
+   * `ownerPartnerId`. `dedupePartnerIds` scopes the duplicate check (org-wide
+   * for partners, the single owner for admins).
+   */
+  private async persistApplication(
+    dto: CreatePartnerApplicationDto,
+    opts: {
+      ownerPartnerId: string;
+      dedupePartnerIds: string[];
+      createdByAdminId?: string;
+    },
+  ): Promise<PartnerApplicationResponseDto> {
     // Verify university-program relationship exists. The partner UI submits the
     // university_programs.id, but accepting the raw Program id keeps older clients working.
     const universityProgram = await this.prisma.universityProgram.findFirst({
@@ -82,11 +130,11 @@ export class PartnerApplicationsService {
       );
     }
 
-    const { university, program } = universityProgram;
+    const { program } = universityProgram;
 
     const existingApplication = await this.prisma.partnerApplication.findFirst({
       where: {
-        partnerId: { in: visiblePartnerIds },
+        partnerId: { in: opts.dedupePartnerIds },
         partnerStudentId: dto.partnerStudentId,
         universityId: dto.universityId,
         programId: program.id,
@@ -110,7 +158,7 @@ export class PartnerApplicationsService {
 
     const application = await this.prisma.partnerApplication.create({
       data: {
-        partner: { connect: { id: partnerId } },
+        partner: { connect: { id: opts.ownerPartnerId } },
         partnerStudent: { connect: { id: dto.partnerStudentId } },
         university: { connect: { id: dto.universityId } },
         program: { connect: { id: program.id } },
@@ -125,6 +173,9 @@ export class PartnerApplicationsService {
           : '[]',
         status: PartnerApplicationStatus.SUBMITTED,
         submittedAt: new Date(),
+        ...(opts.createdByAdminId && {
+          createdByAdmin: { connect: { id: opts.createdByAdminId } },
+        }),
       },
       include: this.includeRelations,
     });
@@ -174,11 +225,13 @@ export class PartnerApplicationsService {
     take?: number;
     status?: PartnerApplicationStatus;
     search?: string;
+    partnerIds?: string[];
   }) {
-    const { skip = 0, take = 50, status, search } = options || {};
+    const { skip = 0, take = 50, status, search, partnerIds } = options || {};
 
     const where: any = {};
     if (status) where.status = status;
+    if (partnerIds) where.partnerId = { in: partnerIds };
     if (search) {
       where.OR = [
         {
@@ -438,6 +491,8 @@ export class PartnerApplicationsService {
       notes: application.notes,
       adminNotes: application.adminNotes,
       assignedTo: application.assignedTo,
+      createdByAdminId: application.createdByAdminId ?? null,
+      isAdminCreated: !!application.createdByAdminId,
       backupPrograms:
         typeof application.backupPrograms === 'string'
           ? JSON.parse(application.backupPrograms)

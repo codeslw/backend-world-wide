@@ -74,4 +74,11 @@ export class CreateApplicationDocumentDto {
   @IsOptional()
   @IsEnum(ApplicationDocumentStatus)
   status?: ApplicationDocumentStatus;
+
+  @ApiPropertyOptional({
+    description: 'Optional free-text comment shown alongside the file.',
+  })
+  @IsOptional()
+  @IsString()
+  comment?: string;
 }

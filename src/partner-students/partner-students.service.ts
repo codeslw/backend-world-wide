@@ -103,9 +103,11 @@ export class PartnerStudentsService {
     }));
   }
 
-  async findAll(search?: string) {
+  async findAll(search?: string, partnerIds?: string[]) {
     const term = search?.trim();
-    const where: any = term
+    const filters: any[] = [];
+    if (partnerIds) filters.push({ partnerId: { in: partnerIds } });
+    const searchWhere: any = term
       ? {
           OR: [
             { firstName: { contains: term, mode: 'insensitive' } },
@@ -143,11 +145,20 @@ export class PartnerStudentsService {
             },
           ],
         }
-      : {};
+      : null;
+    if (searchWhere) filters.push(searchWhere);
+    const where: any = filters.length ? { AND: filters } : {};
 
     const students = await this.prisma.partnerStudent.findMany({
       where,
       include: {
+        _count: {
+          select: { partnerApplications: true, studentDocuments: true },
+        },
+        partnerApplications: {
+          select: { id: true, status: true, createdAt: true },
+          orderBy: { createdAt: 'desc' },
+        },
         partner: {
           select: {
             id: true,
@@ -172,6 +183,12 @@ export class PartnerStudentsService {
         null;
       return {
         ...student,
+        currentStage: deriveCurrentStage(
+          student.partnerApplications as Array<{
+            status: PartnerApplicationStatus;
+            createdAt?: Date;
+          }>,
+        ),
         partnerOrganizationId: org?.id ?? null,
         partnerOrganizationName: org?.name ?? null,
       };

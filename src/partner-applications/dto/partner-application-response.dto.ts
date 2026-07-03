@@ -81,6 +81,16 @@ export class PartnerApplicationResponseDto {
   @ApiPropertyOptional()
   assignedTo?: string;
 
+  @ApiPropertyOptional({
+    description: 'Admin user id that created this application on the partner\'s behalf, if any',
+  })
+  createdByAdminId?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'True when an admin created this application on behalf of the partner',
+  })
+  isAdminCreated?: boolean;
+
   @ApiPropertyOptional()
   backupPrograms?: any[];
 

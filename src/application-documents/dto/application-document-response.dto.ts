@@ -23,6 +23,8 @@ export class ApplicationDocumentResponseDto {
   @ApiProperty({ enum: ApplicationDocumentStatus })
   status: ApplicationDocumentStatus;
   @ApiPropertyOptional() reviewNote?: string | null;
+  @ApiPropertyOptional({ description: 'Free-text comment shown with the file.' })
+  comment?: string | null;
 
   @ApiPropertyOptional() uploadedById?: string | null;
   @ApiPropertyOptional({ enum: Role }) uploadedByRole?: Role | null;

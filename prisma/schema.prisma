@@ -26,6 +26,7 @@ model User {
   partnerMembership   PartnerMember?       @relation("MemberOf")
   auditLogs           PartnerAuditLog[]    @relation("AuditActor")
   uploadedDocuments   ApplicationDocument[] @relation("UploadedDocuments")
+  adminCreatedApplications PartnerApplication[] @relation("AdminCreatedApplications")
 
   @@map("users")
 }
@@ -930,6 +931,9 @@ model ApplicationDocument {
   kind                 ApplicationDocumentKind   @default(OTHER)
   status               ApplicationDocumentStatus @default(PENDING)
   reviewNote           String?
+  // Optional free-text comment attached to the file by the uploader (e.g. an
+  // admin note about a student record). Surfaced to the partner alongside the file.
+  comment              String?
 
   // Who uploaded it (partner, client, or admin) + a role snapshot for display.
   uploadedById         String?
@@ -990,6 +994,12 @@ model PartnerApplication {
   adminNotes         String?
   assignedTo         String?
 
+  // Set when an admin submitted this application on behalf of the partner. The
+  // application is still owned by the partner (partnerId); this only records who
+  // acted. Null for partner-submitted applications.
+  createdByAdminId   String?
+  createdByAdmin     User?    @relation("AdminCreatedApplications", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+
   // Backup / alternative programs (JSON array of { programId, universityId, programTitle, universityName })
   backupPrograms     Json?    @default("[]")
 
@@ -1009,6 +1019,7 @@ model PartnerApplication {
   @@index([status])
   @@index([universityId])
   @@index([programId])
+  @@index([createdByAdminId])
   chats              Chat[]
 
   @@index([createdAt])

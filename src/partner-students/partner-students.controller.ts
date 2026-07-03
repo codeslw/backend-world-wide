@@ -98,10 +98,24 @@ export class PartnerStudentsController {
     type: String,
     description: 'Search by student name, partner, citizenship',
   })
+  @ApiQuery({
+    name: 'organizationId',
+    required: false,
+    type: String,
+    description: 'Scope to a single partner organization',
+  })
   @Get('all')
-  findAll(@Query('search') search?: string) {
+  async findAll(
+    @Query('search') search?: string,
+    @Query('organizationId') organizationId?: string,
+  ) {
+    const partnerIds =
+      organizationId && organizationId !== 'undefined'
+        ? await this.partnerOrgs.getOrgUserIds(organizationId)
+        : undefined;
     return this.partnerStudentsService.findAll(
       search === 'undefined' || search === '' ? undefined : search,
+      partnerIds,
     );
   }
 

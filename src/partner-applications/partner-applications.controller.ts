@@ -103,6 +103,37 @@ export class PartnerApplicationsController {
     return app;
   }
 
+  @Post('admin')
+  @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary:
+      "Admin: create a partner application on behalf of a student's partner",
+  })
+  @ApiResponse({ status: 201, type: PartnerApplicationResponseDto })
+  @ApiResponse({ status: 400, type: ErrorResponseDto })
+  @ApiResponse({ status: 403, type: ErrorResponseDto })
+  @ApiResponse({ status: 404, type: ErrorResponseDto })
+  async adminCreate(
+    @Req() req: RequestWithUser,
+    @Body() dto: CreatePartnerApplicationDto,
+  ) {
+    const app = await this.partnerApplicationsService.adminCreate(
+      req.user.userId,
+      dto,
+    );
+    await this.audit.log({
+      action: 'APPLICATION_CREATED',
+      actorId: req.user.userId,
+      actorRole: req.user.role,
+      ipAddress: req.ip,
+      targetType: 'PartnerApplication',
+      targetId: app?.id,
+      targetLabel: this.applicationLabel(app),
+      metadata: { status: app?.status, createdByAdmin: true },
+    });
+    return app;
+  }
+
   @Get('my')
   @Roles(Role.PARTNER)
   @ApiOperation({
@@ -140,13 +171,24 @@ export class PartnerApplicationsController {
     description:
       'Search by student name, partner organization, program or university',
   })
-  findAll(
+  @ApiQuery({
+    name: 'organizationId',
+    required: false,
+    type: String,
+    description: 'Scope to a single partner organization',
+  })
+  async findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('status') status?: PartnerApplicationStatus,
     @Query('search') search?: string,
+    @Query('organizationId') organizationId?: string,
   ) {
     const skip = ((page || 1) - 1) * (limit || 50);
+    const partnerIds =
+      organizationId && organizationId !== 'undefined'
+        ? await this.partnerOrgs.getOrgUserIds(organizationId)
+        : undefined;
     return this.partnerApplicationsService.findAll({
       skip,
       take: limit || 50,
@@ -155,6 +197,7 @@ export class PartnerApplicationsController {
           ? undefined
           : status,
       search: search === 'undefined' || search === '' ? undefined : search,
+      partnerIds,
     });
   }
 
