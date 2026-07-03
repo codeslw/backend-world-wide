@@ -41,7 +41,10 @@ export class PartnerApplicationsService {
     partnerId: string,
     dto: CreatePartnerApplicationDto,
   ): Promise<PartnerApplicationResponseDto> {
-    // Verify the partner student belongs to this partner
+    // Verify the partner student belongs to the requester's organization.
+    // Org-wide, gated by VIEW_STUDENTS for plain members — same visibility
+    // rule used to list/view/update students and applications elsewhere, so a
+    // team member who can see a student can also apply on their behalf.
     const student = await this.prisma.partnerStudent.findUnique({
       where: { id: dto.partnerStudentId },
     });
@@ -50,7 +53,10 @@ export class PartnerApplicationsService {
       throw new EntityNotFoundException('PartnerStudent', dto.partnerStudentId);
     }
 
-    if (student.partnerId !== partnerId) {
+    const visiblePartnerIds =
+      await this.partnerOrgs.resolveVisiblePartnerIds(partnerId);
+
+    if (!visiblePartnerIds.includes(student.partnerId)) {
       throw new ForbiddenActionException(
         'This student does not belong to your account',
       );
@@ -80,7 +86,7 @@ export class PartnerApplicationsService {
 
     const existingApplication = await this.prisma.partnerApplication.findFirst({
       where: {
-        partnerId,
+        partnerId: { in: visiblePartnerIds },
         partnerStudentId: dto.partnerStudentId,
         universityId: dto.universityId,
         programId: program.id,
