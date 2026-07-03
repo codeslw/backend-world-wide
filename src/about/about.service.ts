@@ -68,6 +68,7 @@ export class AboutService {
         position: pick(t, 'position'),
         role: pick(t, 'role'),
         group: pick(t, 'group'),
+        qualification: pick(t, 'qualification'),
         photoUrl: t.photoUrl,
         linkedinUrl: t.linkedinUrl,
       })),

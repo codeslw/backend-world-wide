@@ -35,6 +35,15 @@ export class TeamMemberResponseDto {
   groupEn?: string | null;
 
   @ApiPropertyOptional()
+  qualificationUz?: string | null;
+
+  @ApiPropertyOptional()
+  qualificationRu?: string | null;
+
+  @ApiPropertyOptional()
+  qualificationEn?: string | null;
+
+  @ApiPropertyOptional()
   photoUrl?: string | null;
 
   @ApiPropertyOptional()

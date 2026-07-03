@@ -1246,6 +1246,10 @@ model TeamMember {
   groupUz    String?
   groupRu    String?
   groupEn    String?
+  // rich-text (HTML) qualification / credentials shown on the About page
+  qualificationUz String?
+  qualificationRu String?
+  qualificationEn String?
   photoUrl   String?
   linkedinUrl String?
   sortOrder  Int     @default(0)
@@ -1275,4 +1279,27 @@ model Certificate {
   @@index([isFeatured])
   @@index([sortOrder])
   @@map("about_certificates")
+}
+
+/// Single-row cache of the latest exchange-rate table fetched from
+/// exchangerate-api.com. We store the whole conversion table (base = USD)
+/// as JSON plus the provider's own update timestamps so the refresh job can
+/// avoid calling the API before new rates are actually published. Persisting
+/// to the DB (rather than in-memory only) means restarts/deploys never trigger
+/// a needless API call and burn the monthly request quota.
+model ExchangeRateSnapshot {
+  id           String   @id @default(uuid())
+  /// Base currency of the rate table (always "USD" for now).
+  baseCode     String   @default("USD")
+  /// Full conversion table: { "USD": 1, "EUR": 0.92, "UZS": 12650, ... }.
+  rates        Json
+  /// When we last successfully fetched from the provider.
+  fetchedAt    DateTime @default(now())
+  /// Provider-reported next update time (time_next_update_unix). The refresh
+  /// job skips the API until now() passes this, so we never over-fetch.
+  nextUpdateAt DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("exchange_rate_snapshots")
 }

@@ -51,6 +51,21 @@ export class CreateTeamMemberDto {
   @IsString()
   groupEn?: string;
 
+  @ApiPropertyOptional({ description: 'Qualification rich-text HTML (Uzbek)' })
+  @IsOptional()
+  @IsString()
+  qualificationUz?: string;
+
+  @ApiPropertyOptional({ description: 'Qualification rich-text HTML (Russian)' })
+  @IsOptional()
+  @IsString()
+  qualificationRu?: string;
+
+  @ApiPropertyOptional({ description: 'Qualification rich-text HTML (English)' })
+  @IsOptional()
+  @IsString()
+  qualificationEn?: string;
+
   @ApiPropertyOptional({ description: 'Photo URL or storage key' })
   @IsOptional()
   @IsString()
