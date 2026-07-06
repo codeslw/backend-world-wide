@@ -22,6 +22,8 @@ import {
 import { UniversitiesMapper } from './universities.mapper';
 import { UniversitiesRepository } from './universities.repository';
 import { MainUniversityResponseDto } from './dto/main-university-response.dto';
+import { IntakesService } from '../intakes/intakes.service';
+import { ProgramIntakeInputDto } from './dto/program-intake-input.dto';
 
 @Injectable()
 export class UniversitiesService {
@@ -31,8 +33,46 @@ export class UniversitiesService {
     private readonly prisma: PrismaService,
     private readonly mapper: UniversitiesMapper,
     private readonly repository: UniversitiesRepository,
+    private readonly intakesService: IntakesService,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
+
+  /**
+   * Turn a program's `intakes` payload into concrete intake ids. Each item is
+   * either an existing intake id ({ id }) or an inline config
+   * ({ season, startMonth?, year, deadline? }) that we find-or-create so the
+   * global intake table stays deduplicated. Duplicate ids are removed.
+   */
+  private async resolveIntakeIds(
+    intakes: ProgramIntakeInputDto[] | undefined,
+    tx?: Prisma.TransactionClient,
+  ): Promise<string[]> {
+    if (!intakes || intakes.length === 0) return [];
+    const ids: string[] = [];
+    for (const input of intakes) {
+      if (input.id) {
+        ids.push(input.id);
+        continue;
+      }
+      if (!input.season || input.year === undefined) {
+        throw new InvalidDataException(
+          'Each inline intake requires at least a season and a year.',
+        );
+      }
+      const row = await this.intakesService.findOrCreate(
+        {
+          season: input.season,
+          startMonth: input.startMonth,
+          year: input.year,
+          deadline: input.deadline ? new Date(input.deadline) : undefined,
+        },
+        tx,
+      );
+      ids.push(row.id);
+    }
+    // De-dupe while preserving order.
+    return Array.from(new Set(ids));
+  }
 
   private async clearCache(specificKeys?: string[]) {
     try {
@@ -73,6 +113,12 @@ export class UniversitiesService {
 
     await this.validateProgramIds(programs.map((p) => p.programId));
 
+    // Resolve each program's inline/existing intakes to concrete intake ids
+    // (find-or-create) before the university create.
+    const programIntakeIds = await Promise.all(
+      programs.map((program) => this.resolveIntakeIds(program.intakes)),
+    );
+
     try {
       const createdUniversity = await this.prisma.university.create({
         data: {
@@ -86,7 +132,7 @@ export class UniversitiesService {
             ? { connect: { id: agencyServiceId } }
             : undefined,
           universityPrograms: {
-            create: programs.map((program) => ({
+            create: programs.map((program, i) => ({
               program: { connect: { id: program.programId } },
               tuitionFee: program.tuitionFee,
               tuitionFeeType: program.tuitionFeeType,
@@ -100,9 +146,9 @@ export class UniversitiesService {
               campuses: program.campusIds
                 ? { connect: program.campusIds.map((id) => ({ id })) }
                 : undefined,
-              intakes: program.intakes
+              intakes: programIntakeIds[i].length
                 ? {
-                    create: program.intakes.map((intakeId) => ({
+                    create: programIntakeIds[i].map((intakeId) => ({
                       intake: { connect: { id: intakeId } },
                     })),
                   }
@@ -825,16 +871,21 @@ export class UniversitiesService {
       });
 
       if (programData.intakes) {
+        const intakeIds = await this.resolveIntakeIds(programData.intakes, tx);
+
         await tx.universityProgramIntake.deleteMany({
           where: { universityProgramId: upsertedProgram.id },
         });
 
-        await tx.universityProgramIntake.createMany({
-          data: programData.intakes.map((intakeId) => ({
-            universityProgramId: upsertedProgram.id,
-            intakeId,
-          })),
-        });
+        if (intakeIds.length > 0) {
+          await tx.universityProgramIntake.createMany({
+            data: intakeIds.map((intakeId) => ({
+              universityProgramId: upsertedProgram.id,
+              intakeId,
+            })),
+            skipDuplicates: true,
+          });
+        }
       }
     }
   }

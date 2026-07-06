@@ -108,6 +108,8 @@ export class UniversitiesMapper {
           intakes:
             up.intakes?.map((api) => ({
               id: api.intake.id,
+              season: api.intake.season,
+              startMonth: api.intake.startMonth,
               month: api.intake.month,
               year: api.intake.year,
               deadline: api.intake.deadline.toISOString(),
@@ -269,6 +271,8 @@ export class UniversitiesMapper {
         intakes:
           up.intakes?.map((api) => ({
             id: api.intake.id,
+            season: api.intake.season,
+            startMonth: api.intake.startMonth,
             month: api.intake.month,
             year: api.intake.year,
             deadline: api.intake.deadline.toISOString(),
@@ -343,6 +347,8 @@ export class UniversitiesMapper {
         intakes:
           up.intakes?.map((api) => ({
             id: api.intake.id,
+            season: api.intake.season,
+            startMonth: api.intake.startMonth,
             month: api.intake.month,
             year: api.intake.year,
             deadline: api.intake.deadline.toISOString(),
