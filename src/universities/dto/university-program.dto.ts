@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { plainToInstance, Transform, Type } from 'class-transformer';
 import {
   IsEnum,
   IsNotEmpty,
@@ -10,14 +11,17 @@ import {
   Min,
   IsArray,
   IsIn,
+  ValidateNested,
 } from 'class-validator';
 import { Currency } from '../../common/enum/currency.enum';
 import { StudyLevel } from '../../common/enum/study-level.enum';
+import { ProgramIntakeInputDto } from './program-intake-input.dto';
 
 export const TUITION_FEE_TYPES = [
   'tuition_per_year',
   'tuition_per_semester',
   'programm_fee',
+  'first_year_tuition',
 ] as const;
 
 export type TuitionFeeType = (typeof TUITION_FEE_TYPES)[number];
@@ -98,14 +102,33 @@ export class UniversityProgramDto {
   scholarshipAppliedTutionFee?: number;
 
   @ApiProperty({
-    description: 'The intakes for this program.',
-    example: ['d290f1ee-6c54-4b01-90e6-d701748f0851'],
+    description:
+      'The intakes for this program. Each item is either an existing intake ' +
+      'id string, or an inline config object { season, startMonth?, year, ' +
+      'deadline? } that the backend find-or-creates. Bare id strings are ' +
+      'accepted for backward compatibility.',
     required: false,
+    type: [ProgramIntakeInputDto],
   })
-  @IsArray()
-  @IsUUID('4', { each: true })
   @IsOptional()
-  intakes?: string[];
+  @IsArray()
+  // Normalize each item into a ProgramIntakeInputDto INSTANCE so nested
+  // validation resolves its metadata (a plain object left by a transform trips
+  // class-validator's "unknownValue" guard under enableImplicitConversion).
+  // Bare-string ids (legacy clients) become { id } instances.
+  @Transform(({ value }) =>
+    Array.isArray(value)
+      ? value.map((v) =>
+          plainToInstance(
+            ProgramIntakeInputDto,
+            typeof v === 'string' ? { id: v } : v,
+          ),
+        )
+      : value,
+  )
+  @ValidateNested({ each: true })
+  @Type(() => ProgramIntakeInputDto)
+  intakes?: ProgramIntakeInputDto[];
 
   @ApiProperty({
     description: 'Logo URL for the program',
