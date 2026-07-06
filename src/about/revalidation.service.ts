@@ -17,11 +17,20 @@ export class RevalidationService {
   constructor(private readonly config: ConfigService) {}
 
   revalidateAbout(): void {
+    this.revalidateTags(['about']);
+  }
+
+  /**
+   * Bust one or more Next.js cache tags on the frontend so ISR-cached data
+   * (site settings, About page, etc.) refreshes immediately after an admin
+   * write instead of waiting out its revalidate window.
+   */
+  revalidateTags(tags: string[]): void {
     const siteUrl = this.config.get<string>('SITE_URL');
     const secret = this.config.get<string>('REVALIDATE_SECRET');
     if (!siteUrl || !secret) {
       this.logger.debug(
-        'Skipping About revalidation: SITE_URL or REVALIDATE_SECRET not set',
+        'Skipping revalidation: SITE_URL or REVALIDATE_SECRET not set',
       );
       return;
     }
@@ -30,7 +39,7 @@ export class RevalidationService {
     axios
       .post(
         url,
-        { tags: ['about'] },
+        { tags },
         {
           headers: {
             'Content-Type': 'application/json',
@@ -40,12 +49,12 @@ export class RevalidationService {
         },
       )
       .then(() => {
-        this.logger.log('Revalidated About page cache on frontend');
+        this.logger.log(`Revalidated frontend cache tags: ${tags.join(', ')}`);
       })
       .catch((err) => {
         // Never throw: revalidation is best-effort.
         this.logger.warn(
-          `Failed to revalidate About on frontend: ${
+          `Failed to revalidate tags [${tags.join(', ')}] on frontend: ${
             err?.response?.status ?? ''
           } ${err?.message ?? err}`,
         );

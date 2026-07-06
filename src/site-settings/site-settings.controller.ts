@@ -3,7 +3,7 @@ import {
   Controller,
   Get,
   Patch,
-  UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -15,8 +15,8 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { ParseFilePipe, MaxFileSizeValidator, FileTypeValidator } from '@nestjs/common';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { BadRequestException } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -54,40 +54,63 @@ export class SiteSettingsController {
       properties: {
         appTitle: { type: 'string' },
         logoFile: { type: 'string', format: 'binary' },
+        consultingLogoFile: { type: 'string', format: 'binary' },
       },
     },
   })
-  @UseInterceptors(FileInterceptor('logoFile'))
-  @ApiOperation({ summary: 'Update application title and logo' })
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'logoFile', maxCount: 1 },
+      { name: 'consultingLogoFile', maxCount: 1 },
+    ]),
+  )
+  @ApiOperation({ summary: 'Update application title and brand logos' })
   @ApiResponse({ status: 200, type: SiteSettingResponseDto })
   async updateSettings(
     @Body() dto: UpdateSiteSettingDto,
-    @UploadedFile(
-      new ParseFilePipe({
-        fileIsRequired: false,
-        validators: [
-          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }),
-          new FileTypeValidator({ fileType: /(jpg|jpeg|png|svg|webp)$/i }),
-        ],
-      }),
-    )
-    logoFile?: Express.Multer.File,
+    @UploadedFiles()
+    files?: {
+      logoFile?: Express.Multer.File[];
+      consultingLogoFile?: Express.Multer.File[];
+    },
   ) {
-    let logoUrl = undefined;
-    if (logoFile) {
-      const uploaded = await this.filesService.uploadFile(logoFile);
-      logoUrl = this.digitalOceanService.getPublicUrl(uploaded.storageKey);
-    }
+    const logoFile = files?.logoFile?.[0];
+    const consultingLogoFile = files?.consultingLogoFile?.[0];
+
+    const logoUrl = await this.uploadLogo(logoFile);
+    const consultingLogoUrl = await this.uploadLogo(consultingLogoFile);
 
     const updated = await this.siteSettingsService.updateSettings({
       ...dto,
       ...(logoUrl !== undefined ? { logoUrl } : {}),
+      ...(consultingLogoUrl !== undefined ? { consultingLogoUrl } : {}),
     });
 
     return {
       appTitle: updated.appTitle,
       logoUrl: updated.logoUrl,
+      consultingLogoUrl: updated.consultingLogoUrl,
       updatedAt: updated.updatedAt,
     };
+  }
+
+  private async uploadLogo(
+    file?: Express.Multer.File,
+  ): Promise<string | undefined> {
+    if (!file) return undefined;
+
+    if (file.size > 5 * 1024 * 1024) {
+      throw new BadRequestException('Logo must be 5MB or smaller');
+    }
+    // Accept common raster/vector image mimetypes (e.g. image/png,
+    // image/jpeg, image/svg+xml, image/webp).
+    if (!/(jpe?g|png|svg|webp)/i.test(file.mimetype)) {
+      throw new BadRequestException(
+        'Logo must be a JPG, PNG, SVG or WEBP image',
+      );
+    }
+
+    const uploaded = await this.filesService.uploadFile(file);
+    return this.digitalOceanService.getPublicUrl(uploaded.storageKey);
   }
 }

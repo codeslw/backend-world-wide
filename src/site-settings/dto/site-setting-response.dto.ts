@@ -12,6 +12,14 @@ export class SiteSettingResponseDto {
   logoUrl?: string | null;
 
   @ApiProperty({
+    example:
+      'https://worldwideuz.blr1.digitaloceanspaces.com/uploads/consulting-logo.png',
+    required: false,
+    nullable: true,
+  })
+  consultingLogoUrl?: string | null;
+
+  @ApiProperty({
     example: '2026-05-31T00:00:00.000Z',
   })
   updatedAt: Date;

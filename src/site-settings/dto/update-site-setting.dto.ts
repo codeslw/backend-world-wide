@@ -12,4 +12,9 @@ export class UpdateSiteSettingDto {
   @IsOptional()
   @IsBoolean()
   clearLogo?: boolean;
+
+  @ApiPropertyOptional({ example: false })
+  @IsOptional()
+  @IsBoolean()
+  clearConsultingLogo?: boolean;
 }

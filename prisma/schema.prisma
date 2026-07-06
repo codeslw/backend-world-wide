@@ -267,7 +267,12 @@ model StudyLanguage {
 model SiteSetting {
   id        String   @id @default("global")
   appTitle  String
+  // Primary brand mark (Talabalink). Shown next to the wordmark in the header,
+  // used as the favicon and About-page lockup.
   logoUrl   String?
+  // Secondary brand mark for the operating company (World Wide Consulting).
+  // Rendered to the left of the primary mark in the header and in the About hero.
+  consultingLogoUrl String?
   updatedAt  DateTime @updatedAt
   createdAt  DateTime @default(now())
 
@@ -277,13 +282,25 @@ model SiteSetting {
 
 model Intake {
   id                 String                    @id @default(uuid())
+  // The academic season this intake belongs to (FALL/SPRING/SUMMER/WINTER).
+  season             IntakeSeason
+  // Numeric start month of the intake (1-12). Defaults to the season's first
+  // month (FALL=9, WINTER=12, SPRING=3, SUMMER=6) but the admin may override it.
+  startMonth         Int
+  // Human-readable month name derived from startMonth. Kept for backward-compat
+  // display; always kept in sync with startMonth by IntakesService.
   month              String
   year               Int
+  // Application submission deadline. Defaults to the 1st of (startMonth - 2)
+  // but the admin may override it. Always strictly before the start date.
   deadline           DateTime
   createdAt          DateTime                  @default(now())
   updatedAt          DateTime                  @updatedAt
   universityPrograms UniversityProgramIntake[]
 
+  // A season+startMonth+year uniquely identifies an intake so we can dedupe
+  // globally via find-or-create when programs are configured inline.
+  @@unique([season, startMonth, year])
   @@map("intakes")
 }
 
