@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, json, urlencoded } from 'express';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { SwaggerAuthMiddleware } from './common/middleware/swagger-auth.middleware';
 import { ConfigService } from '@nestjs/config';
@@ -15,6 +15,11 @@ async function bootstrap() {
   });
   const logger = app.get(AppLoggerService);
   app.useLogger(logger);
+
+  // Raise Express's default 100kb body limit — university updates with
+  // many nested programs can produce multi-megabyte JSON payloads.
+  app.use(json({ limit: '25mb' }));
+  app.use(urlencoded({ extended: true, limit: '25mb' }));
 
   // Enable gzip/brotli compression for all responses
   app.use(
