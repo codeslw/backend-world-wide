@@ -23,6 +23,7 @@ import { CreateReviewDto, ReviewTypeDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { ReviewResponseDto } from './dto/review-response.dto';
 import { ReviewFilterOptionsResponseDto } from './dto/review-filter-options.dto';
+import { SetHomepageVisibilityDto } from './dto/set-homepage-visibility.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -104,6 +105,15 @@ export class ReviewsController {
     });
   }
 
+  @Get('homepage')
+  @ApiOperation({
+    summary: 'Get the admin-curated reviews pinned to the home page (public)',
+  })
+  @ApiResponse({ status: 200, type: [ReviewResponseDto] })
+  findHomepage() {
+    return this.reviewsService.findHomepage();
+  }
+
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
@@ -112,6 +122,26 @@ export class ReviewsController {
   @ApiResponse({ status: 200, type: ReviewResponseDto })
   update(@Param('id') id: string, @Body() dto: UpdateReviewDto) {
     return this.reviewsService.update(id, dto);
+  }
+
+  @Patch(':id/homepage-visibility')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary:
+      'Show/hide a review on the home page (admin only). Enforces a max of 3; pass replaceId to atomically swap out an existing home page review when the cap is reached.',
+  })
+  @ApiResponse({ status: 200, type: ReviewResponseDto })
+  setHomepageVisibility(
+    @Param('id') id: string,
+    @Body() dto: SetHomepageVisibilityDto,
+  ) {
+    return this.reviewsService.setHomepageVisibility(
+      id,
+      dto.show,
+      dto.replaceId,
+    );
   }
 
   @Delete(':id')

@@ -5,6 +5,9 @@ import { UpdateReviewDto } from './dto/update-review.dto';
 import { Prisma, Review } from '@prisma/client';
 import { DigitalOceanService } from '../digital-ocean/digital-ocean.service';
 import { ReviewFilterOptionsResponseDto } from './dto/review-filter-options.dto';
+import { InvalidDataException } from '../common/exceptions/app.exceptions';
+
+export const MAX_HOMEPAGE_REVIEWS = 3;
 
 export interface ReviewFilters {
   type?: ReviewTypeDto;
@@ -56,6 +59,20 @@ export class ReviewsService {
         { createdAt: 'desc' },
       ],
       take: limit,
+    });
+
+    return reviews.map((review) => this.normalizeReviewImage(review));
+  }
+
+  async findHomepage(filters: ReviewFilters = {}): Promise<Review[]> {
+    const reviews = await this.prisma.review.findMany({
+      where: { ...this.buildWhere(filters), showOnHomepage: true },
+      orderBy: [
+        { sortOrder: 'asc' },
+        { rating: 'desc' },
+        { createdAt: 'desc' },
+      ],
+      take: MAX_HOMEPAGE_REVIEWS,
     });
 
     return reviews.map((review) => this.normalizeReviewImage(review));
@@ -134,6 +151,10 @@ export class ReviewsService {
     const review = await this.prisma.review.findUnique({ where: { id } });
     if (!review) throw new NotFoundException(`Review with ID ${id} not found`);
 
+    if (dto.showOnHomepage && !review.showOnHomepage) {
+      await this.assertHomepageCapNotReached();
+    }
+
     const updated = await this.prisma.review.update({
       where: { id },
       data: {
@@ -146,6 +167,84 @@ export class ReviewsService {
     });
 
     return this.normalizeReviewImage(updated);
+  }
+
+  /**
+   * Toggles showOnHomepage for `id`. When enabling and the cap is already
+   * reached, `replaceId` must name a currently-featured review to swap out —
+   * both writes happen in one transaction so the homepage set never briefly
+   * exceeds MAX_HOMEPAGE_REVIEWS or drops below what the admin intended.
+   */
+  async setHomepageVisibility(
+    id: string,
+    show: boolean,
+    replaceId?: string,
+  ): Promise<Review> {
+    const review = await this.prisma.review.findUnique({ where: { id } });
+    if (!review) throw new NotFoundException(`Review with ID ${id} not found`);
+
+    if (!show) {
+      const updated = await this.prisma.review.update({
+        where: { id },
+        data: { showOnHomepage: false },
+      });
+      return this.normalizeReviewImage(updated);
+    }
+
+    if (review.showOnHomepage) {
+      return this.normalizeReviewImage(review);
+    }
+
+    const currentCount = await this.prisma.review.count({
+      where: { showOnHomepage: true },
+    });
+
+    if (currentCount < MAX_HOMEPAGE_REVIEWS) {
+      const updated = await this.prisma.review.update({
+        where: { id },
+        data: { showOnHomepage: true },
+      });
+      return this.normalizeReviewImage(updated);
+    }
+
+    if (!replaceId) {
+      throw new InvalidDataException(
+        `Home page already has ${MAX_HOMEPAGE_REVIEWS} reviews. Choose one to replace.`,
+      );
+    }
+
+    const replaceTarget = await this.prisma.review.findUnique({
+      where: { id: replaceId },
+    });
+    if (!replaceTarget?.showOnHomepage) {
+      throw new InvalidDataException(
+        'The review to replace is not currently shown on the home page',
+      );
+    }
+
+    const [, updated] = await this.prisma.$transaction([
+      this.prisma.review.update({
+        where: { id: replaceId },
+        data: { showOnHomepage: false },
+      }),
+      this.prisma.review.update({
+        where: { id },
+        data: { showOnHomepage: true },
+      }),
+    ]);
+
+    return this.normalizeReviewImage(updated);
+  }
+
+  private async assertHomepageCapNotReached(): Promise<void> {
+    const count = await this.prisma.review.count({
+      where: { showOnHomepage: true },
+    });
+    if (count >= MAX_HOMEPAGE_REVIEWS) {
+      throw new InvalidDataException(
+        `Cannot show on home page: maximum of ${MAX_HOMEPAGE_REVIEWS} reviews can be pinned at a time`,
+      );
+    }
   }
 
   async remove(id: string): Promise<Review> {

@@ -48,6 +48,12 @@ export class ReviewResponseDto {
   sortOrder: number;
 
   @ApiProperty()
+  isFeatured: boolean;
+
+  @ApiProperty()
+  showOnHomepage: boolean;
+
+  @ApiProperty()
   createdAt: Date;
 
   @ApiProperty()

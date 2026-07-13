@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsBoolean,
   IsEnum,
   IsInt,
   IsOptional,
@@ -90,4 +91,21 @@ export class CreateReviewDto {
   @IsOptional()
   @IsInt()
   sortOrder?: number;
+
+  @ApiPropertyOptional({
+    description: 'Whether the "Featured" badge shows on this review',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isFeatured?: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'Whether this review is pinned to the home page (max 3 at a time)',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  showOnHomepage?: boolean;
 }
