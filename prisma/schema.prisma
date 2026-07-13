@@ -1401,6 +1401,7 @@ model UniversityRanking {
   score                 Float?
   category              String?
   year                  Int?
+  rankingUrl            String?
   sortOrder             Int      @default(0)
 
   createdAt DateTime @default(now())

@@ -35,6 +35,9 @@ export class UniversityRankingItemDto {
   @ApiPropertyOptional()
   year?: number | null;
 
+  @ApiPropertyOptional()
+  rankingUrl?: string | null;
+
   @ApiProperty()
   sortOrder: number;
 

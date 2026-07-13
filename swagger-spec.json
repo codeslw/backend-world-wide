@@ -16025,6 +16025,52 @@
           "studyLevel"
         ]
       },
+      "AdditionalExpenseItemDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "Expense label",
+            "example": "Housing"
+          },
+          "amount": {
+            "type": "string",
+            "description": "Expense amount",
+            "example": "500 EUR/month"
+          }
+        },
+        "required": [
+          "label",
+          "amount"
+        ]
+      },
+      "AdditionalExpenseDto": {
+        "type": "object",
+        "properties": {
+          "studyLevel": {
+            "type": "string",
+            "enum": [
+              "BACHELOR",
+              "MASTER",
+              "PHD",
+              "LANGUAGE_COURSE",
+              "FOUNDATION"
+            ],
+            "example": "BACHELOR"
+          },
+          "expenses": {
+            "description": "Expenses for this study level",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdditionalExpenseItemDto"
+            }
+          }
+        },
+        "required": [
+          "studyLevel",
+          "expenses"
+        ]
+      },
       "LanguageCertificateSectionsDto": {
         "type": "object",
         "properties": {
@@ -16337,24 +16383,21 @@
             "default": false
           },
           "additionalExpenses": {
-            "type": "array",
-            "description": "Additional expenses for the university (e.g. housing, insurance)",
+            "description": "Additional expenses for the university, grouped per study level (e.g. housing, insurance)",
             "example": [
               {
-                "label": "Housing",
-                "amount": "500 EUR/month"
+                "studyLevel": "BACHELOR",
+                "expenses": [
+                  {
+                    "label": "Housing",
+                    "amount": "500 EUR/month"
+                  }
+                ]
               }
             ],
+            "type": "array",
             "items": {
-              "type": "object",
-              "properties": {
-                "label": {
-                  "type": "string"
-                },
-                "amount": {
-                  "type": "string"
-                }
-              }
+              "$ref": "#/components/schemas/AdditionalExpenseDto"
             }
           },
           "scholarshipRequirements": {
@@ -17180,15 +17223,26 @@
           },
           "additionalExpenses": {
             "type": "array",
-            "description": "Additional expenses for the university",
+            "description": "Additional expenses for the university, grouped per study level",
             "items": {
               "type": "object",
               "properties": {
-                "label": {
+                "studyLevel": {
                   "type": "string"
                 },
-                "amount": {
-                  "type": "string"
+                "expenses": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "label": {
+                        "type": "string"
+                      },
+                      "amount": {
+                        "type": "string"
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -18347,24 +18401,21 @@
             "default": false
           },
           "additionalExpenses": {
-            "type": "array",
-            "description": "Additional expenses for the university (e.g. housing, insurance)",
+            "description": "Additional expenses for the university, grouped per study level (e.g. housing, insurance)",
             "example": [
               {
-                "label": "Housing",
-                "amount": "500 EUR/month"
+                "studyLevel": "BACHELOR",
+                "expenses": [
+                  {
+                    "label": "Housing",
+                    "amount": "500 EUR/month"
+                  }
+                ]
               }
             ],
+            "type": "array",
             "items": {
-              "type": "object",
-              "properties": {
-                "label": {
-                  "type": "string"
-                },
-                "amount": {
-                  "type": "string"
-                }
-              }
+              "$ref": "#/components/schemas/AdditionalExpenseDto"
             }
           },
           "scholarshipRequirements": {
@@ -23411,6 +23462,9 @@
           "year": {
             "type": "number"
           },
+          "rankingUrl": {
+            "type": "string"
+          },
           "sortOrder": {
             "type": "number"
           },
@@ -23485,6 +23539,11 @@
             "type": "number",
             "description": "Ranking edition year (e.g. 2025)"
           },
+          "rankingUrl": {
+            "type": "string",
+            "description": "Optional URL to the ranking source/page (opened when clicking the ranking)",
+            "example": "https://www.topuniversities.com/universities/example"
+          },
           "sortOrder": {
             "type": "number",
             "description": "Manual ordering"
@@ -23517,6 +23576,11 @@
           "year": {
             "type": "number",
             "description": "Ranking edition year (e.g. 2025)"
+          },
+          "rankingUrl": {
+            "type": "string",
+            "description": "Optional URL to the ranking source/page (opened when clicking the ranking)",
+            "example": "https://www.topuniversities.com/universities/example"
           },
           "sortOrder": {
             "type": "number",

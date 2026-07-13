@@ -4,6 +4,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUrl,
   Max,
   Min,
 } from 'class-validator';
@@ -36,6 +37,15 @@ export class CreateUniversityRankingDto {
   @Min(1000)
   @Max(3000)
   year?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Optional URL to the ranking source/page (opened when clicking the ranking)',
+    example: 'https://www.topuniversities.com/universities/example',
+  })
+  @IsOptional()
+  @IsUrl()
+  rankingUrl?: string;
 
   @ApiPropertyOptional({ description: 'Manual ordering' })
   @IsOptional()
