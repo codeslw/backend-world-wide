@@ -182,6 +182,8 @@ model University {
   isAdmissionFeeRefundable Boolean                 @default(false)
   agencyServiceId         String?
   agencyService           AgencyService?          @relation(fields: [agencyServiceId], references: [id])
+  accreditations          UniversityAccreditation[]
+  rankings                UniversityRanking[]
 
   @@index([name])
   @@index([type])
@@ -1059,6 +1061,8 @@ model Review {
   ranking            String?
   scholarshipAmount  String?
   sortOrder          Int        @default(0)
+  isFeatured         Boolean    @default(false)
+  showOnHomepage     Boolean    @default(false)
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 
@@ -1066,6 +1070,8 @@ model Review {
   @@index([sortOrder])
   @@index([rating])
   @@index([createdAt])
+  @@index([isFeatured])
+  @@index([showOnHomepage])
   @@map("reviews")
 }
 
@@ -1319,4 +1325,92 @@ model ExchangeRateSnapshot {
   updatedAt    DateTime @updatedAt
 
   @@map("exchange_rate_snapshots")
+}
+
+/// Reusable catalog of accreditations (e.g. "AACSB", "ABET", "EQUIS").
+/// `title` is a single non-localized display name; the descriptive blurb is
+/// localized. `imageUrl` holds the icon/logo (DO Spaces key or public URL).
+/// Attached to universities many-to-many via UniversityAccreditation.
+model Accreditation {
+  id              String   @id @default(uuid())
+  title           String
+  descriptionUz   String?  @db.Text
+  descriptionRu   String?  @db.Text
+  descriptionEn   String?  @db.Text
+  imageUrl        String?
+  establishedYear Int?
+  sortOrder       Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  universities UniversityAccreditation[]
+
+  @@index([sortOrder])
+  @@map("accreditations")
+}
+
+/// Reusable catalog of ranking organizations (e.g. "QS", "Times Higher
+/// Education", "Shanghai / ARWU"). A university can hold one ranking value per
+/// organization via UniversityRanking.
+model RankingOrganization {
+  id              String   @id @default(uuid())
+  title           String
+  descriptionUz   String?  @db.Text
+  descriptionRu   String?  @db.Text
+  descriptionEn   String?  @db.Text
+  imageUrl        String?
+  establishedYear Int?
+  sortOrder       Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rankings UniversityRanking[]
+
+  @@index([sortOrder])
+  @@map("ranking_organizations")
+}
+
+/// Join model attaching an Accreditation to a University (reusable catalog).
+model UniversityAccreditation {
+  id              String   @id @default(uuid())
+  universityId    String
+  accreditationId String
+  sortOrder       Int      @default(0)
+
+  createdAt DateTime @default(now())
+
+  university    University    @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  accreditation Accreditation @relation(fields: [accreditationId], references: [id], onDelete: Cascade)
+
+  @@unique([universityId, accreditationId])
+  @@index([universityId])
+  @@index([accreditationId])
+  @@map("university_accreditations")
+}
+
+/// A university's ranking value from a specific ranking organization.
+/// `rank` is the position (e.g. 142); `score` and `category` (e.g. "Computer
+/// Science", "Global") are optional; `year` is the ranking edition year.
+model UniversityRanking {
+  id                    String   @id @default(uuid())
+  universityId          String
+  rankingOrganizationId String
+  rank                  Int
+  score                 Float?
+  category              String?
+  year                  Int?
+  sortOrder             Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  university   University          @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  organization RankingOrganization @relation(fields: [rankingOrganizationId], references: [id], onDelete: Cascade)
+
+  @@unique([universityId, rankingOrganizationId, category])
+  @@index([universityId])
+  @@index([rankingOrganizationId])
+  @@map("university_rankings")
 }

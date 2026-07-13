@@ -43,6 +43,9 @@ import { PartnerAuditModule } from './partner-audit/partner-audit.module';
 import { SiteSettingsModule } from './site-settings/site-settings.module';
 import { AboutModule } from './about/about.module';
 import { CurrenciesModule } from './currencies/currencies.module';
+import { AccreditationsModule } from './accreditations/accreditations.module';
+import { RankingOrganizationsModule } from './ranking-organizations/ranking-organizations.module';
+import { UniversityAccreditationsModule } from './university-accreditations/university-accreditations.module';
 
 @Module({
   imports: [
@@ -89,6 +92,9 @@ import { CurrenciesModule } from './currencies/currencies.module';
     SiteSettingsModule,
     AboutModule,
     CurrenciesModule,
+    AccreditationsModule,
+    RankingOrganizationsModule,
+    UniversityAccreditationsModule,
     DbModule,
   ],
 
