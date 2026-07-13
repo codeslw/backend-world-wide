@@ -215,11 +215,29 @@ export class UniversityResponseDto {
   hasFullScholarship?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Additional expenses for the university',
+    description: 'Additional expenses for the university, grouped per study level',
     type: 'array',
-    items: { type: 'object', properties: { label: { type: 'string' }, amount: { type: 'string' } } },
+    items: {
+      type: 'object',
+      properties: {
+        studyLevel: { type: 'string' },
+        expenses: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              label: { type: 'string' },
+              amount: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
   })
-  additionalExpenses?: { label: string; amount: string }[];
+  additionalExpenses?: {
+    studyLevel: string;
+    expenses: { label: string; amount: string }[];
+  }[];
 
   @ApiProperty({
     description: 'Scholarships for this university',

@@ -24,9 +24,10 @@ import { UniversityProgramDto } from './university-program.dto';
 import { Type } from 'class-transformer';
 
 import { Currency } from '../../common/enum/currency.enum';
+import { StudyLevel } from '@prisma/client';
 import { CreateAdmissionRequirementNestedDto } from '../../admission-requirements/dto/create-admission-requirement.dto';
 
-export class AdditionalExpenseDto {
+export class AdditionalExpenseItemDto {
   @ApiProperty({ description: 'Expense label', example: 'Housing' })
   @IsString()
   label: string;
@@ -34,6 +35,21 @@ export class AdditionalExpenseDto {
   @ApiProperty({ description: 'Expense amount', example: '500 EUR/month' })
   @IsString()
   amount: string;
+}
+
+export class AdditionalExpenseDto {
+  @ApiProperty({ enum: StudyLevel, example: StudyLevel.BACHELOR })
+  @IsEnum(StudyLevel)
+  studyLevel: StudyLevel;
+
+  @ApiProperty({
+    description: 'Expenses for this study level',
+    type: [AdditionalExpenseItemDto],
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AdditionalExpenseItemDto)
+  expenses: AdditionalExpenseItemDto[];
 }
 
 export class CreateUniversityDto {
@@ -276,10 +292,15 @@ export class CreateUniversityDto {
   hasFullScholarship?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Additional expenses for the university (e.g. housing, insurance)',
-    example: [{ label: 'Housing', amount: '500 EUR/month' }],
-    type: 'array',
-    items: { type: 'object', properties: { label: { type: 'string' }, amount: { type: 'string' } } },
+    description:
+      'Additional expenses for the university, grouped per study level (e.g. housing, insurance)',
+    example: [
+      {
+        studyLevel: 'BACHELOR',
+        expenses: [{ label: 'Housing', amount: '500 EUR/month' }],
+      },
+    ],
+    type: [AdditionalExpenseDto],
   })
   @IsOptional()
   @IsArray()
