@@ -104,29 +104,6 @@ jobs:
             # Tag it for docker-compose
             docker tag ${{ secrets.DOCKER_USERNAME }}/backend-world-wide:latest backend-world-wide-api:latest
             
-            # One-off recovery for the 20260726001000 backfill, which aborted on
-            # the 2026-07-26 deploy with 22023 (fixed in 0dcc585). Postgres rolled
-            # it back atomically -- verified: no faculties seeded, no titles
-            # backfilled -- but Prisma still records the attempt and rejects every
-            # later deploy with P3009 until it is marked rolled back.
-            #
-            # Deliberately matched on that one migration name in that one state.
-            # Blanket-resolving whatever happens to be failed would hide genuinely
-            # half-applied migrations (anything Prisma runs outside a transaction,
-            # e.g. CREATE INDEX CONCURRENTLY) and quietly deploy on top of them.
-            #
-            # DELETE THIS BLOCK once a deploy has gone green -- it is dead weight
-            # afterwards, and it should not become a habit.
-            echo "=== Checking for the known-failed backfill migration ==="
-            STUCK=$(docker exec world-wide-postgres psql -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -tAc \
-              "SELECT COUNT(*) FROM _prisma_migrations WHERE migration_name = '20260726001000_backfill_program_hierarchy' AND finished_at IS NULL AND rolled_back_at IS NULL;" 2>/dev/null | tr -d '[:space:]' || echo "0")
-            if [ "${STUCK}" = "1" ]; then
-              echo "Found it in the failed state; marking rolled back so it can re-apply."
-              docker compose run --rm api npx prisma migrate resolve --rolled-back 20260726001000_backfill_program_hierarchy
-            else
-              echo "Nothing to recover."
-            fi
-
             # Run migrations
             echo "=== Running Database Migrations ==="
             docker compose run --rm api npx prisma migrate deploy
