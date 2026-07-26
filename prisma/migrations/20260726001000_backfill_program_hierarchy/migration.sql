@@ -99,8 +99,13 @@ SET "backupPrograms" = COALESCE((
         ORDER BY up."universityId", up."programId", up."studyLevel", up."id"
     ) m ON TRUE
 ), '[]'::JSONB)
-WHERE JSONB_TYPEOF(pa."backupPrograms"::JSONB) = 'array'
-  AND JSONB_ARRAY_LENGTH(pa."backupPrograms"::JSONB) > 0;
+-- Only the type guard, deliberately. Postgres does not promise to evaluate
+-- AND-ed conditions left to right, so pairing this with a
+-- JSONB_ARRAY_LENGTH(...) > 0 check let the planner call array_length on rows
+-- holding a JSON scalar and abort with 22023. The length check bought nothing
+-- anyway: an empty array yields no JSONB_ARRAY_ELEMENTS rows, so JSONB_AGG
+-- returns NULL and the COALESCE below rewrites '[]' to itself.
+WHERE JSONB_TYPEOF(pa."backupPrograms"::JSONB) = 'array';
 
 -- Process templates have no university context, so map to the oldest offering
 -- of that catalog program. `programId` is UNIQUE, so drop the losers of any
