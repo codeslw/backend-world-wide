@@ -100,7 +100,7 @@ export class StatisticsService {
       messages,
     ] = await Promise.all([
       this.prisma.university.count(),
-      this.prisma.program.count(),
+      this.prisma.universityProgram.count(),
       this.prisma.application.count(),
       this.prisma.profile.count(),
       this.prisma.country.count(),
@@ -188,59 +188,76 @@ export class StatisticsService {
   }
 
   /**
-   * Get most popular programs by application count
-   * FIXED: Eliminated N+1 by batching aggregation
+   * Get most popular programs by application count.
+   *
+   * Since the global program catalog was retired, programs live on
+   * `UniversityProgram` (one row per university offering). Rows are therefore
+   * aggregated by `title` so the same program offered by several universities
+   * collapses into a single entry, and both student `Application`s and
+   * `PartnerApplication`s are counted.
    */
   async getPopularPrograms(limit: number = 10): Promise<PopularProgramDto[]> {
     const cacheKey = `stats:popularPrograms:${limit}`;
     const cached = await this.cacheManager.get<PopularProgramDto[]>(cacheKey);
     if (cached) return cached;
 
-    const popularPrograms = await this.prisma.program.findMany({
-      select: {
-        id: true,
-        title: true,
-        _count: {
-          select: {
-            applications: true,
-            universityPrograms: true,
-          },
-        },
-      },
-      orderBy: {
-        applications: {
-          _count: 'desc',
-        },
-      },
-      take: limit,
-    });
+    // Counts are computed with separate correlated sub-selects so the two
+    // application joins cannot multiply each other's rows.
+    const popularPrograms = await this.prisma.$queryRaw<
+      Array<{
+        programId: string;
+        programTitle: string;
+        applicationsCount: number;
+        universitiesCount: number;
+      }>
+    >`
+      SELECT
+        MIN(up.id)                            AS "programId",
+        up.title                              AS "programTitle",
+        SUM(up."applicationsCount")::int      AS "applicationsCount",
+        COUNT(DISTINCT up."universityId")::int AS "universitiesCount"
+      FROM (
+        SELECT
+          p.id,
+          p.title,
+          p."universityId",
+          (
+            (SELECT COUNT(*) FROM applications a WHERE a."preferredProgram" = p.id)
+            + (SELECT COUNT(*) FROM partner_applications pa WHERE pa."programId" = p.id)
+          ) AS "applicationsCount"
+        FROM university_programs p
+      ) up
+      GROUP BY up.title
+      ORDER BY "applicationsCount" DESC, "universitiesCount" DESC, up.title ASC
+      LIMIT ${limit}
+    `;
 
     if (popularPrograms.length === 0) {
       return [];
     }
 
-    // Batch aggregate: get average tuition for all program IDs in one query
-    const programIds = popularPrograms.map((p) => p.id);
+    // Batch aggregate: average tuition per program title in one query.
+    const where: Prisma.UniversityProgramWhereInput = {
+      title: { in: popularPrograms.map((p) => p.programTitle) },
+    };
     const avgTuitions = await this.prisma.universityProgram.groupBy({
-      by: ['programId'],
-      where: {
-        programId: { in: programIds },
-      },
+      by: ['title'],
+      where,
       _avg: {
         tuitionFee: true,
       },
     });
 
     const avgTuitionMap = new Map(
-      avgTuitions.map((a) => [a.programId, a._avg.tuitionFee]),
+      avgTuitions.map((a) => [a.title, a._avg.tuitionFee]),
     );
 
     const result: PopularProgramDto[] = popularPrograms.map((program) => ({
-      programId: program.id,
-      programTitle: program.title || 'Unknown Program',
-      applicationsCount: program._count.applications,
-      universitiesCount: program._count.universityPrograms,
-      averageTuitionFee: avgTuitionMap.get(program.id) || undefined,
+      programId: program.programId,
+      programTitle: program.programTitle || 'Unknown Program',
+      applicationsCount: Number(program.applicationsCount) || 0,
+      universitiesCount: Number(program.universitiesCount) || 0,
+      averageTuitionFee: avgTuitionMap.get(program.programTitle) ?? undefined,
     }));
 
     await this.cacheManager.set(cacheKey, result, STATS_CACHE_TTL);

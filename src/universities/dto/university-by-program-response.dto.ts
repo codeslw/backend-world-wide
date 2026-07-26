@@ -14,11 +14,31 @@ export class ProgramDetailsDto {
   @ApiProperty({ description: 'University Program ID' })
   id: string;
 
-  @ApiProperty({ description: 'Program ID' })
+  @ApiProperty({
+    description:
+      'Program ID. A program is unique per university, so this equals `id`; ' +
+      'kept for backwards compatibility with clients written against the ' +
+      'retired global program catalog.',
+  })
   programId: string;
 
-  @ApiProperty({ description: 'Localized program title' })
+  @ApiPropertyOptional({ description: 'Public URL slug for the program page' })
+  slug?: string;
+
+  @ApiProperty({ description: 'Program title' })
   title: string;
+
+  @ApiPropertyOptional({ description: 'Faculty this program belongs to' })
+  facultyId?: string;
+
+  @ApiPropertyOptional({ description: 'Localized faculty', type: Object })
+  faculty?: Record<string, any>;
+
+  @ApiPropertyOptional({ description: 'Department this program belongs to' })
+  departmentId?: string;
+
+  @ApiPropertyOptional({ description: 'Localized department', type: Object })
+  department?: Record<string, any>;
 
   @ApiProperty({
     description: 'Localized program description',

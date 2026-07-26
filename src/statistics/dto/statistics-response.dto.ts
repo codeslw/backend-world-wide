@@ -70,13 +70,23 @@ export class GeographicDistributionDto {
 }
 
 export class PopularProgramDto {
-  @ApiProperty({ description: 'Program ID', example: 'abc123-def456' })
+  @ApiProperty({
+    description:
+      'Representative UniversityProgram ID for this title. Rows are grouped by ' +
+      'program title across universities, so this is one of possibly several ' +
+      'programs sharing the title — useful as a stable key / deep link only.',
+    example: 'abc123-def456',
+  })
   programId: string;
 
   @ApiProperty({ description: 'Program title', example: 'Computer Science' })
   programTitle: string;
 
-  @ApiProperty({ description: 'Number of applications', example: 450 })
+  @ApiProperty({
+    description:
+      'Number of applications (student applications + partner applications)',
+    example: 450,
+  })
   applicationsCount: number;
 
   @ApiProperty({

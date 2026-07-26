@@ -21,7 +21,7 @@ export class CreateProcessTemplateDto {
   @IsBoolean()
   isDefault?: boolean;
 
-  @ApiPropertyOptional({ description: 'Program ID for program-specific template (null for standard)' })
+  @ApiPropertyOptional({ description: 'UniversityProgram ID for a program-specific template (null for standard)' })
   @IsOptional()
   @IsUUID()
   programId?: string;

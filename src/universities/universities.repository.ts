@@ -3,11 +3,36 @@ import { Prisma } from '@prisma/client';
 import { UniversityFilterDto } from './dto/university-filter.dto';
 import { UniversitiesByProgramsFilterDto } from './dto/universities-by-programs-filter.dto';
 
+/**
+ * Query params arrive either repeated (`?facultyId=a&facultyId=b`) or
+ * comma-separated (`?facultyId=a,b`); normalise both into a plain array.
+ */
+function toIdArray(value: string | string[] | undefined): string[] {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  return `${value}`.split(',').filter(Boolean);
+}
+
+/**
+ * Extra context the where-builders cannot derive on their own because they do
+ * not touch the database.
+ */
+export interface WhereClauseOptions {
+  /**
+   * Titles behind the selected `programs` ids, resolved by the service. Lets a
+   * single "Computer Science" filter option match that program at every
+   * university rather than only the one whose id backed the option.
+   */
+  programTitles?: string[];
+}
+
 @Injectable()
 export class UniversitiesRepository {
   buildUniversityWhereClause(
     filterDto: UniversityFilterDto,
+    options: WhereClauseOptions = {},
   ): Prisma.UniversityWhereInput {
+    const { programTitles } = options;
     const {
       countryCode,
       cityId,
@@ -27,6 +52,8 @@ export class UniversitiesRepository {
       tuitionFeeCurrency,
       studyLevel,
       programs,
+      facultyId,
+      departmentId,
       search,
       intake,
       studyLanguage,
@@ -99,14 +126,19 @@ export class UniversitiesRepository {
         ? programs
         : `${programs}`.split(',').filter(Boolean)
       : [];
+    const facultyIds = toIdArray(facultyId);
+    const departmentIds = toIdArray(departmentId);
     const hasProgramDetailsFilter =
       minTuitionFee !== undefined ||
       maxTuitionFee !== undefined ||
       tuitionFeeCurrency ||
       studyLevel ||
       studyLanguage ||
-      intake;
-    const hasProgramIdsFilter = programIds.length > 0;
+      intake ||
+      facultyIds.length > 0 ||
+      departmentIds.length > 0;
+    const hasProgramIdsFilter =
+      programIds.length > 0 || (programTitles && programTitles.length > 0);
 
     if (hasProgramIdsFilter || hasProgramDetailsFilter) {
       const universityProgramFilter: Prisma.UniversityProgramListRelationFilter =
@@ -115,8 +147,22 @@ export class UniversitiesRepository {
         };
 
       if (hasProgramIdsFilter) {
-        universityProgramFilter.some.programId = { in: programIds };
+        // A program is unique per university now, so selecting "Computer
+        // Science" in the filter dropdown has to match every university that
+        // offers a program with that title, not just the one whose id backed
+        // the dropdown option. The service resolves the ids to titles.
+        universityProgramFilter.some.OR = [
+          ...(programIds.length > 0 ? [{ id: { in: programIds } }] : []),
+          ...(programTitles && programTitles.length > 0
+            ? [{ title: { in: programTitles } }]
+            : []),
+        ];
       }
+
+      if (facultyIds.length > 0)
+        universityProgramFilter.some.facultyId = { in: facultyIds };
+      if (departmentIds.length > 0)
+        universityProgramFilter.some.departmentId = { in: departmentIds };
 
       if (hasProgramDetailsFilter) {
         if (minTuitionFee !== undefined || maxTuitionFee !== undefined) {
@@ -197,7 +243,9 @@ export class UniversitiesRepository {
 
   buildUniversityProgramWhereClause(
     filterDto: UniversitiesByProgramsFilterDto,
+    options: WhereClauseOptions = {},
   ): Prisma.UniversityProgramWhereInput {
+    const { programTitles } = options;
     const {
       countryCode,
       cityId,
@@ -211,6 +259,8 @@ export class UniversitiesRepository {
       intake,
       universityId,
       campusId,
+      facultyId,
+      departmentId,
       studyLanguage,
       minIeltsTotal,
       maxIeltsTotal,
@@ -234,14 +284,25 @@ export class UniversitiesRepository {
     if (universityId) where.universityId = universityId;
     if (campusId) where.campuses = { some: { id: campusId } };
 
-    const programIds = programs
-      ? Array.isArray(programs)
-        ? programs
-        : `${programs}`.split(',').filter(Boolean)
-      : [];
-    if (programIds.length > 0) {
-      where.programId = { in: programIds };
+    const programIds = toIdArray(programs as any);
+    const programOr = [
+      ...(programIds.length > 0 ? [{ id: { in: programIds } }] : []),
+      ...(programTitles && programTitles.length > 0
+        ? [{ title: { in: programTitles } }]
+        : []),
+    ];
+    if (programOr.length > 0) {
+      where.OR = [...((where.OR as any[]) || []), ...programOr];
     }
+
+    const facultyIds = toIdArray(facultyId as any);
+    if (facultyIds.length > 0) where.facultyId = { in: facultyIds };
+    const departmentIds = toIdArray(departmentId as any);
+    if (departmentIds.length > 0) where.departmentId = { in: departmentIds };
+
+    // Placeholder rows created by the catalog migration are inactive and must
+    // never surface in a public program search.
+    where.isActive = true;
 
     const universityWhere: any = {};
     if (countryCode) universityWhere.countryCode = Number(countryCode);
@@ -328,15 +389,22 @@ export class UniversitiesRepository {
     }
 
     if (search) {
-      where.OR = [
+      where.AND = [
+        ...((where.AND as any[]) || []),
+        {
+          OR: [
         { university: { name: { contains: search, mode: 'insensitive' } } },
-        { program: { title: { contains: search, mode: 'insensitive' } } },
+        { title: { contains: search, mode: 'insensitive' } },
+        { faculty: { nameEn: { contains: search, mode: 'insensitive' } } },
+        { department: { nameEn: { contains: search, mode: 'insensitive' } } },
         { university: { city: { nameEn: { contains: search, mode: 'insensitive' } } } },
         { university: { city: { nameRu: { contains: search, mode: 'insensitive' } } } },
         { university: { city: { nameUz: { contains: search, mode: 'insensitive' } } } },
         { university: { country: { nameEn: { contains: search, mode: 'insensitive' } } } },
         { university: { country: { nameRu: { contains: search, mode: 'insensitive' } } } },
         { university: { country: { nameUz: { contains: search, mode: 'insensitive' } } } },
+          ],
+        },
       ];
     }
 

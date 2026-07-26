@@ -72,6 +72,13 @@ export class ApplicationProcessService {
     return template;
   }
 
+  /**
+   * `programId` is a `UniversityProgram.id` (the global program catalog was
+   * retired; `ApplicationProcessTemplate.programId` now FKs UniversityProgram).
+   * `Application.preferredProgram` / `PartnerApplication.programId` hold the
+   * same id, so resolving a template for an application means passing those
+   * values straight through.
+   */
   async findTemplateForProgram(programId: string) {
     // First try program-specific, then fall back to default
     let template = await this.prisma.applicationProcessTemplate.findUnique({
@@ -164,7 +171,7 @@ export class ApplicationProcessService {
       );
     }
 
-    const program = await this.prisma.program.findUnique({
+    const program = await this.prisma.universityProgram.findUnique({
       where: { id: programId },
     });
     if (!program) {

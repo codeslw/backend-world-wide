@@ -49,6 +49,7 @@ describe('ChatGateway', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     partnerApplicationId: null as any,
+    applicationId: null as any,
   };
 
   const mockPrismaService = {

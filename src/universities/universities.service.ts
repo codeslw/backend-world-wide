@@ -24,6 +24,9 @@ import { UniversitiesRepository } from './universities.repository';
 import { MainUniversityResponseDto } from './dto/main-university-response.dto';
 import { IntakesService } from '../intakes/intakes.service';
 import { ProgramIntakeInputDto } from './dto/program-intake-input.dto';
+import { UniversityProgramDto } from './dto/university-program.dto';
+import { buildProgramSlug } from '../common/utils/slug.util';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class UniversitiesService {
@@ -111,7 +114,7 @@ export class UniversitiesService {
       await this.validateIsMainLimit('university');
     }
 
-    await this.validateProgramIds(programs.map((p) => p.programId));
+    await this.validateProgramTaxonomy(programs);
 
     // Resolve each program's inline/existing intakes to concrete intake ids
     // (find-or-create) before the university create.
@@ -132,28 +135,33 @@ export class UniversitiesService {
             ? { connect: { id: agencyServiceId } }
             : undefined,
           universityPrograms: {
-            create: programs.map((program, i) => ({
-              program: { connect: { id: program.programId } },
-              tuitionFee: program.tuitionFee,
-              tuitionFeeType: program.tuitionFeeType,
-              tuitionFeeCurrency: program.tuitionFeeCurrency || 'USD',
-              studyLevel: program.studyLevel,
-              duration: program.duration,
-              scholarshipAppliedTutionFee: program.scholarshipAppliedTutionFee,
-              studyLanguage: program.studyLanguageId
-                ? { connect: { id: program.studyLanguageId } }
-                : undefined,
-              campuses: program.campusIds
-                ? { connect: program.campusIds.map((id) => ({ id })) }
-                : undefined,
-              intakes: programIntakeIds[i].length
-                ? {
-                    create: programIntakeIds[i].map((intakeId) => ({
-                      intake: { connect: { id: intakeId } },
-                    })),
-                  }
-                : undefined,
-            })),
+            create: programs.map((program, i) => {
+              const id = randomUUID();
+              return {
+                id,
+                slug: buildProgramSlug(program.title, id),
+                ...this.buildProgramScalars(program),
+                faculty: program.facultyId
+                  ? { connect: { id: program.facultyId } }
+                  : undefined,
+                department: program.departmentId
+                  ? { connect: { id: program.departmentId } }
+                  : undefined,
+                studyLanguage: program.studyLanguageId
+                  ? { connect: { id: program.studyLanguageId } }
+                  : undefined,
+                campuses: program.campusIds
+                  ? { connect: program.campusIds.map((cid) => ({ id: cid })) }
+                  : undefined,
+                intakes: programIntakeIds[i].length
+                  ? {
+                      create: programIntakeIds[i].map((intakeId) => ({
+                        intake: { connect: { id: intakeId } },
+                      })),
+                    }
+                  : undefined,
+              };
+            }),
           },
           admissionRequirements: admissionRequirements
             ? {
@@ -169,7 +177,8 @@ export class UniversitiesService {
           city: true,
           universityPrograms: {
             include: {
-              program: true,
+              faculty: true,
+              department: true,
               studyLanguage: true,
               intakes: {
                 include: {
@@ -221,7 +230,9 @@ export class UniversitiesService {
         sortDirection = 'asc',
       } = filterDto;
 
-      const where = this.repository.buildUniversityWhereClause(filterDto);
+      const where = this.repository.buildUniversityWhereClause(filterDto, {
+        programTitles: await this.resolveProgramTitles(filterDto.programs),
+      });
       // Recommended-first ordering only when listing within a single country
       // (e.g. the country page), not in global search/listing.
       const prioritizeRecommended = filterDto.countryCode !== undefined;
@@ -259,7 +270,13 @@ export class UniversitiesService {
               },
             },
             universityPrograms: {
+              where: { isActive: true },
               select: {
+                id: true,
+                title: true,
+                slug: true,
+                facultyId: true,
+                departmentId: true,
                 tuitionFee: true,
                 tuitionFeeType: true,
                 tuitionFeeCurrency: true,
@@ -312,7 +329,8 @@ export class UniversitiesService {
           city: true,
           universityPrograms: {
             include: {
-              program: true,
+              faculty: true,
+              department: true,
               studyLanguage: true,
               scholarships: true,
               campuses: true,
@@ -375,7 +393,7 @@ export class UniversitiesService {
     }
 
     if (programs) {
-      await this.validateProgramIds(programs.map((p) => p.programId));
+      await this.validateProgramTaxonomy(programs);
     }
 
     try {
@@ -391,6 +409,11 @@ export class UniversitiesService {
         }
         if (cityId !== undefined) {
           dataToUpdate.city = { connect: { id: cityId } };
+        }
+        if (agencyServiceId !== undefined) {
+          dataToUpdate.agencyService = agencyServiceId
+            ? { connect: { id: agencyServiceId } }
+            : { disconnect: true };
         }
 
         await tx.university.update({
@@ -421,12 +444,6 @@ export class UniversitiesService {
             });
           }
         }
-        
-        if (agencyServiceId !== undefined) {
-          dataToUpdate.agencyService = agencyServiceId
-            ? { connect: { id: agencyServiceId } }
-            : { disconnect: true };
-        }
 
         return tx.university.findUnique({
           where: { id },
@@ -435,7 +452,8 @@ export class UniversitiesService {
             city: true,
             universityPrograms: {
               include: {
-                program: true,
+                faculty: true,
+              department: true,
                 studyLanguage: true,
                 campuses: true,
                 intakes: {
@@ -517,7 +535,7 @@ export class UniversitiesService {
       const universityProgram = await this.prisma.universityProgram.findFirst({
         where: {
           universityId,
-          programId,
+          id: programId,
         },
       });
 
@@ -576,12 +594,8 @@ export class UniversitiesService {
           },
           universityPrograms: {
             include: {
-              program: {
-                select: {
-                  id: true,
-                  title: true,
-                },
-              },
+              faculty: true,
+              department: true,
               intakes: {
                 include: {
                   intake: true,
@@ -624,7 +638,9 @@ export class UniversitiesService {
       } = filterDto;
 
       const where =
-        this.repository.buildUniversityProgramWhereClause(filterDto);
+        this.repository.buildUniversityProgramWhereClause(filterDto, {
+          programTitles: await this.resolveProgramTitles(filterDto.programs),
+        });
       const orderBy = this.repository.getUniversityProgramSortConfig(
         sortBy,
         sortDirection,
@@ -664,15 +680,8 @@ export class UniversitiesService {
                 },
               },
             },
-            program: {
-              select: {
-                id: true,
-                title: true,
-                descriptionUz: true,
-                descriptionRu: true,
-                descriptionEn: true,
-              },
-            },
+            faculty: true,
+            department: true,
             intakes: {
               include: {
                 intake: true,
@@ -743,15 +752,8 @@ export class UniversitiesService {
             universityId,
           },
           include: {
-            program: {
-              select: {
-                id: true,
-                title: true,
-                descriptionUz: true,
-                descriptionRu: true,
-                descriptionEn: true,
-              },
-            },
+            faculty: true,
+            department: true,
             university: {
               select: {
                 id: true,
@@ -787,22 +789,19 @@ export class UniversitiesService {
     const cached = await this.cacheManager.get<any>(cacheKey);
     if (cached) return cached;
 
+    // Programs are unique per university, so a global "every program" list is
+    // deduplicated by title: it only feeds filter dropdowns, where two
+    // universities offering "Computer Science" should appear as one option.
     const universityPrograms = await this.prisma.universityProgram.findMany({
-      distinct: ['programId'],
-      select: {
-        programId: true,
-        program: {
-          select: {
-            id: true,
-            title: true,
-          },
-        },
-      },
+      where: { isActive: true },
+      distinct: ['title'],
+      select: { id: true, title: true },
+      orderBy: { title: 'asc' },
     });
 
     const result = universityPrograms.map((up) => ({
-      id: up.programId,
-      title: up.program?.title || '',
+      id: up.id,
+      title: up.title,
     }));
 
     await this.cacheManager.set(cacheKey, result);
@@ -815,57 +814,85 @@ export class UniversitiesService {
     programs: any[],
     existingPrograms: any[],
   ) {
-    const incomingProgramIds = new Set(programs.map((p) => p.programId));
+    // A university program owns its identity now, so the diff key is its own
+    // id. Rows carrying an id are updated in place (which preserves their
+    // public slug and any applications pointing at them); rows without one are
+    // new; existing rows missing from the payload are removed.
+    const incomingIds = new Set(
+      programs.map((p) => p.id).filter((id): id is string => Boolean(id)),
+    );
     const programsToDelete = existingPrograms
-      .filter((up) => !incomingProgramIds.has(up.programId))
-      .map((up) => up.programId);
+      .filter((up) => !incomingIds.has(up.id))
+      .map((up) => up.id);
 
     if (programsToDelete.length > 0) {
-      await tx.universityProgram.deleteMany({
+      // Programs that students have already applied to must not disappear from
+      // under those applications; hide them instead.
+      const referenced = await tx.universityProgram.findMany({
         where: {
-          universityId,
-          programId: { in: programsToDelete },
+          id: { in: programsToDelete },
+          OR: [
+            { applications: { some: {} } },
+            { partnerApplications: { some: {} } },
+          ],
         },
+        select: { id: true },
       });
+      const referencedIds = new Set(referenced.map((p) => p.id));
+
+      const deletableIds = programsToDelete.filter(
+        (id) => !referencedIds.has(id),
+      );
+      if (deletableIds.length > 0) {
+        await tx.universityProgram.deleteMany({
+          where: { universityId, id: { in: deletableIds } },
+        });
+      }
+      if (referencedIds.size > 0) {
+        await tx.universityProgram.updateMany({
+          where: { universityId, id: { in: Array.from(referencedIds) } },
+          data: { isActive: false },
+        });
+      }
     }
 
     for (const programData of programs) {
+      const id = programData.id ?? randomUUID();
+      const scalars = this.buildProgramScalars(programData);
       const upsertedProgram = await tx.universityProgram.upsert({
-        where: {
-          universityId_programId_studyLevel: {
-            universityId,
-            programId: programData.programId,
-            studyLevel: programData.studyLevel,
-          },
-        },
+        where: { id },
         create: {
+          id,
+          slug: buildProgramSlug(programData.title, id),
           university: { connect: { id: universityId } },
-          program: { connect: { id: programData.programId } },
-          tuitionFee: programData.tuitionFee,
-          tuitionFeeType: programData.tuitionFeeType,
-          tuitionFeeCurrency: programData.tuitionFeeCurrency,
-          studyLevel: programData.studyLevel,
-          duration: programData.duration,
-          scholarshipAppliedTutionFee: programData.scholarshipAppliedTutionFee,
+          ...scalars,
+          faculty: programData.facultyId
+            ? { connect: { id: programData.facultyId } }
+            : undefined,
+          department: programData.departmentId
+            ? { connect: { id: programData.departmentId } }
+            : undefined,
           studyLanguage: programData.studyLanguageId
             ? { connect: { id: programData.studyLanguageId } }
             : undefined,
           campuses: programData.campusIds
-            ? { connect: programData.campusIds.map((id: string) => ({ id })) }
+            ? { connect: programData.campusIds.map((cid: string) => ({ id: cid })) }
             : undefined,
         },
         update: {
-          tuitionFee: programData.tuitionFee,
-          tuitionFeeType: programData.tuitionFeeType,
-          tuitionFeeCurrency: programData.tuitionFeeCurrency,
-          studyLevel: programData.studyLevel,
-          duration: programData.duration,
-          scholarshipAppliedTutionFee: programData.scholarshipAppliedTutionFee,
+          ...scalars,
+          // The slug is a public URL, so it deliberately survives a rename.
+          faculty: programData.facultyId
+            ? { connect: { id: programData.facultyId } }
+            : { disconnect: true },
+          department: programData.departmentId
+            ? { connect: { id: programData.departmentId } }
+            : { disconnect: true },
           studyLanguage: programData.studyLanguageId
             ? { connect: { id: programData.studyLanguageId } }
             : { disconnect: true },
           campuses: programData.campusIds
-            ? { set: programData.campusIds.map((id: string) => ({ id })) }
+            ? { set: programData.campusIds.map((cid: string) => ({ id: cid })) }
             : undefined,
         },
       });
@@ -890,22 +917,112 @@ export class UniversitiesService {
     }
   }
 
-  private async validateProgramIds(programIds: string[]): Promise<void> {
-    if (!programIds || programIds.length === 0) {
-      return;
-    }
-    const existingPrograms = await this.prisma.program.findMany({
-      where: { id: { in: programIds } },
-      select: { id: true },
+  /**
+   * The program filter dropdown is fed by a title-deduplicated list, so the id
+   * the client sends back stands for a program *name*. Resolve those ids to
+   * their titles so the filter matches that program at every university.
+   */
+  private async resolveProgramTitles(
+    programIds: string[] | undefined,
+  ): Promise<string[]> {
+    const ids = Array.isArray(programIds)
+      ? programIds
+      : programIds
+        ? `${programIds}`.split(',').filter(Boolean)
+        : [];
+    if (ids.length === 0) return [];
+
+    const rows = await this.prisma.universityProgram.findMany({
+      where: { id: { in: ids } },
+      select: { title: true },
     });
-    const existingProgramIdsSet = new Set(existingPrograms.map((p) => p.id));
-    const invalidIds = programIds.filter(
-      (id) => !existingProgramIdsSet.has(id),
-    );
-    if (invalidIds.length > 0) {
+    return Array.from(new Set(rows.map((r) => r.title)));
+  }
+
+  /**
+   * Everything a university program stores on its own row, shared by the
+   * nested create and the update upsert so the two can never drift.
+   */
+  private buildProgramScalars(program: UniversityProgramDto) {
+    return {
+      title: program.title,
+      tuitionFee: program.tuitionFee,
+      tuitionFeeType: program.tuitionFeeType,
+      tuitionFeeCurrency: program.tuitionFeeCurrency || 'USD',
+      studyLevel: program.studyLevel,
+      duration: program.duration,
+      scholarshipAppliedTutionFee: program.scholarshipAppliedTutionFee,
+      descriptionEn: program.descriptionEn,
+      descriptionRu: program.descriptionRu,
+      descriptionUz: program.descriptionUz,
+      credits: program.credits,
+      studyMode: program.studyMode,
+      applicationFee: program.applicationFee,
+      applicationFeeCurrency: program.applicationFeeCurrency,
+      isApplicationFeeRefundable: program.isApplicationFeeRefundable,
+      additionalExpenses:
+        (program.additionalExpenses as unknown as Prisma.InputJsonValue) ??
+        undefined,
+      isActive: program.isActive,
+      isFeatured: program.isFeatured,
+    };
+  }
+
+  /**
+   * Checks that every faculty/department referenced by the payload exists and
+   * that each department really belongs to the faculty it was paired with —
+   * otherwise the taxonomy silently rots and the filters stop agreeing with
+   * the program pages.
+   */
+  private async validateProgramTaxonomy(
+    programs: UniversityProgramDto[],
+  ): Promise<void> {
+    if (!programs || programs.length === 0) return;
+
+    const facultyIds = Array.from(
+      new Set(programs.map((p) => p.facultyId).filter(Boolean)),
+    ) as string[];
+    const departmentIds = Array.from(
+      new Set(programs.map((p) => p.departmentId).filter(Boolean)),
+    ) as string[];
+
+    if (facultyIds.length > 0) {
+      const found = await this.prisma.faculty.findMany({
+        where: { id: { in: facultyIds } },
+        select: { id: true },
+      });
+      const foundIds = new Set(found.map((f) => f.id));
+      const invalid = facultyIds.filter((id) => !foundIds.has(id));
+      if (invalid.length > 0) {
+        throw new InvalidDataException(
+          `Invalid faculty IDs provided: ${invalid.join(', ')}`,
+        );
+      }
+    }
+
+    if (departmentIds.length === 0) return;
+
+    const departments = await this.prisma.department.findMany({
+      where: { id: { in: departmentIds } },
+      select: { id: true, facultyId: true },
+    });
+    const departmentsById = new Map(departments.map((d) => [d.id, d]));
+    const invalid = departmentIds.filter((id) => !departmentsById.has(id));
+    if (invalid.length > 0) {
       throw new InvalidDataException(
-        `Invalid program IDs provided: ${invalidIds.join(', ')}`,
+        `Invalid department IDs provided: ${invalid.join(', ')}`,
       );
+    }
+
+    for (const program of programs) {
+      if (!program.departmentId) continue;
+      const department = departmentsById.get(program.departmentId);
+      if (program.facultyId && department.facultyId !== program.facultyId) {
+        throw new InvalidDataException(
+          `Department ${program.departmentId} does not belong to faculty ${program.facultyId}.`,
+          { reason: 'DEPARTMENT_FACULTY_MISMATCH' },
+        );
+      }
     }
   }
 

@@ -3,7 +3,6 @@ import {
   University,
   Country,
   City,
-  Program,
   UniversityProgram,
   Intake,
   Scholarship,
@@ -25,7 +24,8 @@ type UniversityWithRelations = University & {
   country?: Country;
   city?: City;
   universityPrograms?: (UniversityProgram & {
-    program?: Program;
+    faculty?: any;
+    department?: any;
     intakes?: { intake: Intake }[];
     scholarships?: Scholarship[];
     campuses?: Campus[];
@@ -45,7 +45,8 @@ type UniversityProgramWithRelations = UniversityProgram & {
     country: Country;
     city: City;
   };
-  program: Program;
+  faculty?: any;
+  department?: any;
   intakes?: { intake: Intake }[];
   scholarships?: Scholarship[];
   campuses?: Campus[];
@@ -91,8 +92,29 @@ export class UniversitiesMapper {
       universityPrograms:
         university.universityPrograms?.map((up) => ({
           id: up.id,
-          programId: up.programId,
-          title: up.program?.title,
+          // Kept for backwards compatibility with clients that still read
+          // `programId`; a program is now identified by its own id.
+          programId: up.id,
+          slug: up.slug,
+          title: up.title,
+          facultyId: up.facultyId,
+          faculty: this.localizeTaxonomy((up as any).faculty, langSuffix) ?? undefined,
+          departmentId: up.departmentId,
+          department:
+            this.localizeTaxonomy((up as any).department, langSuffix) ??
+            undefined,
+          description: this.getLocalizedField(up, 'description', langSuffix),
+          descriptionEn: up.descriptionEn,
+          descriptionRu: up.descriptionRu,
+          descriptionUz: up.descriptionUz,
+          credits: up.credits,
+          studyMode: up.studyMode,
+          applicationFee: up.applicationFee,
+          applicationFeeCurrency: up.applicationFeeCurrency,
+          isApplicationFeeRefundable: up.isApplicationFeeRefundable,
+          additionalExpenses: (up.additionalExpenses as any) || [],
+          isActive: up.isActive,
+          isFeatured: up.isFeatured,
           tuitionFee: up.tuitionFee,
           tuitionFeeType: up.tuitionFeeType,
           tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
@@ -262,8 +284,11 @@ export class UniversitiesMapper {
       country: this.localizeCountry(university.country, langSuffix),
       city: this.localizeCity(university.city, langSuffix),
       programs: programs.slice(0, 5).map((up) => ({
-        programId: up.programId,
-        title: up.program?.title || '',
+        programId: up.id,
+        slug: up.slug,
+        title: up.title || '',
+        facultyId: up.facultyId,
+        departmentId: up.departmentId,
         tuitionFee: up.tuitionFee,
         tuitionFeeType: up.tuitionFeeType,
         tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
@@ -302,8 +327,6 @@ export class UniversitiesMapper {
   ): UniversityByProgramResponseDto {
     const langSuffix = this.getLangSuffix(lang);
     const university = up.university;
-    const program = up.program;
-
     return {
       universityId: university.id,
       universityName: university.name,
@@ -329,9 +352,15 @@ export class UniversitiesMapper {
       city: this.localizeCity(university.city, langSuffix),
       program: {
         id: up.id,
-        programId: program.id,
-        title: program.title || '',
-        description: this.getLocalizedField(program, 'description', langSuffix),
+        programId: up.id,
+        slug: up.slug,
+        title: up.title || '',
+        description: this.getLocalizedField(up, 'description', langSuffix),
+        facultyId: up.facultyId,
+        faculty: this.localizeTaxonomy(up.faculty, langSuffix) ?? undefined,
+        departmentId: up.departmentId,
+        department:
+          this.localizeTaxonomy(up.department, langSuffix) ?? undefined,
         tuitionFee: up.tuitionFee,
         tuitionFeeType: up.tuitionFeeType,
         tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
@@ -383,20 +412,24 @@ export class UniversitiesMapper {
 
   toProgramDetailsDto(
     up: UniversityProgram & {
-      program: Program;
+      faculty?: any;
+      department?: any;
       scholarships?: Scholarship[];
       studyLanguage?: any;
     },
     lang: string = 'uz',
   ): ProgramDetailsDto {
     const langSuffix = this.getLangSuffix(lang);
-    const program = up.program;
-
     return {
       id: up.id,
-      programId: program.id,
-      title: program.title || '',
-      description: this.getLocalizedField(program, 'description', langSuffix),
+      programId: up.id,
+      slug: up.slug,
+      title: up.title || '',
+      description: this.getLocalizedField(up, 'description', langSuffix),
+      facultyId: up.facultyId,
+      faculty: this.localizeTaxonomy(up.faculty, langSuffix) ?? undefined,
+      departmentId: up.departmentId,
+      department: this.localizeTaxonomy(up.department, langSuffix) ?? undefined,
       tuitionFee: up.tuitionFee,
       tuitionFeeType: up.tuitionFeeType,
       tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
@@ -445,6 +478,27 @@ export class UniversitiesMapper {
     return (
       entity[`${fieldPrefix}${langSuffix}`] || entity[`${fieldPrefix}Uz`] || ''
     );
+  }
+
+  /**
+   * Shapes a Faculty or Department into the response form used everywhere:
+   * the localized `name`/`description` plus the raw per-locale fields the
+   * admin panel edits.
+   */
+  private localizeTaxonomy(node: any, langSuffix: string): any {
+    if (!node) return null;
+    return {
+      id: node.id,
+      slug: node.slug,
+      name: this.getLocalizedField(node, 'name', langSuffix),
+      nameEn: node.nameEn,
+      nameRu: node.nameRu,
+      nameUz: node.nameUz,
+      description: this.getLocalizedField(node, 'description', langSuffix),
+      iconKey: node.iconKey ?? undefined,
+      facultyId: node.facultyId ?? undefined,
+      sortOrder: node.sortOrder,
+    };
   }
 
   private localizeCountry(country: any, langSuffix: string): any {

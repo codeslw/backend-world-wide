@@ -20,7 +20,10 @@ export class CreatePartnerApplicationDto {
   @IsUUID()
   universityId: string;
 
-  @ApiProperty({ description: 'Program ID' })
+  @ApiProperty({
+    description:
+      'UniversityProgram ID (the program as offered by `universityId`)',
+  })
   @IsUUID()
   programId: string;
 
@@ -58,7 +61,7 @@ export class CreatePartnerApplicationDto {
 
   @ApiPropertyOptional({
     description:
-      'Backup programs array of objects with programId, universityId, programTitle, universityName',
+      'Backup programs array of objects with programId (UniversityProgram ID), universityId, programTitle, universityName',
     type: 'array',
   })
   @IsOptional()

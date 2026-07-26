@@ -15,12 +15,12 @@ async function main() {
     console.log('Checking Programs:', programIds);
     const foundPrograms = await prisma.universityProgram.findMany({
         where: { id: { in: programIds } },
-        include: { university: true, program: true }
+        include: { university: true }
     });
 
     console.log('Found Programs count:', foundPrograms.length);
     foundPrograms.forEach(p => {
-        console.log(`- Program ID: ${p.id}, Program Name: ${p.program.title}, University ID: ${p.universityId}, University: ${p.university.name}`);
+        console.log(`- Program ID: ${p.id}, Program Name: ${p.title}, University ID: ${p.universityId}, University: ${p.university.name}`);
     });
 
     if (foundPrograms.length < programIds.length) {

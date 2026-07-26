@@ -26,10 +26,10 @@ import {
   PaginatedCityResponseDto,
   CityResponseDto,
 } from '../cities/dto/city-response.dto';
-import {
-  PaginatedProgramResponseDto,
-  ProgramResponseDto,
-} from '../programs/dto/program-response.dto';
+import { PaginatedFacultyResponseDto } from '../faculties/dto/faculty-response.dto';
+import { PaginatedDepartmentResponseDto } from '../departments/dto/department-response.dto';
+import { QueryFacultyDto } from '../faculties/dto/query-faculty.dto';
+import { QueryDepartmentDto } from '../departments/dto/query-department.dto';
 
 @ApiTags('catalog')
 @Controller('catalog')
@@ -151,15 +151,35 @@ export class CatalogController {
     return this.catalogService.getCity(id, lang);
   }
 
-  @Get('programs')
+  @Get('faculties')
+  @ApiOperation({
+    summary: 'Get the faculty taxonomy for catalog filters',
+    description:
+      'Replaces the retired `catalog/programs` endpoints. The global program ' +
+      'catalog is gone; programs are now UniversityProgram rows classified by ' +
+      'faculty and department.',
+  })
+  @ApiHeader({
+    name: 'Accept-Language',
+    enum: ['uz', 'ru', 'en'],
+    description: 'Language preference',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of faculties',
+    type: PaginatedFacultyResponseDto,
+  })
+  getFaculties(
+    @Query() query: QueryFacultyDto,
+    @Headers('Accept-Language') lang: string = 'uz',
+  ) {
+    return this.catalogService.getFaculties(query, lang);
+  }
+
+  @Get('departments')
   @ApiOperation({
     summary:
-      'Get all programs for catalog display, optionally filtered by parent ID',
-  })
-  @ApiQuery({
-    name: 'parentId',
-    required: false,
-    description: 'Filter by parent program ID',
+      'Get the department taxonomy for catalog filters, optionally scoped to a faculty',
   })
   @ApiHeader({
     name: 'Accept-Language',
@@ -168,55 +188,14 @@ export class CatalogController {
   })
   @ApiResponse({
     status: 200,
-    description: 'List of programs',
-    type: PaginatedProgramResponseDto,
+    description: 'List of departments',
+    type: PaginatedDepartmentResponseDto,
   })
-  getPrograms(
-    @Query('parentId') parentId?: string,
-    @Headers('Accept-Language') lang: string = 'uz',
-    @Query() paginationDto?: PaginationDto,
-  ) {
-    return this.catalogService.getPrograms(parentId, lang, paginationDto);
-  }
-
-  @Get('programs/root')
-  @ApiOperation({ summary: 'Get only root-level programs (without parent)' })
-  @ApiHeader({
-    name: 'Accept-Language',
-    enum: ['uz', 'ru', 'en'],
-    description: 'Language preference',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'List of root programs',
-    type: PaginatedProgramResponseDto,
-  })
-  getRootPrograms(
-    @Headers('Accept-Language') lang: string = 'uz',
-    @Query() paginationDto?: PaginationDto,
-  ) {
-    return this.catalogService.getRootPrograms(lang, paginationDto);
-  }
-
-  @Get('programs/:id')
-  @ApiOperation({ summary: 'Get a program by ID for catalog display' })
-  @ApiParam({ name: 'id', description: 'Program ID (UUID)' })
-  @ApiHeader({
-    name: 'Accept-Language',
-    enum: ['uz', 'ru', 'en'],
-    description: 'Language preference',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Program details',
-    type: ProgramResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'Program not found' })
-  getProgram(
-    @Param('id') id: string,
+  getDepartments(
+    @Query() query: QueryDepartmentDto,
     @Headers('Accept-Language') lang: string = 'uz',
   ) {
-    return this.catalogService.getProgram(id, lang);
+    return this.catalogService.getDepartments(query, lang);
   }
 
   @Get('languages')

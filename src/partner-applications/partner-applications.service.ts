@@ -110,34 +110,32 @@ export class PartnerApplicationsService {
       createdByAdminId?: string;
     },
   ): Promise<PartnerApplicationResponseDto> {
-    // Verify university-program relationship exists. The partner UI submits the
-    // university_programs.id, but accepting the raw Program id keeps older clients working.
+    // Verify the program belongs to the university. Since the global program
+    // catalog was retired, `dto.programId` is a UniversityProgram id and the
+    // university program owns its own title.
     const universityProgram = await this.prisma.universityProgram.findFirst({
       where: {
+        id: dto.programId,
         universityId: dto.universityId,
-        OR: [{ id: dto.programId }, { programId: dto.programId }],
       },
       include: {
         university: true,
-        program: true,
       },
     });
 
     if (!universityProgram) {
       throw new EntityNotFoundException(
         'Program',
-        `University program with relationship ID ${dto.programId} not found for university ${dto.universityId}`,
+        `University program ${dto.programId} not found for university ${dto.universityId}`,
       );
     }
-
-    const { program } = universityProgram;
 
     const existingApplication = await this.prisma.partnerApplication.findFirst({
       where: {
         partnerId: { in: opts.dedupePartnerIds },
         partnerStudentId: dto.partnerStudentId,
         universityId: dto.universityId,
-        programId: program.id,
+        programId: universityProgram.id,
         intakeSeason: dto.intakeSeason,
         intakeYear: dto.intakeYear,
         status: {
@@ -161,7 +159,7 @@ export class PartnerApplicationsService {
         partner: { connect: { id: opts.ownerPartnerId } },
         partnerStudent: { connect: { id: dto.partnerStudentId } },
         university: { connect: { id: dto.universityId } },
-        program: { connect: { id: program.id } },
+        program: { connect: { id: universityProgram.id } },
         intakeSeason: dto.intakeSeason,
         intakeYear: dto.intakeYear,
         englishProficiency: dto.englishProficiency,

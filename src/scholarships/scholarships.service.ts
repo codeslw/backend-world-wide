@@ -6,11 +6,51 @@ import {
 import { PrismaService } from '../db/prisma.service';
 import { CreateScholarshipDto } from './dto/create-scholarship.dto';
 import { UpdateScholarshipDto } from './dto/update-scholarship.dto';
-import { Prisma } from '@prisma/client';
+import { Prisma, StudyLevel } from '@prisma/client';
+
+/**
+ * Minimal shape of a UniversityProgram needed to synthesise the legacy
+ * `program` object that used to come from the global program catalog.
+ */
+type LegacyProgramSource = {
+  id: string;
+  title: string;
+  slug: string | null;
+  studyLevel: StudyLevel;
+};
 
 @Injectable()
 export class ScholarshipsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * The global `Program` catalog was retired: a UniversityProgram now owns its
+   * own title/slug. Existing clients still read `program.{id,title,...}` off a
+   * scholarship program, so we keep the key and populate it from the university
+   * program itself. Prefer the flat `title`/`slug` fields in new code.
+   */
+  private attachLegacyProgram<P extends LegacyProgramSource>(program: P) {
+    return {
+      ...program,
+      program: {
+        id: program.id,
+        title: program.title,
+        slug: program.slug,
+        studyLevel: program.studyLevel,
+      },
+    };
+  }
+
+  private attachLegacyPrograms<S extends { programs: LegacyProgramSource[] }>(
+    scholarship: S,
+  ) {
+    return {
+      ...scholarship,
+      programs: scholarship.programs.map((program) =>
+        this.attachLegacyProgram(program),
+      ),
+    };
+  }
 
   async create(createScholarshipDto: CreateScholarshipDto) {
     const { universityId, programIds, ...rest } = createScholarshipDto;
@@ -47,17 +87,13 @@ export class ScholarshipsService {
       },
       include: {
         university: true,
-        programs: {
-          include: {
-            program: true,
-          },
-        },
+        programs: true,
       },
     });
 
     await this.updateUniversityScholarshipStatus(universityId);
 
-    return scholarship;
+    return this.attachLegacyPrograms(scholarship);
   }
 
   async findAll(query: {
@@ -102,11 +138,7 @@ export class ScholarshipsService {
       where: { id },
       include: {
         university: true,
-        programs: {
-          include: {
-            program: true,
-          },
-        },
+        programs: true,
       },
     });
 
@@ -114,7 +146,7 @@ export class ScholarshipsService {
       throw new NotFoundException(`Scholarship with ID ${id} not found`);
     }
 
-    return scholarship;
+    return this.attachLegacyPrograms(scholarship);
   }
 
   async getScholarshipPrograms(scholarshipId: string) {
@@ -137,7 +169,6 @@ export class ScholarshipsService {
         },
       },
       include: {
-        program: true,
         university: {
           select: {
             id: true,
@@ -145,6 +176,8 @@ export class ScholarshipsService {
             photoUrl: true,
           },
         },
+        faculty: true,
+        department: true,
         intakes: {
           include: {
             intake: true,
@@ -160,7 +193,7 @@ export class ScholarshipsService {
       },
     });
 
-    return programs;
+    return programs.map((program) => this.attachLegacyProgram(program));
   }
 
   async update(id: string, updateScholarshipDto: UpdateScholarshipDto) {
@@ -186,11 +219,7 @@ export class ScholarshipsService {
       data,
       include: {
         university: true,
-        programs: {
-          include: {
-            program: true,
-          },
-        },
+        programs: true,
       },
     });
 
@@ -202,7 +231,7 @@ export class ScholarshipsService {
       updatedScholarship.universityId,
     );
 
-    return updatedScholarship;
+    return this.attachLegacyPrograms(updatedScholarship);
   }
 
   async remove(id: string) {

@@ -39,7 +39,7 @@ export class PartnerApplicationResponseDto {
   @ApiPropertyOptional({ description: 'University logo URL' })
   universityLogoUrl?: string;
 
-  @ApiProperty({ description: 'Program ID' })
+  @ApiProperty({ description: 'UniversityProgram ID' })
   programId: string;
 
   @ApiPropertyOptional({ description: 'Program name' })

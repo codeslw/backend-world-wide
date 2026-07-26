@@ -31,6 +31,11 @@ model User {
   @@map("users")
 }
 
+/// LEGACY. The global program catalog was retired in favour of the
+/// University -> Faculty -> Department -> UniversityProgram hierarchy: a
+/// UniversityProgram now owns its own title and content instead of pointing at
+/// a shared catalog row. The table is kept (unreferenced) for one release so the
+/// migration can be rolled back; drop it once the new model is proven in prod.
 model Program {
   id                 String              @id @default(uuid())
   createdAt          DateTime            @default(now())
@@ -42,12 +47,61 @@ model Program {
   title              String
   parent             Program?            @relation("ProgramToProgram", fields: [parentId], references: [id])
   children           Program[]           @relation("ProgramToProgram")
-  universityPrograms     UniversityProgram[]
-  applications           Application[]
-  partnerApplications    PartnerApplication[]
-  processTemplate        ApplicationProcessTemplate?
 
   @@map("programs")
+}
+
+/// Global, admin-curated faculty taxonomy (e.g. "Engineering & Technology").
+/// Shared by every university; a UniversityProgram belongs to exactly one.
+model Faculty {
+  id            String   @id @default(uuid())
+  /// Stable machine key used for seeding, icons and deep links.
+  slug          String   @unique
+  nameEn        String
+  nameRu        String
+  nameUz        String
+  descriptionEn String?
+  descriptionRu String?
+  descriptionUz String?
+  /// Icon identifier resolved by the clients to a lucide/MUI icon.
+  iconKey       String?
+  sortOrder     Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  departments        Department[]
+  universityPrograms UniversityProgram[]
+
+  @@index([sortOrder])
+  @@index([isActive])
+  @@map("faculties")
+}
+
+/// Optional second level of the taxonomy, always scoped to a faculty
+/// (e.g. Faculty "Engineering & Technology" -> Department "Civil Engineering").
+model Department {
+  id            String   @id @default(uuid())
+  facultyId     String
+  faculty       Faculty  @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+  slug          String
+  nameEn        String
+  nameRu        String
+  nameUz        String
+  descriptionEn String?
+  descriptionRu String?
+  descriptionUz String?
+  sortOrder     Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  universityPrograms UniversityProgram[]
+
+  @@unique([facultyId, slug])
+  @@index([facultyId])
+  @@index([sortOrder])
+  @@map("departments")
 }
 
 model Country {
@@ -222,10 +276,19 @@ model AgencyService {
   @@map("agency_services")
 }
 
+/// The authoritative program entity. Unique per university: it owns its title
+/// and content rather than pointing at a shared catalog row, and is placed in
+/// the global taxonomy through facultyId (+ optional departmentId).
 model UniversityProgram {
   id                 String     @id @default(uuid())
   universityId       String
-  programId          String
+  /// Program name as offered by this university.
+  title              String
+  /// URL-safe identifier, unique across all programs. Used for the public
+  /// /programs/<slug> route; falls back to the id when absent.
+  slug               String?    @unique
+  facultyId          String?
+  departmentId       String?
   tuitionFee         Float
   tuitionFeeType     String     @default("tuition_per_year")
   tuitionFeeCurrency String     @default("USD")
@@ -235,21 +298,60 @@ model UniversityProgram {
   duration           Float?
   scholarshipAppliedTutionFee Float?
 
+  /// Rich-text (HTML) program description per locale.
+  descriptionEn      String?    @db.Text
+  descriptionRu      String?    @db.Text
+  descriptionUz      String?    @db.Text
+  /// Rich-text career outcomes / what graduates go on to do.
+  careerOutcomesEn   String?    @db.Text
+  careerOutcomesRu   String?    @db.Text
+  careerOutcomesUz   String?    @db.Text
+  /// Rich-text curriculum overview.
+  curriculumEn       String?    @db.Text
+  curriculumRu       String?    @db.Text
+  curriculumUz       String?    @db.Text
+
+  credits            Int?
+  studyMode          StudyMode  @default(FULL_TIME)
+  applicationFee     Float?
+  applicationFeeCurrency String?
+  isApplicationFeeRefundable Boolean @default(false)
+  /// Program-scoped costs beyond tuition.
+  /// Shape: [{ label: string, amount: string, isMandatory?: boolean }]
+  additionalExpenses Json       @default("[]")
+  /// Hidden programs stay in the DB but are excluded from public listings.
+  isActive           Boolean    @default(true)
+  isFeatured         Boolean    @default(false)
+
   studyLanguageId String?
   studyLanguage   StudyLanguage? @relation(fields: [studyLanguageId], references: [id])
-  program       Program                   @relation(fields: [programId], references: [id])
   university    University                @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  faculty       Faculty?                  @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  department    Department?               @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   scholarships  Scholarship[]
   intakes       UniversityProgramIntake[]
   campuses      Campus[]
+  admissionRequirement ProgramAdmissionRequirement?
+  applications         Application[]
+  partnerApplications  PartnerApplication[]
+  processTemplate      ApplicationProcessTemplate?
 
-  @@unique([universityId, programId, studyLevel])
   @@index([universityId])
-  @@index([programId])
+  @@index([facultyId])
+  @@index([departmentId])
   @@index([tuitionFee])
   @@index([studyLevel])
   @@index([studyLanguageId])
+  @@index([title])
+  @@index([isActive])
   @@map("university_programs")
+}
+
+enum StudyMode {
+  FULL_TIME
+  PART_TIME
+  ONLINE
+  HYBRID
 }
 
 model StudyLanguage {
@@ -462,6 +564,9 @@ model Application {
   profileId           String
   preferredCountry    String
   preferredUniversity String
+  /// FK to UniversityProgram. Named `preferredProgram` for backwards
+  /// compatibility with existing API consumers; it used to reference the
+  /// retired global program catalog.
   preferredProgram    String
   intakeSeason        IntakeSeason
   intakeYear          Int
@@ -471,7 +576,7 @@ model Application {
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
   profile             Profile           @relation(fields: [profileId], references: [id])
-  program             Program           @relation(fields: [preferredProgram], references: [id])
+  program             UniversityProgram @relation(fields: [preferredProgram], references: [id])
   university          University        @relation(fields: [preferredUniversity], references: [id])
   chats               Chat[]
   documents           ApplicationDocument[]
@@ -751,6 +856,8 @@ enum StandardizedTestType {
   GMAT
   CAT
   GRE
+  SAT
+  ACT
 }
 
 enum Gender {
@@ -794,6 +901,132 @@ model AdmissionRequirement {
 
   @@unique([universityId, programLevel])
   @@map("admission_requirements")
+}
+
+/// Machine-readable entry requirements for a single UniversityProgram.
+/// Deliberately relational (rather than a Json blob like the legacy
+/// university-level AdmissionRequirement) so eligibility checks and student
+/// matching can be expressed as SQL predicates.
+model ProgramAdmissionRequirement {
+  id                  String            @id @default(uuid())
+  universityProgramId String            @unique
+  universityProgram   UniversityProgram @relation(fields: [universityProgramId], references: [id], onDelete: Cascade)
+
+  /// Minimum prior qualification the applicant must hold.
+  minEducationLevel      DegreeType?
+  /// Minimum GPA expressed on `gpaScale` (e.g. 3.0 on a 4.0 scale).
+  minGpa                 Float?
+  gpaScale               Float?  @default(4)
+  /// Subjects the applicant must have studied previously.
+  requiredSubjects       String[] @default([])
+  minWorkExperienceYears Int?
+  minAge                 Int?
+  maxAge                 Int?
+  requiresInterview      Boolean @default(false)
+  requiresPortfolio      Boolean @default(false)
+  /// True when the English requirement can be dropped (e.g. prior study in English).
+  englishRequirementWaivable Boolean @default(false)
+  englishWaiverNoteEn    String? @db.Text
+  englishWaiverNoteRu    String? @db.Text
+  englishWaiverNoteUz    String? @db.Text
+  additionalNotesEn      String? @db.Text
+  additionalNotesRu      String? @db.Text
+  additionalNotesUz      String? @db.Text
+
+  languageTests     ProgramLanguageTestRequirement[]
+  standardizedTests ProgramStandardizedTestRequirement[]
+  documents         ProgramDocumentRequirement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("program_admission_requirements")
+}
+
+/// One accepted English test and its minimum scores. Multiple rows mean the
+/// applicant satisfies the requirement by meeting ANY one of them.
+model ProgramLanguageTestRequirement {
+  id            String                      @id @default(uuid())
+  requirementId String
+  requirement   ProgramAdmissionRequirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  test          LanguageTestType
+  minTotal      Float?
+  minListening  Float?
+  minReading    Float?
+  minWriting    Float?
+  minSpeaking   Float?
+
+  @@unique([requirementId, test])
+  @@index([test])
+  @@map("program_language_test_requirements")
+}
+
+model ProgramStandardizedTestRequirement {
+  id            String                      @id @default(uuid())
+  requirementId String
+  requirement   ProgramAdmissionRequirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  test          StandardizedTestType
+  minScore      Float?
+  status        RequirementStatus           @default(REQUIRED)
+
+  @@unique([requirementId, test])
+  @@map("program_standardized_test_requirements")
+}
+
+/// A document the applicant must (or may) submit. `kind` is the machine key the
+/// matching algorithm reads; the localized labels are display-only overrides.
+model ProgramDocumentRequirement {
+  id            String                      @id @default(uuid())
+  requirementId String
+  requirement   ProgramAdmissionRequirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+  kind          DocumentRequirementKind
+  status        RequirementStatus           @default(REQUIRED)
+  /// How many copies are expected (e.g. 2 recommendation letters).
+  quantity      Int?
+  labelEn       String?
+  labelRu       String?
+  labelUz       String?
+  notesEn       String? @db.Text
+  notesRu       String? @db.Text
+  notesUz       String? @db.Text
+  sortOrder     Int     @default(0)
+
+  @@index([requirementId])
+  @@map("program_document_requirements")
+}
+
+enum LanguageTestType {
+  IELTS
+  TOEFL_IBT
+  TOEFL_PBT
+  DUOLINGO
+  PTE
+  CAMBRIDGE
+  TOEIC
+}
+
+enum RequirementStatus {
+  REQUIRED
+  OPTIONAL
+  NOT_REQUIRED
+}
+
+enum DocumentRequirementKind {
+  PASSPORT
+  TRANSCRIPT
+  DIPLOMA
+  RECOMMENDATION_LETTER
+  MOTIVATION_LETTER
+  CV
+  PORTFOLIO
+  RESEARCH_PROPOSAL
+  FINANCIAL_PROOF
+  MEDICAL_CERTIFICATE
+  PHOTO
+  ENGLISH_CERTIFICATE
+  STANDARDIZED_TEST_SCORE
+  INTERVIEW
+  OTHER
 }
 
 model Campus {
@@ -873,7 +1106,7 @@ model ApplicationProcessTemplate {
   description String?
   isDefault   Boolean  @default(false) // true = standard template used as fallback
   programId   String?  @unique         // null = standard template; non-null = program-specific override
-  program     Program? @relation(fields: [programId], references: [id], onDelete: Cascade)
+  program     UniversityProgram? @relation(fields: [programId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -995,8 +1228,9 @@ model PartnerApplication {
   partnerStudent   PartnerStudent         @relation(fields: [partnerStudentId], references: [id], onDelete: Cascade)
   universityId     String
   university       University             @relation(fields: [universityId], references: [id])
+  /// FK to UniversityProgram (previously the retired global program catalog).
   programId        String
-  program          Program                @relation(fields: [programId], references: [id])
+  program          UniversityProgram      @relation(fields: [programId], references: [id])
   intakeSeason     IntakeSeason
   intakeYear       Int
 

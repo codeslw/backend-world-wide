@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsOptional,
   IsInt,
@@ -266,4 +266,32 @@ export class UniversitiesByProgramsFilterDto {
   @Max(100)
   @Type(() => Number)
   limit?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Filter by faculty. Accepts a repeated param or a comma-separated list.',
+    isArray: true,
+    type: [String],
+  })
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.split(',').filter(Boolean) : value,
+  )
+  @IsArray()
+  @IsUUID('4', { each: true })
+  facultyId?: string[];
+
+  @ApiPropertyOptional({
+    description:
+      'Filter by department. Accepts a repeated param or a comma-separated list.',
+    isArray: true,
+    type: [String],
+  })
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.split(',').filter(Boolean) : value,
+  )
+  @IsArray()
+  @IsUUID('4', { each: true })
+  departmentId?: string[];
 }

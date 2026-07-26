@@ -86,8 +86,12 @@ export class ReviewsService {
         select: { nameUz: true, nameRu: true, nameEn: true },
         orderBy: { nameEn: 'asc' },
       }),
-      this.prisma.program.findMany({
+      // The global program catalog was retired: program titles now live on
+      // UniversityProgram, so distinct titles form the filter options.
+      this.prisma.universityProgram.findMany({
         select: { title: true },
+        distinct: ['title'],
+        where: { isActive: true },
         orderBy: { title: 'asc' },
       }),
       this.prisma.review.findMany({
@@ -107,10 +111,10 @@ export class ReviewsService {
       return { value: label, label };
     });
 
-    const catalogProgramOptions = programs.map((program) => {
-      const label = this.pickLocalized(program, 'title', lang);
-      return { value: label, label };
-    });
+    const catalogProgramOptions = programs
+      .map((program) => program.title?.trim())
+      .filter((title): title is string => Boolean(title))
+      .map((title) => ({ value: title, label: title }));
 
     const existingDegreeOptions = this.toOptions(
       reviews.map((review) => review.degree),

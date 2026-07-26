@@ -6,7 +6,6 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { PrismaService } from './db/prisma.service';
 import { DbModule } from './db/db.module';
-import { ProgramsModule } from './programs/programs.module';
 import { CountriesModule } from './countries/countries.module';
 import { CitiesModule } from './cities/cities.module';
 import { CommonModule } from './common/common.module';
@@ -17,6 +16,9 @@ import { IntakesModule } from './intakes/intakes.module';
 import { FilesModule } from './files/files.module';
 import { ChatModule } from './chat/chat.module';
 import { CatalogModule } from './catalog/catalog.module';
+import { FacultiesModule } from './faculties/faculties.module';
+import { DepartmentsModule } from './departments/departments.module';
+import { UniversityProgramsModule } from './university-programs/university-programs.module';
 import { ProfilesModule } from './profiles/profiles.module';
 import { ApplicationsModule } from './applications/applications.module';
 import { MiniApplicationsModule } from './modules/mini-applications.module';
@@ -60,10 +62,12 @@ import { UniversityAccreditationsModule } from './university-accreditations/univ
     AuthModule,
     UsersModule,
     ProfilesModule,
-    ProgramsModule,
     CountriesModule,
     CitiesModule,
     UniversitiesModule,
+    FacultiesModule,
+    DepartmentsModule,
+    UniversityProgramsModule,
     AgencyServicesModule,
     DigitalOceanModule,
     FilesModule,
