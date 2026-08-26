@@ -28,6 +28,14 @@ import { UniversityProgramDto } from './dto/university-program.dto';
 import { buildProgramSlug } from '../common/utils/slug.util';
 import { randomUUID } from 'crypto';
 
+/**
+ * Writing a university rewrites all of its programs and their links, so the
+ * transaction's cost grows with the payload. These bounds leave room for a
+ * large catalogue without letting a runaway request hold a connection forever.
+ */
+const UNIVERSITY_TX_TIMEOUT_MS = 30_000;
+const UNIVERSITY_TX_MAX_WAIT_MS = 10_000;
+
 @Injectable()
 export class UniversitiesService {
   private readonly logger = new Logger(UniversitiesService.name);
@@ -396,79 +404,101 @@ export class UniversitiesService {
       await this.validateProgramTaxonomy(programs);
     }
 
+    // Intakes are a globally deduplicated lookup table, so finding-or-creating
+    // them is idempotent and independent of this university. Doing it here
+    // instead of inside the transaction keeps a sequential per-intake round
+    // trip (which scales with programs x intakes) out of the 
+    // interactive-transaction budget.
+    const programIntakeIds = programs
+      ? await Promise.all(
+          programs.map((program) => this.resolveIntakeIds(program.intakes)),
+        )
+      : [];
+
     try {
-      const updatedUniversity = await this.prisma.$transaction(async (tx) => {
-        const dataToUpdate: Prisma.UniversityUpdateInput = {
-          ...otherFields,
-          additionalExpenses:
-            (otherFields.additionalExpenses as unknown as Prisma.InputJsonValue) ??
-            undefined,
-        };
-        if (countryCode !== undefined) {
-          dataToUpdate.country = { connect: { code: countryCode } };
-        }
-        if (cityId !== undefined) {
-          dataToUpdate.city = { connect: { id: cityId } };
-        }
-        if (agencyServiceId !== undefined) {
-          dataToUpdate.agencyService = agencyServiceId
-            ? { connect: { id: agencyServiceId } }
-            : { disconnect: true };
-        }
-
-        await tx.university.update({
-          where: { id },
-          data: dataToUpdate,
-        });
-
-        if (programs) {
-          await this.updateUniversityPrograms(
-            tx,
-            id,
-            programs,
-            existingUniversity.universityPrograms,
-          );
-        }
-
-        if (admissionRequirements) {
-          await tx.admissionRequirement.deleteMany({
-            where: { universityId: id },
-          });
-          if (admissionRequirements.length > 0) {
-            await tx.admissionRequirement.createMany({
-              data: admissionRequirements.map((req) => ({
-                ...req,
-                universityId: id,
-                languageRequirements: req.languageRequirements as any,
-              })),
-            });
+      const updatedUniversity = await this.prisma.$transaction(
+        async (tx) => {
+          const dataToUpdate: Prisma.UniversityUpdateInput = {
+            ...otherFields,
+            additionalExpenses:
+              (otherFields.additionalExpenses as unknown as Prisma.InputJsonValue) ??
+              undefined,
+          };
+          if (countryCode !== undefined) {
+            dataToUpdate.country = { connect: { code: countryCode } };
           }
-        }
+          if (cityId !== undefined) {
+            dataToUpdate.city = { connect: { id: cityId } };
+          }
+          if (agencyServiceId !== undefined) {
+            dataToUpdate.agencyService = agencyServiceId
+              ? { connect: { id: agencyServiceId } }
+              : { disconnect: true };
+          }
 
-        return tx.university.findUnique({
-          where: { id },
-          include: {
-            country: true,
-            city: true,
-            universityPrograms: {
-              include: {
-                faculty: true,
-              department: true,
-                studyLanguage: true,
-                campuses: true,
-                intakes: {
-                  include: {
-                    intake: true,
+          await tx.university.update({
+            where: { id },
+            data: dataToUpdate,
+          });
+
+          if (programs) {
+            await this.updateUniversityPrograms(
+              tx,
+              id,
+              programs,
+              existingUniversity.universityPrograms,
+              programIntakeIds,
+            );
+          }
+
+          if (admissionRequirements) {
+            await tx.admissionRequirement.deleteMany({
+              where: { universityId: id },
+            });
+            if (admissionRequirements.length > 0) {
+              await tx.admissionRequirement.createMany({
+                data: admissionRequirements.map((req) => ({
+                  ...req,
+                  universityId: id,
+                  languageRequirements: req.languageRequirements as any,
+                })),
+              });
+            }
+          }
+
+          return tx.university.findUnique({
+            where: { id },
+            include: {
+              country: true,
+              city: true,
+              universityPrograms: {
+                include: {
+                  faculty: true,
+                  department: true,
+                  studyLanguage: true,
+                  campuses: true,
+                  intakes: {
+                    include: {
+                      intake: true,
+                    },
                   },
                 },
               },
+              admissionRequirements: true,
+              campuses: true,
+              agencyService: true,
             },
-            admissionRequirements: true,
-            campuses: true,
-            agencyService: true,
-          },
-        });
-      });
+          });
+        },
+        // A university edit rewrites every program row plus its intake and
+        // campus links, so the work scales with the size of the payload rather
+        // than being constant. Prisma's 5s default is too tight for a
+        // catalogue-sized university on a remote database.
+        {
+          maxWait: UNIVERSITY_TX_MAX_WAIT_MS,
+          timeout: UNIVERSITY_TX_TIMEOUT_MS,
+        },
+      );
 
       if (!updatedUniversity) {
         throw new Error(
@@ -813,6 +843,7 @@ export class UniversitiesService {
     universityId: string,
     programs: any[],
     existingPrograms: any[],
+    programIntakeIds: string[][],
   ) {
     // A university program owns its identity now, so the diff key is its own
     // id. Rows carrying an id are updated in place (which preserves their
@@ -856,10 +887,17 @@ export class UniversitiesService {
       }
     }
 
-    for (const programData of programs) {
+    // Intake links are rewritten set-wide after the loop rather than per
+    // program, so a payload of N programs costs two statements here instead of
+    // 2N sequential round trips.
+    const intakeLinkTargets: string[] = [];
+    const intakeLinkRows: { universityProgramId: string; intakeId: string }[] =
+      [];
+
+    for (const [index, programData] of programs.entries()) {
       const id = programData.id ?? randomUUID();
       const scalars = this.buildProgramScalars(programData);
-      const upsertedProgram = await tx.universityProgram.upsert({
+      await tx.universityProgram.upsert({
         where: { id },
         create: {
           id,
@@ -897,22 +935,25 @@ export class UniversitiesService {
         },
       });
 
+      // Only programs that actually carried an `intakes` field have their
+      // links rewritten; omitting the field leaves the existing ones alone.
       if (programData.intakes) {
-        const intakeIds = await this.resolveIntakeIds(programData.intakes, tx);
-
-        await tx.universityProgramIntake.deleteMany({
-          where: { universityProgramId: upsertedProgram.id },
-        });
-
-        if (intakeIds.length > 0) {
-          await tx.universityProgramIntake.createMany({
-            data: intakeIds.map((intakeId) => ({
-              universityProgramId: upsertedProgram.id,
-              intakeId,
-            })),
-            skipDuplicates: true,
-          });
+        intakeLinkTargets.push(id);
+        for (const intakeId of programIntakeIds[index] ?? []) {
+          intakeLinkRows.push({ universityProgramId: id, intakeId });
         }
+      }
+    }
+
+    if (intakeLinkTargets.length > 0) {
+      await tx.universityProgramIntake.deleteMany({
+        where: { universityProgramId: { in: intakeLinkTargets } },
+      });
+      if (intakeLinkRows.length > 0) {
+        await tx.universityProgramIntake.createMany({
+          data: intakeLinkRows,
+          skipDuplicates: true,
+        });
       }
     }
   }
