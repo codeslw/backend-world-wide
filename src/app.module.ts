@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { PrismaService } from './db/prisma.service';
@@ -48,6 +49,7 @@ import { CurrenciesModule } from './currencies/currencies.module';
 import { AccreditationsModule } from './accreditations/accreditations.module';
 import { RankingOrganizationsModule } from './ranking-organizations/ranking-organizations.module';
 import { UniversityAccreditationsModule } from './university-accreditations/university-accreditations.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -59,6 +61,7 @@ import { UniversityAccreditationsModule } from './university-accreditations/univ
       limit: 100,   // 100 requests per minute
     }]),
     CommonModule,
+    MailModule,
     AuthModule,
     UsersModule,
     ProfilesModule,
@@ -102,7 +105,14 @@ import { UniversityAccreditationsModule } from './university-accreditations/univ
     DbModule,
   ],
 
-  providers: [DigitalOceanService],
+  providers: [
+    DigitalOceanService,
+    // ThrottlerModule was configured but never enforced — without a global
+    // guard the per-route @Throttle decorators on the auth OTP endpoints are
+    // inert. Registering it activates the module's existing 100/min default
+    // alongside the tighter per-route limits.
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
   controllers: [],
 })
 export class AppModule {}

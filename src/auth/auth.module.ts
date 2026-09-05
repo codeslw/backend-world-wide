@@ -8,12 +8,15 @@ import { JwtStrategy } from './jwt.strategy';
 import { PrismaService } from '../db/prisma.service';
 import { PartnerOrganizationsModule } from '../partner-organizations/partner-organizations.module';
 import { PartnerAuditModule } from '../partner-audit/partner-audit.module';
+import { MailModule } from '../mail/mail.module';
+import { OtpService } from './otp.service';
 
 @Module({
   imports: [
     UsersModule,
     PartnerOrganizationsModule,
     PartnerAuditModule,
+    MailModule,
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
@@ -25,7 +28,7 @@ import { PartnerAuditModule } from '../partner-audit/partner-audit.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, PrismaService],
+  providers: [AuthService, OtpService, JwtStrategy, PrismaService],
   exports: [AuthService],
 })
 export class AuthModule {}

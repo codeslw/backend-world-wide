@@ -12,6 +12,7 @@ model User {
   email         String         @unique
   password      String
   role          Role           @default(CLIENT)
+  isEmailVerified Boolean      @default(false)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   adminChats    Chat[]         @relation("AdminChats")
@@ -616,6 +617,35 @@ model RefreshToken {
   @@index([token])
   @@index([expiresAt])
   @@map("refresh_tokens")
+}
+
+/// Purpose of a one-time code emailed to a user.
+enum EmailOtpPurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+/// A single-use numeric code emailed to a user address. The code itself is
+/// never stored in plaintext — `codeHash` holds a bcrypt hash, so a database
+/// leak cannot be replayed against the OTP endpoints. Rows are keyed by email
+/// rather than userId because verification codes are issued before (or
+/// independently of) a confirmed account, and they are consumed on success.
+model EmailOtp {
+  id        String          @id @default(uuid())
+  email     String
+  codeHash  String
+  purpose   EmailOtpPurpose
+  expiresAt DateTime
+  /// Number of wrong codes submitted against this row; the OTP is burned once
+  /// it crosses the service-level maximum so codes cannot be brute forced.
+  attempts  Int             @default(0)
+  consumedAt DateTime?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([email, purpose])
+  @@index([expiresAt])
+  @@map("email_otps")
 }
 
 model Scholarship {
