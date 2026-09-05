@@ -31,6 +31,12 @@ DIGITAL_OCEAN_ACCESS_KEY=your_digital_ocean_access_key
 DIGITAL_OCEAN_SECRET_KEY=your_digital_ocean_secret_key
 DIGITAL_OCEAN_BUCKET=your_digital_ocean_bucket
 DIGITAL_OCEAN_ENDPOINT=your_digital_ocean_endpoint
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASSWORD=
+SMTP_FROM="World Wide <no-reply@talabalink.uz>"
 EOF
     echo ".env file created. Please update with your actual values before continuing."
     echo "Edit the file with your values and then run this script again."
