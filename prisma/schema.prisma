@@ -1679,3 +1679,59 @@ model UniversityRanking {
   @@index([rankingOrganizationId])
   @@map("university_rankings")
 }
+
+// ─── Our Services CMS ──────────────────────────────────────────────────────────
+model OurService {
+  id            String   @id @default(uuid())
+  slug          String   @unique
+  titleUz       String
+  titleRu       String
+  titleEn       String
+  shortDescUz   String?
+  shortDescRu   String?
+  shortDescEn   String?
+  fullDescUz    String?  @db.Text
+  fullDescRu    String?  @db.Text
+  fullDescEn    String?  @db.Text
+  iconName      String?
+  badgeUz       String?
+  badgeRu       String?
+  badgeEn       String?
+  featuresUz    String[] @default([])
+  featuresRu    String[] @default([])
+  featuresEn    String[] @default([])
+  actionTextUz  String?
+  actionTextRu  String?
+  actionTextEn  String?
+  actionUrl     String?
+  sortOrder     Int      @default(0)
+  isActive      Boolean  @default(true)
+  isFeatured    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@index([isActive])
+  @@map("our_services")
+}
+
+model OurServicesPage {
+  id               String   @id @default(uuid())
+  heroTitleUz      String?
+  heroTitleRu      String?
+  heroTitleEn      String?
+  heroSubtitleUz   String?
+  heroSubtitleRu   String?
+  heroSubtitleEn   String?
+  bannerTitleUz    String?
+  bannerTitleRu    String?
+  bannerTitleEn    String?
+  bannerSubtitleUz String?
+  bannerSubtitleRu String?
+  bannerSubtitleEn String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("our_services_page")
+}
+

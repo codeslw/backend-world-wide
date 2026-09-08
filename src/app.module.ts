@@ -50,6 +50,7 @@ import { AccreditationsModule } from './accreditations/accreditations.module';
 import { RankingOrganizationsModule } from './ranking-organizations/ranking-organizations.module';
 import { UniversityAccreditationsModule } from './university-accreditations/university-accreditations.module';
 import { MailModule } from './mail/mail.module';
+import { OurServicesModule } from './our-services/our-services.module';
 
 @Module({
   imports: [
@@ -102,6 +103,7 @@ import { MailModule } from './mail/mail.module';
     AccreditationsModule,
     RankingOrganizationsModule,
     UniversityAccreditationsModule,
+    OurServicesModule,
     DbModule,
   ],
 
