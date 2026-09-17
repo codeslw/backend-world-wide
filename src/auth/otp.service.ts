@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { EmailOtpPurpose } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
@@ -33,6 +38,11 @@ export class OtpService {
    * the endpoint cannot be used to flood an address with mail.
    */
   async issue(email: string, purpose: EmailOtpPurpose): Promise<void> {
+    if (!this.mail.isConfigured()) {
+      throw new ServiceUnavailableException(
+        'Email delivery is not configured. Please try again later.',
+      );
+    }
     const normalizedEmail = this.normalize(email);
 
     const lastIssued = await this.prisma.emailOtp.findFirst({

@@ -30,19 +30,25 @@ export class MailService implements OnModuleInit {
 
   constructor(private readonly configService: ConfigService) {}
 
+  /**
+   * True once a real SMTP transport exists. Email-dependent flows (OTP)
+   * check this and fail loudly instead of pretending a code was delivered.
+   */
+  isConfigured(): boolean {
+    return this.transporter !== null;
+  }
+
   onModuleInit() {
     const host = this.configService.get<string>('SMTP_HOST');
 
     if (!host) {
-      if (this.configService.get('NODE_ENV') === 'production') {
-        throw new Error(
-          'SMTP_HOST is not configured. Email delivery is required in production ' +
-            '(signup verification and password reset depend on it).',
-        );
-      }
-      this.logger.warn(
-        'SMTP_HOST is not set — running in log mode. Emails will be printed to ' +
-          'the log instead of being delivered.',
+      // Never crash the whole API over email config: the platform must stay
+      // up (universities, applications, chats). OTP endpoints refuse to
+      // issue codes while unconfigured — see OtpService.
+      this.logger.error(
+        'SMTP_HOST is not set — running in log mode. Emails will be printed ' +
+          'to the log instead of being delivered, and OTP issue endpoints ' +
+          'will answer 503 until SMTP is configured.',
       );
       return;
     }
