@@ -53,7 +53,7 @@ export class ApplicationsController {
   constructor(private readonly applicationsService: ApplicationsService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.CLIENT)
   @ApiOperation({ summary: 'Create a new application' })
   @ApiBearerAuth('access-token')
@@ -168,7 +168,7 @@ export class ApplicationsController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.CLIENT, Role.ADMIN)
   @ApiOperation({ summary: 'Get application by id' })
   @ApiBearerAuth('access-token')
@@ -215,7 +215,7 @@ export class ApplicationsController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.CLIENT, Role.ADMIN)
   @ApiOperation({ summary: 'Update an application' })
   @ApiBearerAuth('access-token')
@@ -259,7 +259,7 @@ export class ApplicationsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.CLIENT, Role.ADMIN)
   @ApiOperation({ summary: 'Delete an application' })
   @ApiBearerAuth('access-token')
@@ -330,7 +330,7 @@ export class ApplicationsController {
 
   @Patch(':id/submit')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.CLIENT)
   @ApiOperation({ summary: 'Submit an application' })
   @ApiBearerAuth('access-token')

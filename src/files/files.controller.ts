@@ -32,7 +32,8 @@ import { FileResponseDto } from './dto/file-response.dto';
 import { Response, urlencoded } from 'express';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../common/enum/roles.enum';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard.mock';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
 
 @ApiTags('files')
 @Controller('files')
@@ -40,7 +41,8 @@ export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
   @Post('upload')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.CLIENT, Role.PARTNER, Role.ADMIN)
   @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -55,7 +57,7 @@ export class FilesController {
     },
   })
   @UseInterceptors(FileInterceptor('file'))
-  @ApiOperation({ summary: 'Upload a single file (Admin only)' })
+  @ApiOperation({ summary: 'Upload a single file (authenticated users)' })
   @ApiResponse({
     status: 201,
     description: 'File uploaded successfully',
@@ -78,6 +80,7 @@ export class FilesController {
   }
 
   @Post('upload/multiple')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @UseInterceptors(FilesInterceptor('files', 10)) // Max 10 files
   @ApiOperation({ summary: 'Upload multiple files (max 10) (Admin only)' })
@@ -110,7 +113,10 @@ export class FilesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all files' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get all files (Admin only)' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
   @ApiResponse({
@@ -145,6 +151,8 @@ export class FilesController {
 
   // ADD THIS NEW ENDPOINT
   @Get(':id/download')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Download a file by its ID' })
   @ApiParam({ name: 'id', description: 'File ID' })
   @ApiResponse({ status: 200, description: 'File stream for download' })
@@ -154,6 +162,8 @@ export class FilesController {
   }
 
   @Get('download-by-url')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Download file by URL' })
   @ApiQuery({
     name: 'url',
@@ -170,6 +180,8 @@ export class FilesController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get file metadata by ID' })
   @ApiParam({ name: 'id', description: 'File ID' })
   @ApiResponse({
@@ -183,7 +195,10 @@ export class FilesController {
   }
 
   @Delete('url')
-  @ApiOperation({ summary: 'Delete file by URL' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Delete file by URL (Admin only)' })
   @ApiBody({
     schema: {
       properties: {
