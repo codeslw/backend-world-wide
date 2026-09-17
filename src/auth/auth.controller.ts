@@ -4,7 +4,6 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { SendOtpDto } from './dto/send-otp.dto';
-import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ApiTags, ApiResponse, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { CreateUserDto } from '../users/dto/create-user.dto';
@@ -92,58 +91,6 @@ export class AuthController {
 
   // OTP endpoints carry a tighter throttle than the global 100/min: they send
   // mail and guess-check codes, so they are the ones worth rate limiting.
-
-  @Post('verify-email')
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @ApiOperation({
-    summary: 'Confirm a signup email address with the emailed code',
-    description:
-      'On success the account is marked verified and a token pair is returned, ' +
-      'so the user is signed in without re-entering their password.',
-  })
-  @ApiBody({ type: VerifyOtpDto })
-  @ApiResponse({
-    status: 200,
-    description: 'Email verified and user signed in',
-    type: Object,
-    example: {
-      access_token: 'jwt.token.here',
-      refresh_token: 'refresh.token.here',
-      user: { id: 'uuid', email: 'user@example.com', role: 'CLIENT' },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Code invalid, expired, or email already verified',
-    type: ErrorResponseDto,
-  })
-  @ApiResponse({ status: 404, description: 'No account for this email' })
-  async verifyEmail(@Body() verifyOtpDto: VerifyOtpDto, @Req() req) {
-    return this.authService.verifyEmail(verifyOtpDto, req?.ip);
-  }
-
-  @Post('resend-verification')
-  @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @ApiOperation({ summary: 'Re-send the signup verification code' })
-  @ApiBody({ type: SendOtpDto })
-  @ApiResponse({
-    status: 200,
-    description:
-      'Generic acknowledgement — identical whether or not the address is registered',
-    type: Object,
-    example: {
-      message:
-        'If an unverified account exists for this address, a verification code has been sent.',
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Resend requested inside the cooldown window',
-    type: ErrorResponseDto,
-  })
-  async resendVerification(@Body() sendOtpDto: SendOtpDto) {
-    return this.authService.resendVerificationOtp(sendOtpDto);
-  }
 
   @Post('forgot-password')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
