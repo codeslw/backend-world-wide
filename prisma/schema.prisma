@@ -885,6 +885,7 @@ enum DegreeType {
   BACHELOR
   MASTER
   PHD
+  OTHER
 }
 
 enum StandardizedTestType {
@@ -949,6 +950,8 @@ model ProgramAdmissionRequirement {
 
   /// Minimum prior qualification the applicant must hold.
   minEducationLevel      DegreeType?
+  /// Free-text qualification used when minEducationLevel is OTHER.
+  minEducationLevelNote  String?
   /// Minimum GPA expressed on `gpaScale` (e.g. 3.0 on a 4.0 scale).
   minGpa                 Float?
   gpaScale               Float?  @default(4)

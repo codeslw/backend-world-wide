@@ -13,10 +13,14 @@ import {
   IsBoolean,
   IsEnum,
   IsInt,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
+  Matches,
+  MaxLength,
   Min,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import { IsWithinLanguageTestRange } from '../validators/language-test-score-range.validator';
@@ -159,12 +163,27 @@ export class ProgramDocumentRequirementDto {
 export class ProgramAdmissionRequirementDto {
   @ApiPropertyOptional({
     enum: DegreeType,
-    description: 'Minimum prior qualification the applicant must hold',
+    description:
+      'Minimum prior qualification the applicant must hold. Use OTHER with minEducationLevelNote for a custom value.',
     example: DegreeType.HIGH_SCHOOL,
   })
   @IsOptional()
   @IsEnum(DegreeType)
   minEducationLevel?: DegreeType;
+
+  @ApiPropertyOptional({
+    description:
+      'Custom qualification, required when minEducationLevel is OTHER and ignored otherwise',
+    example: 'Foundation diploma in Art & Design',
+  })
+  @ValidateIf((o) => o.minEducationLevel === DegreeType.OTHER)
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/\S/, {
+    message: 'minEducationLevelNote must contain a non-whitespace character',
+  })
+  @MaxLength(200)
+  minEducationLevelNote?: string;
 
   @ApiPropertyOptional({
     description: 'Minimum GPA expressed on `gpaScale`',

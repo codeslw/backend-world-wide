@@ -205,6 +205,12 @@ export class ProgramAdmissionRequirementResponseDto {
   @ApiPropertyOptional({ enum: DegreeType, nullable: true })
   minEducationLevel?: DegreeType;
 
+  @ApiPropertyOptional({
+    nullable: true,
+    description: 'Custom qualification, set when minEducationLevel is OTHER',
+  })
+  minEducationLevelNote?: string;
+
   @ApiPropertyOptional({ nullable: true }) minGpa?: number;
   @ApiPropertyOptional({ nullable: true }) gpaScale?: number;
   @ApiProperty({ type: [String] }) requiredSubjects: string[];

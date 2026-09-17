@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, UniversityProgram } from '@prisma/client';
+import { DegreeType, Prisma, UniversityProgram } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../db/prisma.service';
 import {
@@ -489,6 +489,12 @@ export class UniversityProgramsService {
   ): Prisma.ProgramAdmissionRequirementCreateWithoutUniversityProgramInput {
     return {
       minEducationLevel: dto.minEducationLevel,
+      // A custom note is only meaningful with OTHER; drop stale text so a
+      // level change can't leave a misleading qualification behind.
+      minEducationLevelNote:
+        dto.minEducationLevel === DegreeType.OTHER
+          ? (dto.minEducationLevelNote ?? null)
+          : null,
       minGpa: dto.minGpa,
       gpaScale: dto.gpaScale,
       requiredSubjects: dto.requiredSubjects || [],

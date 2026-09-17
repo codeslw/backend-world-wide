@@ -338,6 +338,7 @@ export class UniversityProgramsMapper {
       id: requirement.id,
       universityProgramId: requirement.universityProgramId,
       minEducationLevel: requirement.minEducationLevel,
+      minEducationLevelNote: requirement.minEducationLevelNote,
       minGpa: requirement.minGpa,
       gpaScale: requirement.gpaScale,
       requiredSubjects: requirement.requiredSubjects || [],
