@@ -292,6 +292,15 @@ export class CreateUniversityDto {
   hasFullScholarship?: boolean;
 
   @ApiPropertyOptional({
+    description: 'Whether applicants can apply to this university without language certificates',
+    example: true,
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  canApplyWithoutLanguageCert?: boolean;
+
+  @ApiPropertyOptional({
     description:
       'Additional expenses for the university, grouped per study level (e.g. housing, insurance)',
     example: [

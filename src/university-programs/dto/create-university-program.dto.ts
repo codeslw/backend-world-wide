@@ -210,6 +210,15 @@ export class CreateUniversityProgramDto {
   @IsBoolean()
   isFeatured?: boolean;
 
+  @ApiPropertyOptional({
+    description:
+      'Rolling admissions: applications are accepted year-round, outside fixed intake deadlines',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  hasRollingIntakes?: boolean;
+
   @ApiPropertyOptional({ description: 'Language of instruction' })
   @IsOptional()
   @IsUUID()

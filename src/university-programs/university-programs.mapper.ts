@@ -117,6 +117,7 @@ export class UniversityProgramsMapper {
 
       isActive: program.isActive,
       isFeatured: program.isFeatured,
+      hasRollingIntakes: program.hasRollingIntakes ?? false,
       hasScholarship: (program.scholarships?.length ?? 0) > 0,
 
       studyLanguageId: program.studyLanguageId,

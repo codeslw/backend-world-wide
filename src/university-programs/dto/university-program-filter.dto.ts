@@ -153,6 +153,12 @@ export class UniversityProgramFilterDto extends PaginationDto {
   @IsBoolean()
   isFeatured?: boolean;
 
+  @ApiPropertyOptional({ description: 'Only programs with rolling admissions' })
+  @IsOptional()
+  @Transform(toBoolean)
+  @IsBoolean()
+  hasRollingIntakes?: boolean;
+
   @ApiPropertyOptional({
     description:
       'Student IELTS total. Keeps programs whose IELTS requirement is <= this score (and programs with no IELTS requirement).',

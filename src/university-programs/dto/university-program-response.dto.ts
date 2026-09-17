@@ -278,6 +278,12 @@ export class UniversityProgramListItemDto {
   @ApiProperty() isActive: boolean;
   @ApiProperty() isFeatured: boolean;
 
+  @ApiProperty({
+    description:
+      'Rolling admissions: applications are accepted year-round, outside fixed intake deadlines',
+  })
+  hasRollingIntakes: boolean;
+
   @ApiProperty({ description: 'At least one visible scholarship is attached' })
   hasScholarship: boolean;
 

@@ -304,6 +304,12 @@ export class UniversityFilterDto {
   @Transform(({ value }) => value === 'true' || value === true)
   hasFullScholarship?: boolean;
 
+  @ApiProperty({ description: 'Filter by universities accepting applications without language certificates', required: false })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  canApplyWithoutLanguageCert?: boolean;
+
   @ApiProperty({ description: 'Page number', required: false })
   @IsOptional()
   @IsInt()

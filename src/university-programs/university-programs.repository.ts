@@ -76,6 +76,7 @@ export class UniversityProgramsRepository {
       maxDuration,
       hasScholarship,
       isFeatured,
+      hasRollingIntakes,
       maxIeltsTotal,
       maxToeflTotal,
       maxDuolingoTotal,
@@ -99,6 +100,8 @@ export class UniversityProgramsRepository {
     if (intakeId) where.intakes = { some: { intakeId } };
     if (tuitionFeeCurrency) where.tuitionFeeCurrency = tuitionFeeCurrency;
     if (isFeatured !== undefined) where.isFeatured = isFeatured;
+    if (hasRollingIntakes !== undefined)
+      where.hasRollingIntakes = hasRollingIntakes;
 
     if (minTuitionFee !== undefined || maxTuitionFee !== undefined) {
       where.tuitionFee = {

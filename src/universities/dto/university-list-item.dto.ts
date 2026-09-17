@@ -71,6 +71,9 @@ export class UniversityListItemDto {
   @ApiPropertyOptional({ description: 'Whether this university has a full (100%) scholarship' })
   hasFullScholarship?: boolean;
 
+  @ApiPropertyOptional({ description: 'Whether applicants can apply to this university without language certificates' })
+  canApplyWithoutLanguageCert?: boolean;
+
   @ApiPropertyOptional({ description: 'Country flag / photo URL' })
   countryPhotoUrl?: string;
 }

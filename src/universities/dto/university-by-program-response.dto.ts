@@ -190,6 +190,12 @@ export class UniversityByProgramResponseDto {
   })
   hasFullScholarship?: boolean;
 
+  @ApiPropertyOptional({
+    description: 'Whether applicants can apply to this university without language certificates',
+    default: false,
+  })
+  canApplyWithoutLanguageCert?: boolean;
+
   @ApiProperty({ description: 'Timestamp of creation' })
   createdAt: string;
 

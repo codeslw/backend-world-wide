@@ -115,6 +115,7 @@ export class UniversitiesMapper {
           additionalExpenses: (up.additionalExpenses as any) || [],
           isActive: up.isActive,
           isFeatured: up.isFeatured,
+          hasRollingIntakes: (up as any).hasRollingIntakes ?? false,
           tuitionFee: up.tuitionFee,
           tuitionFeeType: up.tuitionFeeType,
           tuitionFeeCurrency: up.tuitionFeeCurrency as Currency,
@@ -162,6 +163,7 @@ export class UniversitiesMapper {
         })) || [],
       hasScholarship: university.hasScholarship ?? false,
       hasFullScholarship: (university as any).hasFullScholarship ?? false,
+      canApplyWithoutLanguageCert: (university as any).canApplyWithoutLanguageCert ?? false,
       additionalExpenses: ((university as any).additionalExpenses as any) || [],
       admissionRequirements: university.admissionRequirements?.map((req) => ({
         ...req,
@@ -248,6 +250,7 @@ export class UniversitiesMapper {
       phdCount,
       hasScholarship: university.hasScholarship ?? false,
       hasFullScholarship: (university as any).hasFullScholarship ?? false,
+      canApplyWithoutLanguageCert: (university as any).canApplyWithoutLanguageCert ?? false,
       isAdmissionFeeRefundable: university.isAdmissionFeeRefundable ?? false,
       countryPhotoUrl: (university.country as any)?.photoUrl || undefined,
     };
@@ -312,6 +315,7 @@ export class UniversitiesMapper {
       applicationFeeCurrency: university.applicationFeeCurrency,
       isAdmissionFeeRefundable: university.isAdmissionFeeRefundable,
       hasScholarship: university.hasScholarship,
+      canApplyWithoutLanguageCert: (university as any).canApplyWithoutLanguageCert ?? false,
       bachelorCount,
       masterCount,
       phdCount,
@@ -405,6 +409,7 @@ export class UniversitiesMapper {
         campuses: (up.campuses as any) || [],
       },
       hasFullScholarship: (university as any).hasFullScholarship ?? false,
+      canApplyWithoutLanguageCert: (university as any).canApplyWithoutLanguageCert ?? false,
       createdAt: university.createdAt.toISOString(),
       updatedAt: university.updatedAt.toISOString(),
     };

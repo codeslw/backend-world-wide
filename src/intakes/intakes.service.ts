@@ -11,7 +11,6 @@ import {
   defaultStartMonth,
   intakeStartDate,
   isDeadlineBeforeStart,
-  isIntakeFullyExpired,
   monthNumberToName,
   nextFutureCycle,
 } from './intake.util';
@@ -170,8 +169,10 @@ export class IntakesService {
 
   /**
    * Daily job: expire intakes whose deadline has passed and roll each linked
-   * program forward to the next same-season cycle, then delete intake rows that
-   * are fully expired (deadline + start both past) and no longer linked.
+   * program forward to the next same-season cycle, then delete expired intake
+   * rows that are no longer linked. The start date is intentionally NOT
+   * consulted: once the deadline has passed and nothing references the row,
+   * it is removed immediately.
    */
   @Cron(CronExpression.EVERY_DAY_AT_1AM, { name: 'expire-intakes' })
   async scheduledExpiry(): Promise<void> {
@@ -248,11 +249,13 @@ export class IntakesService {
           detachedLinks += removed.count;
         }
 
-        // 3) Delete the old intake row if it is now fully expired and unlinked.
+        // 3) Delete the old intake row as soon as nothing references it
+        // anymore. Every row handled here already has a past deadline (see
+        // step 1), so no start-date check is needed.
         const stillLinked = await tx.universityProgramIntake.count({
           where: { intakeId: intake.id },
         });
-        if (stillLinked === 0 && isIntakeFullyExpired(intake, now)) {
+        if (stillLinked === 0) {
           await tx.intake.delete({ where: { id: intake.id } });
           deletedIntakes += 1;
         }

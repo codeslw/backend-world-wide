@@ -61,6 +61,12 @@ class UniversityProgramResponseDto {
   hasScholarship?: boolean;
 
   @ApiPropertyOptional({
+    description:
+      'Rolling admissions: applications are accepted year-round, outside fixed intake deadlines',
+  })
+  hasRollingIntakes?: boolean;
+
+  @ApiPropertyOptional({
     description: 'Campuses associated with this program',
     type: [CampusResponseDto],
   })
@@ -213,6 +219,11 @@ export class UniversityResponseDto {
     description: 'Whether this university has a full (100%) scholarship',
   })
   hasFullScholarship?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Whether applicants can apply to this university without language certificates',
+  })
+  canApplyWithoutLanguageCert?: boolean;
 
   @ApiPropertyOptional({
     description: 'Additional expenses for the university, grouped per study level',

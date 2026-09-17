@@ -1006,6 +1006,7 @@ export class UniversitiesService {
         undefined,
       isActive: program.isActive,
       isFeatured: program.isFeatured,
+      hasRollingIntakes: program.hasRollingIntakes,
     };
   }
 

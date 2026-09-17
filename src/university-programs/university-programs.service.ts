@@ -56,6 +56,7 @@ const PROGRAM_SCALAR_KEYS = [
   'isApplicationFeeRefundable',
   'isActive',
   'isFeatured',
+  'hasRollingIntakes',
 ] as const;
 
 type UniversityProgramScalarData = Partial<

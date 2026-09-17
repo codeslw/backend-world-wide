@@ -71,6 +71,7 @@ export class UniversitiesRepository {
       maxGpa,
       hasScholarship,
       hasFullScholarship,
+      canApplyWithoutLanguageCert,
     } = filterDto;
 
     const where: Prisma.UniversityWhereInput = {};
@@ -79,6 +80,9 @@ export class UniversitiesRepository {
     if (cityId) where.cityId = cityId;
     if (universityId) where.id = universityId;
     if (type) where.type = type;
+    if (canApplyWithoutLanguageCert === true) {
+      where.canApplyWithoutLanguageCert = true;
+    }
     // Filter on the scholarships relation directly rather than the
     // denormalized hasScholarship/hasFullScholarship flags, which can drift
     // out of sync (they are only recalculated on scholarship CRUD and default

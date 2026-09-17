@@ -313,4 +313,14 @@ export class UniversityProgramDto {
   @IsBoolean()
   @IsOptional()
   isFeatured?: boolean;
+
+  @ApiProperty({
+    description:
+      'Rolling admissions: applications are accepted year-round, outside fixed intake deadlines.',
+    required: false,
+    default: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  hasRollingIntakes?: boolean;
 }

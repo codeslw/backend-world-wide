@@ -74,6 +74,9 @@ export class MainUniversityResponseDto {
   @ApiProperty({ description: 'Whether scholarships are available' })
   hasScholarship?: boolean;
 
+  @ApiProperty({ description: 'Whether applicants can apply to this university without language certificates' })
+  canApplyWithoutLanguageCert?: boolean;
+
   @ApiProperty({ description: 'Number of bachelor programs' })
   bachelorCount?: number;
 

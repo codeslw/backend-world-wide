@@ -228,6 +228,7 @@ model University {
   applications            Application[]
   hasScholarship          Boolean                 @default(false)
   hasFullScholarship      Boolean                 @default(false)
+  canApplyWithoutLanguageCert Boolean             @default(false)
   additionalExpenses      Json                    @default("[]")
   scholarshipRequirements String[]                @default([])
   scholarships            Scholarship[]
@@ -248,6 +249,7 @@ model University {
   @@index([cityId])
   @@index([isMain])
   @@index([isRecommended])
+  @@index([canApplyWithoutLanguageCert])
   @@map("universities")
 }
 
@@ -323,6 +325,9 @@ model UniversityProgram {
   /// Hidden programs stay in the DB but are excluded from public listings.
   isActive           Boolean    @default(true)
   isFeatured         Boolean    @default(false)
+  /// Rolling admissions: applications are accepted year-round, outside fixed
+  /// intake deadlines.
+  hasRollingIntakes  Boolean    @default(false)
 
   studyLanguageId String?
   studyLanguage   StudyLanguage? @relation(fields: [studyLanguageId], references: [id])
