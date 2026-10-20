@@ -535,17 +535,36 @@ export class UsersService {
         throw new EntityNotFoundException('User', id);
       }
 
-      return await this.prisma.user.delete({
-        where: { id },
-        select: {
-          id: true,
-          email: true,
-          role: true,
-        },
+      // A partner owns an organization (created together with the account).
+      // It can go with its owner, unless other people still belong to it.
+      return await this.prisma.$transaction(async (tx) => {
+        const org = await tx.partnerOrganization.findUnique({
+          where: { ownerId: id },
+          select: { id: true, _count: { select: { members: true } } },
+        });
+        if (org) {
+          if (org._count.members > 0) {
+            throw new ConflictException(
+              `This partner owns an organization with ${org._count.members} member(s). Remove the members first.`,
+            );
+          }
+          await tx.partnerOrganization.delete({ where: { id: org.id } });
+        }
+        return tx.user.delete({
+          where: { id },
+          select: {
+            id: true,
+            email: true,
+            role: true,
+          },
+        });
       });
     } catch (error) {
       // If it's already our custom exception, just rethrow it
-      if (error instanceof EntityNotFoundException) {
+      if (
+        error instanceof EntityNotFoundException ||
+        error instanceof ConflictException
+      ) {
         throw error;
       }
       // Otherwise let the global exception filter handle it
