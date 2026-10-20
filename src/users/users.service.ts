@@ -1,4 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { toE164 } from '../catalog-events/catalog-snapshots';
+import { Role } from '../common/enum/roles.enum';
 import { CreateUserDto } from './dto/create-user.dto';
 import { CreateAdminUserDto } from './dto/create-admin-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -197,7 +199,9 @@ export class UsersService {
           } catch (reconnectError) {
             this.logger.error(
               'Failed to reconnect to database',
-              reconnectError instanceof Error ? reconnectError.stack : String(reconnectError),
+              reconnectError instanceof Error
+                ? reconnectError.stack
+                : String(reconnectError),
             );
           }
 
@@ -227,10 +231,24 @@ export class UsersService {
         );
       }
 
+      // Partners sign in to edu-crm with a code sent to their Telegram, so
+      // they need a phone number we can match to the bot.
+      const isPartner = createAdminUserDto.role === Role.PARTNER;
+      const partnerPhone = toE164(createAdminUserDto.profile?.phoneNumber);
+      if (isPartner && !partnerPhone) {
+        throw new BadRequestException(
+          'Partners need a phone number in international format, e.g. +998901234567',
+        );
+      }
+
       const hashedPassword = await bcrypt.hash(createAdminUserDto.password, 10);
 
       // Extract profile data if present
-      const { profile, ...userData } = createAdminUserDto;
+      const { profile: rawProfile, ...userData } = createAdminUserDto;
+      const profile =
+        rawProfile && partnerPhone
+          ? { ...rawProfile, phoneNumber: partnerPhone }
+          : rawProfile;
 
       const user = await this.prisma.user.create({
         data: {
@@ -255,6 +273,14 @@ export class UsersService {
         this.logger.verbose(
           `No profile data provided for admin user ${user.id}, skipping profile creation`,
         );
+      }
+
+      // The organization normally appears at the owner's first login; create
+      // it now so edu-crm can place the account right away.
+      if (isPartner) {
+        await this.prisma.partnerOrganization.create({
+          data: { ownerId: user.id },
+        });
       }
 
       return user;

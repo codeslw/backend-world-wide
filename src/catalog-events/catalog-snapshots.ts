@@ -166,7 +166,80 @@ export async function loadCatalogSnapshot(
         intakeIds: intakes.map((i) => i.intakeId),
       };
     }
+    case 'partner_org':
+      return db.partnerOrganization.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          ownerId: true,
+          name: true,
+          isActive: true,
+          phone: true,
+          email: true,
+          country: true,
+          city: true,
+          updatedAt: true,
+        },
+      });
+    case 'partner_account':
+      return loadPartnerAccount(db, id);
     default:
       return undefined;
   }
+}
+
+/**
+ * A partner login: a PARTNER user with the organization and role they act
+ * under. Owners have no partner_members row, they own the organization
+ * (which may not exist yet if they never logged in). No password data.
+ */
+async function loadPartnerAccount(
+  db: Prisma.TransactionClient,
+  userId: string,
+): Promise<Record<string, unknown> | null> {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      updatedAt: true,
+      profile: {
+        select: { firstName: true, lastName: true, phoneNumber: true },
+      },
+      partnerMembership: {
+        select: {
+          organizationId: true,
+          role: true,
+          permissions: { where: { granted: true }, select: { action: true } },
+        },
+      },
+      partnerOrganization: { select: { id: true } },
+    },
+  });
+  if (!user || user.role !== 'PARTNER') return null;
+
+  const member = user.partnerMembership;
+  const organizationId =
+    member?.organizationId ?? user.partnerOrganization?.id ?? null;
+  return {
+    id: user.id,
+    email: user.email,
+    phone: toE164(user.profile?.phoneNumber),
+    firstName: user.profile?.firstName ?? null,
+    lastName: user.profile?.lastName ?? null,
+    organizationId,
+    // Owners are the organization's creator; everyone else has a member row.
+    partnerRole: member?.role ?? 'OWNER',
+    // Owners and managers can do everything; permissions only limit members.
+    permissions: member ? member.permissions.map((p) => p.action) : [],
+    updatedAt: user.updatedAt,
+  };
+}
+
+/** "+998 90 123-45-67" -> "+998901234567"; null when it isn't a valid number. */
+export function toE164(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const phone = raw.replace(/[\s\-().]/g, '');
+  return /^\+[1-9][0-9]{7,14}$/.test(phone) ? phone : null;
 }

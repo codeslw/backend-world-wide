@@ -20,10 +20,41 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../db/prisma.service';
 import { loadCatalogSnapshot } from './catalog-snapshots';
 
-/** JetStream stream holding the latest state of every catalog entity. */
-export const CATALOG_STREAM = 'WW_CATALOG';
-/** Subjects are `ww.catalog.v1.<entity>.<id>`, one per entity. */
-export const CATALOG_SUBJECT_PREFIX = 'ww.catalog.v1';
+interface StreamDef {
+  name: string;
+  /** Subjects are `<prefix>.<entity>.<id>`, one per entity. */
+  prefix: string;
+  /** Contract version published in every event's `schema` field. */
+  schema: string;
+  entities: ReadonlySet<string>;
+}
+
+/** Latest state of every catalog entity (universities, programs, ...). */
+export const CATALOG_STREAM: StreamDef = {
+  name: 'WW_CATALOG',
+  prefix: 'ww.catalog.v1',
+  schema: 'ww.catalog.v1',
+  entities: new Set([
+    'country',
+    'city',
+    'university',
+    'faculty',
+    'department',
+    'study_language',
+    'intake',
+    'program',
+  ]),
+};
+
+/** Latest state of every partner organization and partner login. */
+export const PARTNERS_STREAM: StreamDef = {
+  name: 'WW_PARTNERS',
+  prefix: 'ww.partner.v1',
+  schema: 'ww.partner.v1',
+  entities: new Set(['partner_org', 'partner_account']),
+};
+
+const STREAMS = [CATALOG_STREAM, PARTNERS_STREAM];
 
 const BATCH_SIZE = 200;
 const POLL_INTERVAL_MS = 1000;
@@ -88,9 +119,11 @@ export class CatalogEventsRelay
           name: 'edu-world-wide',
           maxReconnectAttempts: -1,
         });
-        await this.ensureStream();
+        for (const stream of STREAMS) await this.ensureStream(stream);
         this.js = this.nc.jetstream();
-        this.logger.log(`Publishing catalog events to ${CATALOG_STREAM}`);
+        this.logger.log(
+          `Publishing events to ${STREAMS.map((s) => s.name).join(', ')}`,
+        );
         this.schedule();
         return;
       } catch (error) {
@@ -101,11 +134,11 @@ export class CatalogEventsRelay
     }
   }
 
-  private async ensureStream() {
+  private async ensureStream(stream: StreamDef) {
     const jsm = await this.nc!.jetstreamManager();
     const config = {
-      name: CATALOG_STREAM,
-      subjects: [`${CATALOG_SUBJECT_PREFIX}.>`],
+      name: stream.name,
+      subjects: [`${stream.prefix}.>`],
       storage: StorageType.File,
       retention: RetentionPolicy.Limits,
       discard: DiscardPolicy.Old,
@@ -116,7 +149,7 @@ export class CatalogEventsRelay
       await jsm.streams.add(config);
     } catch {
       // Already exists with a different config: bring it up to date.
-      await jsm.streams.update(CATALOG_STREAM, config);
+      await jsm.streams.update(stream.name, config);
     }
   }
 
@@ -189,13 +222,16 @@ export class CatalogEventsRelay
       );
       return;
     }
-    const data = await loadCatalogSnapshot(tx, entity, entityId);
-    if (data === undefined) {
+    const stream = STREAMS.find((s) => s.entities.has(entity));
+    const data = stream
+      ? await loadCatalogSnapshot(tx, entity, entityId)
+      : undefined;
+    if (!stream || data === undefined) {
       this.logger.error(`Skipping unknown catalog entity "${entity}"`);
       return;
     }
     const event = {
-      schema: 'ww.catalog.v1',
+      schema: stream.schema,
       entity,
       id: entityId,
       deleted: data === null,
@@ -204,7 +240,7 @@ export class CatalogEventsRelay
       data,
     };
     await this.js!.publish(
-      `${CATALOG_SUBJECT_PREFIX}.${entity}.${entityId}`,
+      `${stream.prefix}.${entity}.${entityId}`,
       this.codec.encode(event),
       { msgID: `${entity}:${entityId}:${outboxId}` },
     );

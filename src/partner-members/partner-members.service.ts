@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { toE164 } from '../catalog-events/catalog-snapshots';
 import { PrismaService } from '../db/prisma.service';
 import { CreatePartnerMemberDto } from './dto/create-partner-member.dto';
 import { SetPermissionsDto } from './dto/set-permissions.dto';
@@ -59,6 +60,11 @@ export class PartnerMembersService {
       throw new ConflictException(`Email ${dto.email} is already in use`);
     }
 
+    const phoneNumber = toE164(dto.phoneNumber);
+    if (dto.phoneNumber && !phoneNumber) {
+      throw new BadRequestException('Phone number must be in international format, e.g. +998901234567');
+    }
+
     const hashedPassword = await bcrypt.hash(dto.temporaryPassword, 10);
 
     const user = await this.prisma.user.create({
@@ -71,6 +77,7 @@ export class PartnerMembersService {
             firstName: dto.firstName,
             lastName: dto.lastName,
             email: dto.email,
+            ...(phoneNumber && { phoneNumber }),
           },
         },
       },
