@@ -51,6 +51,7 @@ import { RankingOrganizationsModule } from './ranking-organizations/ranking-orga
 import { UniversityAccreditationsModule } from './university-accreditations/university-accreditations.module';
 import { MailModule } from './mail/mail.module';
 import { OurServicesModule } from './our-services/our-services.module';
+import { CatalogEventsModule } from './catalog-events/catalog-events.module';
 
 @Module({
   imports: [
@@ -104,6 +105,7 @@ import { OurServicesModule } from './our-services/our-services.module';
     RankingOrganizationsModule,
     UniversityAccreditationsModule,
     OurServicesModule,
+    CatalogEventsModule,
     DbModule,
   ],
 
