@@ -52,7 +52,6 @@ import { UniversityAccreditationsModule } from './university-accreditations/univ
 import { MailModule } from './mail/mail.module';
 import { OurServicesModule } from './our-services/our-services.module';
 import { CatalogEventsModule } from './catalog-events/catalog-events.module';
-import { CrmEventsModule } from './crm-events/crm-events.module';
 
 @Module({
   imports: [
@@ -107,7 +106,6 @@ import { CrmEventsModule } from './crm-events/crm-events.module';
     UniversityAccreditationsModule,
     OurServicesModule,
     CatalogEventsModule,
-    CrmEventsModule,
     DbModule,
   ],
 

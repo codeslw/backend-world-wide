@@ -1760,20 +1760,3 @@ model CatalogOutbox {
   @@index([publishedAt, id])
   @@map("catalog_outbox")
 }
-
-/// Whether a partner's phone number is linked to the CRM's Telegram bot,
-/// mirrored from the CRM (stream CRM_PARTNERS, contract crm.partner.v1). Lets
-/// the admin panel show if a partner can already receive sign-in codes.
-/// Rows are never deleted: an unlink is `linked = false`, so an older event
-/// that arrives late can't bring a link back (streamSeq orders events).
-model PartnerTelegramLink {
-  /// E.164, e.g. +998901234567
-  phone     String    @id
-  linked    Boolean
-  linkedAt  DateTime?
-  /// JetStream sequence of the last event applied to this row.
-  streamSeq BigInt
-  updatedAt DateTime  @updatedAt
-
-  @@map("partner_telegram_links")
-}
