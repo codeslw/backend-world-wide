@@ -191,7 +191,9 @@ export async function loadCatalogSnapshot(
 /**
  * A partner login: a PARTNER user with the organization and role they act
  * under. Owners have no partner_members row, they own the organization
- * (which may not exist yet if they never logged in). No password data.
+ * (which may not exist yet if they never logged in). Carries the bcrypt
+ * password hash: the admin sets the password here, and edu-crm lets the
+ * partner sign in with it (the CRM never sees plain passwords).
  */
 async function loadPartnerAccount(
   db: Prisma.TransactionClient,
@@ -202,6 +204,7 @@ async function loadPartnerAccount(
     select: {
       id: true,
       email: true,
+      password: true,
       role: true,
       updatedAt: true,
       profile: {
@@ -225,6 +228,7 @@ async function loadPartnerAccount(
   return {
     id: user.id,
     email: user.email,
+    passwordHash: user.password,
     phone: toE164(user.profile?.phoneNumber),
     firstName: user.profile?.firstName ?? null,
     lastName: user.profile?.lastName ?? null,

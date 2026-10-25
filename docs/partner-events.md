@@ -27,6 +27,7 @@ One per `PARTNER` user, keyed by the **user** id:
 {
   "id": "user uuid",
   "email": "owner@acme.test",
+  "passwordHash": "$2b$10$… (bcrypt)",
   "phone": "+998901112233",
   "firstName": "Olim",
   "lastName": "Karimov",
@@ -41,8 +42,12 @@ One per `PARTNER` user, keyed by the **user** id:
 - `permissions` lists granted actions for members; owners and managers get `[]` because
   they can do everything (same rule as `PartnerPermissionsGuard`).
 - `phone` is normalized to E.164 from `profiles.phoneNumber`, or `null` when it isn't a
-  valid number. The CRM cannot activate an account without one.
-- **No password data is ever published.**
+  valid number. The CRM cannot sign an account in without one.
+- `passwordHash` is the bcrypt hash of the password the admin set. The CRM signs the
+  partner in with it (phone + that password) and asks them to change it at first login.
+  A new hash (admin reset the password) replaces the CRM password; unchanged hashes
+  never overwrite a password the partner chose in the CRM. Plain passwords are never
+  published. Treat the `WW_PARTNERS` stream as secret: restrict who can read it.
 - A deleted user, or one who stops being a `PARTNER`, is published as a tombstone
   (`deleted: true`); the CRM deactivates the login.
 
