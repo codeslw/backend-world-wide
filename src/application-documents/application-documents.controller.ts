@@ -22,6 +22,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { ServiceActorGuard } from '../auth/guards/service-actor.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../common/enum/roles.enum';
 import {
@@ -41,7 +42,8 @@ interface RequestWithUser extends Request {
 
 @ApiTags('application-documents')
 @Controller('application-documents')
-@UseGuards(JwtAuthGuard, RolesGuard)
+// ServiceActorGuard: edu-crm reads and uploads documents for its partners.
+@UseGuards(ServiceActorGuard, JwtAuthGuard, RolesGuard)
 @ApiBearerAuth('access-token')
 export class ApplicationDocumentsController {
   constructor(private readonly service: ApplicationDocumentsService) {}
@@ -115,8 +117,10 @@ export class ApplicationDocumentsController {
   }
 
   @Patch(':id/status')
-  @Roles(Role.PARTNER, Role.ADMIN)
-  @ApiOperation({ summary: 'Review (approve/reject) an application document' })
+  @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary: 'Review (approve/reject) an application document (Admin only)',
+  })
   @ApiResponse({ status: 200, type: ApplicationDocumentResponseDto })
   updateStatus(
     @Req() req: RequestWithUser,

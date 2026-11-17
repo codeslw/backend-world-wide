@@ -1,5 +1,5 @@
-import { IsString, IsNotEmpty } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsInt, IsOptional, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateStudentDocumentDto {
   @ApiProperty()
@@ -21,4 +21,15 @@ export class CreateStudentDocumentDto {
   @IsString()
   @IsNotEmpty()
   url: string;
+
+  @ApiPropertyOptional({ description: 'File size in bytes' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  fileSize?: number;
+
+  @ApiPropertyOptional({ description: 'MIME type of the file' })
+  @IsOptional()
+  @IsString()
+  mimeType?: string;
 }

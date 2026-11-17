@@ -11,6 +11,48 @@ import {
   InvalidDataException,
 } from '../common/exceptions/app.exceptions';
 import { PartnerOrganizationsService } from '../partner-organizations/partner-organizations.service';
+import { normalizeStage } from '../crm-events/process-stage';
+
+const FINAL_STATUSES = new Set<PartnerApplicationStatus>([
+  PartnerApplicationStatus.ENROLLED,
+  PartnerApplicationStatus.REJECTED,
+  PartnerApplicationStatus.WITHDRAWN,
+]);
+
+/**
+ * Why a status change is not allowed, or null when it is. Same rule as
+ * edu-crm's CheckTransition: final statuses stay final, nothing goes back to
+ * draft, and a draft can only be submitted or withdrawn.
+ */
+export function checkStatusTransition(
+  from: PartnerApplicationStatus,
+  to: PartnerApplicationStatus,
+): string | null {
+  if (from === to) return `The application is already ${to}`;
+  if (FINAL_STATUSES.has(from)) {
+    return `The application is ${from}, a final status`;
+  }
+  if (to === PartnerApplicationStatus.DRAFT) {
+    return 'An application cannot go back to DRAFT';
+  }
+  if (
+    from === PartnerApplicationStatus.DRAFT &&
+    to !== PartnerApplicationStatus.SUBMITTED &&
+    to !== PartnerApplicationStatus.WITHDRAWN
+  ) {
+    return 'A draft can only be submitted or withdrawn';
+  }
+  return null;
+}
+
+/** The statuses an admin can move an application to from `from`. */
+export function allowedNextStatuses(
+  from: PartnerApplicationStatus,
+): PartnerApplicationStatus[] {
+  return Object.values(PartnerApplicationStatus).filter(
+    (to) => checkStatusTransition(from, to) === null,
+  );
+}
 
 @Injectable()
 export class PartnerApplicationsService {
@@ -170,7 +212,9 @@ export class PartnerApplicationsService {
           ? JSON.stringify(dto.backupPrograms)
           : '[]',
         status: PartnerApplicationStatus.SUBMITTED,
+        stage: normalizeStage(PartnerApplicationStatus.SUBMITTED, null),
         submittedAt: new Date(),
+        origin: opts.createdByAdminId ? 'ADMIN' : 'PORTAL',
         ...(opts.createdByAdminId && {
           createdByAdmin: { connect: { id: opts.createdByAdminId } },
         }),
@@ -224,11 +268,16 @@ export class PartnerApplicationsService {
     status?: PartnerApplicationStatus;
     search?: string;
     partnerIds?: string[];
+    origin?: string;
+    stage?: number;
   }) {
-    const { skip = 0, take = 50, status, search, partnerIds } = options || {};
+    const { skip = 0, take = 50, status, search, partnerIds, origin, stage } =
+      options || {};
 
     const where: any = {};
     if (status) where.status = status;
+    if (origin) where.origin = origin;
+    if (stage) where.stage = stage;
     if (partnerIds) where.partnerId = { in: partnerIds };
     if (search) {
       where.OR = [
@@ -244,6 +293,7 @@ export class PartnerApplicationsService {
         },
         { university: { name: { contains: search, mode: 'insensitive' } } },
         { program: { title: { contains: search, mode: 'insensitive' } } },
+        { crmAssigneeName: { contains: search, mode: 'insensitive' } },
         // Partner organization name — resolved via either the direct
         // partnerOrganization relation or the partnerMembership's organization.
         {
@@ -397,7 +447,13 @@ export class PartnerApplicationsService {
       throw new EntityNotFoundException('PartnerApplication', id);
     }
 
-    if (dto.status === PartnerApplicationStatus.REJECTED && !dto.reason) {
+    const transitionError = checkStatusTransition(
+      application.status,
+      dto.status,
+    );
+    if (transitionError) throw new InvalidDataException(transitionError);
+
+    if (dto.status === PartnerApplicationStatus.REJECTED && !dto.reason?.trim()) {
       throw new InvalidDataException(
         'Rejection reason is required when status is REJECTED',
       );
@@ -405,7 +461,16 @@ export class PartnerApplicationsService {
 
     const data: any = {
       status: dto.status,
+      // Keep the CRM's process stage in the range the new status allows, the
+      // same rule edu-crm applies (see docs/student-events.md).
+      stage: normalizeStage(dto.status, application.stage),
     };
+    if (
+      dto.status === PartnerApplicationStatus.SUBMITTED &&
+      !application.submittedAt
+    ) {
+      data.submittedAt = new Date();
+    }
 
     if (dto.reason) data.rejectionReason = dto.reason;
     if (dto.adminNotes) data.adminNotes = dto.adminNotes;
@@ -480,6 +545,8 @@ export class PartnerApplicationsService {
       intakeSeason: application.intakeSeason,
       intakeYear: application.intakeYear,
       status: application.status,
+      stage: normalizeStage(application.status, application.stage),
+      allowedStatuses: allowedNextStatuses(application.status),
       rejectionReason: application.rejectionReason,
       submittedAt: application.submittedAt,
       reviewedAt: application.reviewedAt,
@@ -490,6 +557,9 @@ export class PartnerApplicationsService {
       adminNotes: application.adminNotes,
       assignedTo: application.assignedTo,
       createdByAdminId: application.createdByAdminId ?? null,
+      origin: application.origin,
+      crmSyncedAt: application.crmSyncedAt ?? null,
+      crmAssigneeName: application.crmAssigneeName ?? null,
       isAdminCreated: !!application.createdByAdminId,
       backupPrograms:
         typeof application.backupPrograms === 'string'

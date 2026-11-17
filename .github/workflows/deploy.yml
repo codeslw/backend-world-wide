@@ -100,9 +100,15 @@ jobs:
             SMTP_USER=${{ secrets.SMTP_USER }}
             SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
             SMTP_FROM=${{ secrets.SMTP_FROM }}
+            NATS_URL=${{ secrets.NATS_URL }}
+            CRM_SERVICE_TOKEN=${{ secrets.CRM_SERVICE_TOKEN }}
+            COMPOSE_FILE=docker-compose.yml:docker-compose.crm.yml
             EOF
             echo ".env file created"
             
+            # Shared with edu-crm (NATS events, document API); see docker-compose.crm.yml.
+            docker network inspect edu-bridge >/dev/null 2>&1 || docker network create edu-bridge
+
             # Pull pre-built image from Docker Hub
             echo "=== Pulling Pre-built Image ==="
             docker pull ${{ secrets.DOCKER_USERNAME }}/backend-world-wide:latest

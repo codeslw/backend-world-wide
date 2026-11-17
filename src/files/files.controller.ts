@@ -34,6 +34,11 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../common/enum/roles.enum';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { ServiceActorGuard } from '../auth/guards/service-actor.guard';
+
+/** MIME types `POST /files/upload` accepts: images, PDF and office documents. */
+export const UPLOAD_MIME_TYPES =
+  /^(image\/(jpe?g|png|gif)|application\/(pdf|msword|vnd\.ms-excel|vnd\.ms-powerpoint|vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation)))$/i;
 
 @ApiTags('files')
 @Controller('files')
@@ -41,7 +46,8 @@ export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
   @Post('upload')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  // ServiceActorGuard: edu-crm uploads application documents for its partners.
+  @UseGuards(ServiceActorGuard, JwtAuthGuard, RolesGuard)
   @Roles(Role.CLIENT, Role.PARTNER, Role.ADMIN)
   @ApiBearerAuth('access-token')
   @ApiConsumes('multipart/form-data')
@@ -68,9 +74,9 @@ export class FilesController {
       new ParseFilePipe({
         validators: [
           new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB limit
-          new FileTypeValidator({
-            fileType: /(jpg|jpeg|png|gif|pdf|doc|docx|xls|xlsx|ppt|pptx)$/i,
-          }),
+          // Matched against the MIME type: office documents are
+          // application/msword, application/vnd.ms-excel, …/vnd.openxmlformats-…
+          new FileTypeValidator({ fileType: UPLOAD_MIME_TYPES }),
         ],
       }),
     )

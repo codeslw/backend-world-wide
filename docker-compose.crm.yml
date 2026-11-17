@@ -1,0 +1,15 @@
+# Production overlay: joins the API to the edu-bridge network it shares with
+# edu-crm, so it reaches the CRM's NATS (nats://edu-crm-nats:4222) and the CRM
+# reaches this API (http://world-wide-api:3000/api/v1). The deploy workflow
+# creates the network and selects this file through COMPOSE_FILE in .env.
+# Not used in local development.
+services:
+  api:
+    networks:
+      - app-network
+      - edu-bridge
+
+networks:
+  edu-bridge:
+    external: true
+    name: edu-bridge

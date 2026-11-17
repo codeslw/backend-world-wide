@@ -54,6 +54,31 @@ export class PartnerApplicationResponseDto {
   @ApiProperty({ enum: PartnerApplicationStatus })
   status: PartnerApplicationStatus;
 
+  @ApiProperty({
+    description:
+      'Step of the admission process, 1 Консультация to 7 Готово (always within the range the status allows)',
+  })
+  stage: number;
+
+  @ApiProperty({
+    description: 'Statuses an admin can move the application to next',
+    enum: PartnerApplicationStatus,
+    isArray: true,
+  })
+  allowedStatuses: PartnerApplicationStatus[];
+
+  @ApiProperty({
+    description: 'Where it was created: PORTAL, ADMIN or CRM (edu-crm)',
+    enum: ['PORTAL', 'ADMIN', 'CRM'],
+  })
+  origin: string;
+
+  @ApiPropertyOptional({ description: 'When edu-crm last sent it', nullable: true })
+  crmSyncedAt: Date | null;
+
+  @ApiPropertyOptional({ description: 'Its manager in edu-crm', nullable: true })
+  crmAssigneeName: string | null;
+
   @ApiPropertyOptional()
   rejectionReason?: string;
 

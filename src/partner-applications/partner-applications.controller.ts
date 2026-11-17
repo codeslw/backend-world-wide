@@ -177,12 +177,26 @@ export class PartnerApplicationsController {
     type: String,
     description: 'Scope to a single partner organization',
   })
+  @ApiQuery({
+    name: 'origin',
+    required: false,
+    enum: ['PORTAL', 'ADMIN', 'CRM'],
+    description: 'Where the application was created',
+  })
+  @ApiQuery({
+    name: 'stage',
+    required: false,
+    type: Number,
+    description: 'edu-crm process stage, 1-7',
+  })
   async findAll(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('status') status?: PartnerApplicationStatus,
     @Query('search') search?: string,
     @Query('organizationId') organizationId?: string,
+    @Query('origin') origin?: string,
+    @Query('stage') stage?: string,
   ) {
     const skip = ((page || 1) - 1) * (limit || 50);
     const partnerIds =
@@ -198,6 +212,8 @@ export class PartnerApplicationsController {
           : status,
       search: search === 'undefined' || search === '' ? undefined : search,
       partnerIds,
+      origin: ['PORTAL', 'ADMIN', 'CRM'].includes(origin ?? '') ? origin : undefined,
+      stage: /^[1-7]$/.test(stage ?? '') ? Number(stage) : undefined,
     });
   }
 

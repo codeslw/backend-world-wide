@@ -38,6 +38,8 @@ services:
       - SMTP_FROM=${SMTP_FROM}
       # NATS JetStream for catalog events to edu-crm. Unset = events stay queued.
       - NATS_URL=${NATS_URL}
+      # edu-crm service token (documents); unset disables it.
+      - CRM_SERVICE_TOKEN=${CRM_SERVICE_TOKEN:-}
     networks:
       - app-network
     depends_on:

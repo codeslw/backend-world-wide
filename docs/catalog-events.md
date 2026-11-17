@@ -56,6 +56,9 @@ in `src/catalog-events/catalog-snapshots.ts`.
 - If the stream is ever deleted and recreated, sequences restart at 1.
   Consumers must detect this (local versions ahead of the stream) and reset.
 
+Partner students and applications use the same outbox and relay but are synced both
+ways; see `student-events.md`.
+
 ## Compatibility
 
 This is a public contract. Adding fields is fine. Renaming or removing a field,

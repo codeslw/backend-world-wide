@@ -54,7 +54,15 @@ export const PARTNERS_STREAM: StreamDef = {
   entities: new Set(['partner_org', 'partner_account']),
 };
 
-const STREAMS = [CATALOG_STREAM, PARTNERS_STREAM];
+/** Latest state of every partner student and application (synced both ways with edu-crm). */
+export const STUDENTS_STREAM: StreamDef = {
+  name: 'WW_STUDENTS',
+  prefix: 'ww.student.v1',
+  schema: 'ww.student.v1',
+  entities: new Set(['partner_student', 'partner_application']),
+};
+
+const STREAMS = [CATALOG_STREAM, PARTNERS_STREAM, STUDENTS_STREAM];
 
 const BATCH_SIZE = 200;
 const POLL_INTERVAL_MS = 1000;

@@ -18,6 +18,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { ServiceActorGuard } from '../auth/guards/service-actor.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../common/enum/roles.enum';
 import { StudentDocumentsService } from './student-documents.service';
@@ -27,7 +28,8 @@ import { CreateStudentDocumentDto } from './dto/create-student-document.dto';
 
 @ApiTags('student-documents')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+// ServiceActorGuard: edu-crm shows and uploads profile documents for its partners.
+@UseGuards(ServiceActorGuard, JwtAuthGuard, RolesGuard)
 @Controller('student-documents')
 export class StudentDocumentsController {
   constructor(
@@ -51,7 +53,11 @@ export class StudentDocumentsController {
     @Body() dto: CreateStudentDocumentDto,
   ): Promise<any> {
     const partnerIds = await this.visiblePartnerIds(req);
-    const doc = await this.service.create(partnerIds, dto);
+    const doc = await this.service.create(
+      partnerIds,
+      { userId: req.user.userId, role: req.user.role },
+      dto,
+    );
     await this.audit.log({
       action: 'DOCUMENT_UPLOADED',
       actorId: req.user.userId,

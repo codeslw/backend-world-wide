@@ -20,6 +20,9 @@ import {
   Role,
 } from '@prisma/client';
 
+/** Kinds only the admin side uploads. */
+const ADMIN_ONLY_KINDS = new Set<string>(['OFFER_LETTER', 'ADMIN_DOC']);
+
 export type ApplicationRef =
   | { type: 'partner'; id: string }
   | { type: 'user'; id: string };
@@ -167,6 +170,49 @@ export class ApplicationDocumentsService {
     const ref = this.refFromDto(dto);
     await this.assertAccess(requester, ref);
 
+    const isAdmin = requester.role === Role.ADMIN;
+    // Only reviewers decide a document's status, and offer letters and admin
+    // documents come from the admin side only.
+    if (!isAdmin && dto.status && dto.status !== ApplicationDocumentStatus.PENDING) {
+      throw new ForbiddenActionException(
+        'Only an admin can set the review status of a document',
+      );
+    }
+    if (!isAdmin && dto.kind && ADMIN_ONLY_KINDS.has(dto.kind)) {
+      throw new ForbiddenActionException(
+        `Only an admin can upload a ${dto.kind} document`,
+      );
+    }
+    if (dto.documentTypeId) {
+      const type = await this.prisma.applicationDocumentType.findUnique({
+        where: { id: dto.documentTypeId },
+        select: { id: true, name: true, fileTypes: true, maxSizeMb: true },
+      });
+      if (!type) {
+        throw new InvalidDataException(
+          `Document type ${dto.documentTypeId} does not exist`,
+        );
+      }
+      // The requirement's own limits; admins may attach anything.
+      if (!isAdmin) {
+        if (dto.fileSize && type.maxSizeMb > 0 && dto.fileSize > type.maxSizeMb * 1024 * 1024) {
+          throw new InvalidDataException(
+            `"${type.name}" accepts files up to ${type.maxSizeMb} MB`,
+          );
+        }
+        if (!matchesFileTypes(type.fileTypes, dto.name, dto.mimeType)) {
+          throw new InvalidDataException(
+            `"${type.name}" accepts ${type.fileTypes.join(', ')} files`,
+          );
+        }
+      }
+    }
+    const name = dto.name?.trim();
+    if (!name) throw new InvalidDataException('Document name is required');
+    if (!dto.fileUrl?.trim()) {
+      throw new InvalidDataException('fileUrl is required');
+    }
+
     // Persist the storage key (not a resolved URL), consistent with chat files.
     const fileKey = this.files.toStorageKey(dto.fileUrl);
 
@@ -178,12 +224,14 @@ export class ApplicationDocumentsService {
         ...(dto.documentTypeId && {
           documentType: { connect: { id: dto.documentTypeId } },
         }),
-        name: dto.name,
+        name,
         fileUrl: fileKey,
         fileSize: dto.fileSize,
         mimeType: dto.mimeType,
-        kind: dto.kind ?? 'OTHER',
-        status: dto.status ?? ApplicationDocumentStatus.PENDING,
+        kind: dto.kind ?? (dto.documentTypeId ? 'REQUIREMENT' : 'OTHER'),
+        status: isAdmin
+          ? (dto.status ?? ApplicationDocumentStatus.PENDING)
+          : ApplicationDocumentStatus.PENDING,
         comment: dto.comment ?? null,
         uploadedBy: { connect: { id: requester.userId } },
         uploadedByRole: requester.role,
@@ -221,6 +269,9 @@ export class ApplicationDocumentsService {
     });
     if (!existing) throw new EntityNotFoundException('ApplicationDocument', id);
 
+    if (requester.role !== Role.ADMIN) {
+      throw new ForbiddenActionException('Only an admin can review documents');
+    }
     const ref: ApplicationRef = existing.partnerApplicationId
       ? { type: 'partner', id: existing.partnerApplicationId }
       : { type: 'user', id: existing.applicationId! };
@@ -242,6 +293,8 @@ export class ApplicationDocumentsService {
         fileUrl: true,
         partnerApplicationId: true,
         applicationId: true,
+        status: true,
+        uploadedByRole: true,
       },
     });
     if (!existing) throw new EntityNotFoundException('ApplicationDocument', id);
@@ -250,6 +303,21 @@ export class ApplicationDocumentsService {
       ? { type: 'partner', id: existing.partnerApplicationId }
       : { type: 'user', id: existing.applicationId! };
     await this.assertAccess(requester, ref);
+
+    // Partners and students can take back their own uploads until they are
+    // approved; approved documents and what the admin side sent stay.
+    if (requester.role !== Role.ADMIN) {
+      if (existing.uploadedByRole === Role.ADMIN) {
+        throw new ForbiddenActionException(
+          'Documents sent by the admin team cannot be deleted',
+        );
+      }
+      if (existing.status === ApplicationDocumentStatus.APPROVED) {
+        throw new ForbiddenActionException(
+          'An approved document cannot be deleted',
+        );
+      }
+    }
 
     await this.prisma.applicationDocument.delete({ where: { id } });
 
@@ -396,4 +464,40 @@ export class ApplicationDocumentsService {
       },
     });
   }
+}
+
+const EXTENSION_ALIASES: Record<string, string[]> = {
+  jpg: ['jpg', 'jpeg'],
+  jpeg: ['jpg', 'jpeg'],
+  doc: ['doc', 'msword'],
+  docx: ['docx', 'wordprocessingml'],
+  xls: ['xls', 'ms-excel'],
+  xlsx: ['xlsx', 'spreadsheetml'],
+};
+
+/**
+ * Whether a file fits a requirement's accepted types (`["pdf", "jpg"]`), judged
+ * by its name's extension or, failing that, its MIME type. A file whose type
+ * can't be told is let through; the upload endpoint already limits types.
+ */
+export function matchesFileTypes(
+  fileTypes: string[] | null | undefined,
+  name: string | null | undefined,
+  mimeType: string | null | undefined,
+): boolean {
+  const accepted = (fileTypes ?? [])
+    .map((t) => t.trim().toLowerCase().replace(/^\./, ''))
+    .filter(Boolean);
+  if (!accepted.length) return true;
+  const ext = /\.([a-z0-9]+)$/i.exec(name ?? '')?.[1]?.toLowerCase();
+  const mime = (mimeType ?? '').toLowerCase();
+  if (!ext && !mime) return true;
+  return accepted.some((t) => {
+    if (t.includes('/')) {
+      return t.endsWith('/*') ? mime.startsWith(t.slice(0, -1)) : mime === t;
+    }
+    const names = EXTENSION_ALIASES[t] ?? [t];
+    if (ext) return names.includes(ext);
+    return names.some((n) => mime.includes(n));
+  });
 }

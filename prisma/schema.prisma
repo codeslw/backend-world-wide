@@ -27,6 +27,7 @@ model User {
   partnerMembership   PartnerMember?       @relation("MemberOf")
   auditLogs           PartnerAuditLog[]    @relation("AuditActor")
   uploadedDocuments   ApplicationDocument[] @relation("UploadedDocuments")
+  uploadedStudentDocuments StudentDocument[] @relation("UploadedStudentDocuments")
   adminCreatedApplications PartnerApplication[] @relation("AdminCreatedApplications")
 
   @@map("users")
@@ -1273,6 +1274,9 @@ model PartnerApplication {
   intakeYear       Int
 
   status           PartnerApplicationStatus @default(DRAFT)
+  /// Step of the admission process, 1 (Консультация) to 7 (Готово); see src/crm-events/process-stage.ts.
+  /// Set by edu-crm. NULL until then: the status implies the stage.
+  stage            Int?
   rejectionReason  String?
   submittedAt      DateTime?
   reviewedAt       DateTime?
@@ -1302,12 +1306,21 @@ model PartnerApplication {
   // admin-sent files, student records attached to this application).
   applicationDocuments ApplicationDocument[]
 
+  /// Where the application was created: PORTAL, ADMIN or CRM (edu-crm).
+  origin           String    @default("PORTAL")
+  /// When edu-crm last sent this application (NULL: never).
+  crmSyncedAt      DateTime?
+  /// The application's manager in edu-crm.
+  crmAssigneeName  String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([partnerId])
   @@index([partnerStudentId])
   @@index([status])
+  @@index([origin])
+  @@index([stage])
   @@index([universityId])
   @@index([programId])
   @@index([createdByAdminId])
@@ -1408,6 +1421,13 @@ model PartnerStudent {
   howHeard             String?
   additionalNotes      String?
 
+  /// Where the student was created: PORTAL, ADMIN or CRM (edu-crm).
+  origin               String        @default("PORTAL")
+  /// When edu-crm last sent this student (NULL: never).
+  crmSyncedAt          DateTime?
+  /// The student's manager in edu-crm.
+  crmAssigneeName      String?
+
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
 
@@ -1415,6 +1435,7 @@ model PartnerStudent {
   studentDocuments     StudentDocument[]
 
   @@index([partnerId])
+  @@index([origin])
   @@map("partner_students")
 }
 
@@ -1425,6 +1446,11 @@ model StudentDocument {
   type      String
   name      String
   url       String
+  fileSize       Int?
+  mimeType       String?
+  uploadedById   String?
+  uploadedBy     User?          @relation("UploadedStudentDocuments", fields: [uploadedById], references: [id], onDelete: SetNull)
+  uploadedByRole Role?
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 

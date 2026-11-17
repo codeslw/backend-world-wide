@@ -156,7 +156,15 @@ export class PartnerStudentsService {
           select: { partnerApplications: true, studentDocuments: true },
         },
         partnerApplications: {
-          select: { id: true, status: true, createdAt: true },
+          select: {
+            id: true,
+            status: true,
+            stage: true,
+            origin: true,
+            createdAt: true,
+            university: { select: { name: true } },
+            program: { select: { title: true } },
+          },
           orderBy: { createdAt: 'desc' },
         },
         partner: {
