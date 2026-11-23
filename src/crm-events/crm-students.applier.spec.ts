@@ -63,3 +63,18 @@ describe('CrmStudentsApplier tracking', () => {
     expect(data).toMatchObject({ origin: 'CRM', crmAssigneeName: 'Dilnoza K.', firstName: 'Ali' });
   });
 });
+
+describe('correctedOrigin', () => {
+  const { correctedOrigin } = jest.requireActual('./crm-students.applier');
+
+  it('relabels a CRM-labelled record the CRM received from world-wide', () => {
+    expect(correctedOrigin({ createdIn: 'worldwide' }, 'CRM', null)).toEqual({ origin: 'PORTAL' });
+    expect(correctedOrigin({ createdIn: 'worldwide' }, 'CRM', 'admin-1')).toEqual({ origin: 'ADMIN' });
+  });
+
+  it('keeps records the CRM created, and older events without createdIn', () => {
+    expect(correctedOrigin({ createdIn: 'crm' }, 'CRM', null)).toEqual({});
+    expect(correctedOrigin({}, 'CRM', null)).toEqual({});
+    expect(correctedOrigin({ createdIn: 'worldwide' }, 'PORTAL', null)).toEqual({});
+  });
+});

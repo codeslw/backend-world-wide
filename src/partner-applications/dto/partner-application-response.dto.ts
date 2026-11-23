@@ -15,6 +15,9 @@ export class PartnerApplicationResponseDto {
   @ApiPropertyOptional({ description: 'Partner organization (agency) name' })
   partnerOrganizationName?: string | null;
 
+  @ApiPropertyOptional({ description: "Email of the partner account that owns the application" })
+  partnerEmail?: string | null;
+
   @ApiProperty({ description: 'Partner student ID' })
   partnerStudentId: string;
 

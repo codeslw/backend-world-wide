@@ -294,6 +294,7 @@ export class PartnerApplicationsService {
         { university: { name: { contains: search, mode: 'insensitive' } } },
         { program: { title: { contains: search, mode: 'insensitive' } } },
         { crmAssigneeName: { contains: search, mode: 'insensitive' } },
+        { partner: { email: { contains: search, mode: 'insensitive' } } },
         // Partner organization name — resolved via either the direct
         // partnerOrganization relation or the partnerMembership's organization.
         {
@@ -529,7 +530,9 @@ export class PartnerApplicationsService {
       id: application.id,
       partnerId: application.partnerId,
       partnerOrganizationId: org?.id ?? null,
-      partnerOrganizationName: org?.name ?? null,
+      // An organization may have no name yet: null, so the admin panel shows the partner's email instead.
+      partnerOrganizationName: org?.name?.trim() || null,
+      partnerEmail: application.partner?.email ?? null,
       partnerStudentId: application.partnerStudentId,
       partnerStudent: application.partnerStudent,
       universityId: application.universityId,

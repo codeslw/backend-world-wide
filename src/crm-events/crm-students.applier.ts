@@ -95,10 +95,13 @@ export class CrmStudentsApplier {
     };
     const existing = await tx.partnerStudent.findUnique({
       where: { id },
-      select: { id: true },
+      select: { id: true, origin: true },
     });
     if (existing) {
-      await tx.partnerStudent.update({ where: { id }, data: fields });
+      await tx.partnerStudent.update({
+        where: { id },
+        data: { ...fields, ...correctedOrigin(data, existing.origin, null) },
+      });
       return true;
     }
     const partnerId = await this.resolvePartnerId(
@@ -178,10 +181,16 @@ export class CrmStudentsApplier {
 
     const existing = await tx.partnerApplication.findUnique({
       where: { id },
-      select: { id: true },
+      select: { id: true, origin: true, createdByAdminId: true },
     });
     if (existing) {
-      await tx.partnerApplication.update({ where: { id }, data: fields });
+      await tx.partnerApplication.update({
+        where: { id },
+        data: {
+          ...fields,
+          ...correctedOrigin(data, existing.origin, existing.createdByAdminId),
+        },
+      });
       return true;
     }
     if (!season || !year) {
@@ -221,6 +230,21 @@ function tracking(data: Record<string, any>) {
     crmSyncedAt: new Date(),
     crmAssigneeName: str(data.assigneeName) ?? null,
   };
+}
+
+/**
+ * The CRM says where it got a record (`createdIn`). A record it received from
+ * here was created in the portal or by the admin team, never in the CRM: the
+ * 20261117 backfill labelled every record without a creation audit entry as
+ * CRM, so this puts the right origin back when such a record is next sent.
+ */
+export function correctedOrigin(
+  data: Record<string, any>,
+  origin: string,
+  createdByAdminId: string | null,
+): { origin?: string } {
+  if (data.createdIn !== 'worldwide' || origin !== 'CRM') return {};
+  return { origin: createdByAdminId ? 'ADMIN' : 'PORTAL' };
 }
 
 /** A trimmed non-empty string, or undefined. */
