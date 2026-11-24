@@ -39,6 +39,8 @@ import { ErrorResponseDto } from '../common/dto/error-response.dto';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Post()
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({
@@ -60,6 +62,8 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Post('create/many')
   @ApiOperation({ summary: 'Register multiple users' })
   @ApiBody({
@@ -86,8 +90,8 @@ export class UsersController {
   }
 
   @Post('admin/create')
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(Role.ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Create a user as admin (profile optional)' })
   @ApiResponse({
@@ -160,9 +164,9 @@ export class UsersController {
   }
 
   @Get()
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(Role.ADMIN)
-  // @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get all users with pagination and search' })
   @ApiResponse({
     status: 200,

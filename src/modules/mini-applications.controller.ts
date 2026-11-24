@@ -28,6 +28,11 @@ import {
   MiniApplicationResponseDto,
   PaginatedMiniApplicationResponseDto,
 } from './dto/mini-application-response.dto';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '../common/enum/roles.enum';
 
 @ApiTags('Mini Applications (Public)')
 @Controller('mini-applications')
@@ -52,6 +57,8 @@ export class MiniApplicationsController {
     return this.miniApplicationsService.create(createMiniApplicationDto);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Get()
   @ApiOperation({ summary: 'Retrieve all mini applications with pagination' })
   @ApiQuery({
@@ -89,6 +96,8 @@ export class MiniApplicationsController {
     return this.miniApplicationsService.findAll(paginationDto);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Get(':id')
   @ApiOperation({ summary: 'Retrieve a specific mini application by ID' })
   @ApiParam({
@@ -109,6 +118,8 @@ export class MiniApplicationsController {
     return this.miniApplicationsService.findOne(id);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Patch(':id')
   @ApiOperation({ summary: 'Update a specific mini application by ID' })
   @ApiParam({
@@ -135,6 +146,8 @@ export class MiniApplicationsController {
     return this.miniApplicationsService.update(id, updateMiniApplicationDto);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a specific mini application by ID' })

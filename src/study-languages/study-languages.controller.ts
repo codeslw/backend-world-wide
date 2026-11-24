@@ -13,16 +13,18 @@ import { StudyLanguagesService } from './study-languages.service';
 import { CreateStudyLanguageDto } from './dto/create-study-language.dto';
 import { UpdateStudyLanguageDto } from './dto/update-study-language.dto';
 import { StudyLanguageResponseDto } from './dto/study-language-response.dto';
-// import { RolesGuard } from '../auth/guards/roles.guard';
-// import { Roles } from '../auth/decorators/roles.decorator';
-// import { Role } from '@prisma/client';
-// import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '../common/enum/roles.enum';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('study-languages')
 @Controller('study-languages')
 export class StudyLanguagesController {
   constructor(private readonly studyLanguagesService: StudyLanguagesService) {}
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Post()
   @ApiOperation({ summary: 'Create a new study language' })
   @ApiResponse({ status: 201, type: StudyLanguageResponseDto })
@@ -44,6 +46,8 @@ export class StudyLanguagesController {
     return this.studyLanguagesService.findOne(id);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Patch(':id')
   @ApiOperation({ summary: 'Update a study language' })
   @ApiResponse({ status: 200, type: StudyLanguageResponseDto })
@@ -54,6 +58,8 @@ export class StudyLanguagesController {
     return this.studyLanguagesService.update(id, updateStudyLanguageDto);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a study language' })
   @ApiResponse({ status: 200 })

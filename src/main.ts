@@ -30,6 +30,14 @@ async function bootstrap() {
   );
   const configService = app.get(ConfigService);
 
+  // Behind the reverse proxy every visitor would otherwise share the proxy's
+  // address, and so share one rate limit. TRUST_PROXY is the number of proxies
+  // in front of the API (0 to turn it off).
+  const trustProxy = Number(configService.get('TRUST_PROXY') ?? 1);
+  if (trustProxy > 0) {
+    (app.getHttpAdapter().getInstance() as any).set('trust proxy', trustProxy);
+  }
+
   // Apply global validation pipe with detailed error messages
   app.useGlobalPipes(
     new ValidationPipe({

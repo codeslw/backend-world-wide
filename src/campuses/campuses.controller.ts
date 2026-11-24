@@ -13,12 +13,19 @@ import { CampusesService } from './campuses.service';
 import { CreateCampusDto } from './dto/create-campus.dto';
 import { UpdateCampusDto } from './dto/update-campus.dto';
 import { CampusResponseDto } from './dto/campus-response.dto';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '../common/enum/roles.enum';
 
 @ApiTags('Campuses')
 @Controller('campuses')
 export class CampusesController {
   constructor(private readonly campusesService: CampusesService) {}
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Post()
   @ApiOperation({ summary: 'Create a new campus' })
   @ApiResponse({ status: 201, type: CampusResponseDto })
@@ -41,6 +48,8 @@ export class CampusesController {
     return this.campusesService.findOne(id);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Patch(':id')
   @ApiOperation({ summary: 'Update campus' })
   @ApiResponse({ status: 200, type: CampusResponseDto })
@@ -48,6 +57,8 @@ export class CampusesController {
     return this.campusesService.update(id, updateCampusDto);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Delete(':id')
   @ApiOperation({ summary: 'Delete campus' })
   @ApiResponse({ status: 200, type: CampusResponseDto })

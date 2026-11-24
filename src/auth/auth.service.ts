@@ -116,7 +116,12 @@ export class AuthService {
    * reset — registration needs no verification step.
    */
   async register(createUserDto: CreateUserDto) {
-    const user = await this.usersService.create(createUserDto);
+    // Public sign-up only ever makes a client. Staff and partner accounts are
+    // created by an admin (POST /users/admin/create), never by the caller.
+    const user = await this.usersService.create({
+      ...createUserDto,
+      role: Role.CLIENT,
+    });
 
     await this.prisma.user.update({
       where: { id: user.id },

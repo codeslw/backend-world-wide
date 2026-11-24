@@ -12,6 +12,11 @@ import { AdmissionRequirementsService } from './admission-requirements.service';
 import { CreateAdmissionRequirementDto } from './dto/create-admission-requirement.dto';
 import { UpdateAdmissionRequirementDto } from './dto/update-admission-requirement.dto';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { Role } from '../common/enum/roles.enum';
 
 @ApiTags('Admission Requirements')
 @Controller('admission-requirements')
@@ -20,6 +25,8 @@ export class AdmissionRequirementsController {
     private readonly admissionRequirementsService: AdmissionRequirementsService,
   ) {}
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Post()
   @ApiOperation({ summary: 'Create admission requirement' })
   create(@Body() createDto: CreateAdmissionRequirementDto) {
@@ -41,6 +48,8 @@ export class AdmissionRequirementsController {
     return this.admissionRequirementsService.findOne(id);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Patch(':id')
   @ApiOperation({ summary: 'Update admission requirement by ID' })
   update(
@@ -50,6 +59,8 @@ export class AdmissionRequirementsController {
     return this.admissionRequirementsService.update(id, updateDto);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Delete(':id')
   @ApiOperation({ summary: 'Delete admission requirement by ID' })
   remove(@Param('id') id: string) {
