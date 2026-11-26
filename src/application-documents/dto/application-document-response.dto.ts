@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   ApplicationDocumentKind,
   ApplicationDocumentStatus,
+  DocumentRequirementKind,
   Role,
 } from '@prisma/client';
 
@@ -12,6 +13,11 @@ export class ApplicationDocumentResponseDto {
   @ApiPropertyOptional() documentTypeId?: string | null;
   @ApiPropertyOptional({ description: 'Requirement name, when linked.' })
   documentTypeName?: string | null;
+  @ApiPropertyOptional({
+    enum: DocumentRequirementKind,
+    description: 'Document the program asks for that this upload fulfils.',
+  })
+  requirementKind?: DocumentRequirementKind | null;
 
   @ApiProperty() name: string;
   @ApiProperty({ description: 'Stable public URL resolved from the storage key.' })
@@ -25,6 +31,8 @@ export class ApplicationDocumentResponseDto {
   @ApiPropertyOptional() reviewNote?: string | null;
   @ApiPropertyOptional({ description: 'Free-text comment shown with the file.' })
   comment?: string | null;
+  @ApiPropertyOptional({ description: 'When the document stops being valid.' })
+  expiresAt?: Date | null;
 
   @ApiPropertyOptional() uploadedById?: string | null;
   @ApiPropertyOptional({ enum: Role }) uploadedByRole?: Role | null;

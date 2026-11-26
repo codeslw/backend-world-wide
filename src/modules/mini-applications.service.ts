@@ -19,11 +19,21 @@ export class MiniApplicationsService {
     private filterService: FilterService,
   ) {}
 
+  /** A request from the public site; edu-crm receives it within a second. */
   async create(
     createMiniApplicationDto: CreateMiniApplicationDto,
   ): Promise<MiniApplication> {
+    const { source, ...data } = createMiniApplicationDto;
     return this.prisma.miniApplication.create({
-      data: createMiniApplicationDto,
+      data: {
+        ...data,
+        // The services page sends what it knows in the notes; name its source.
+        source:
+          source ??
+          (data.service || /^Service Requested:/i.test(data.notes ?? '')
+            ? 'SERVICES'
+            : 'QUICK_FORM'),
+      },
     });
   }
 

@@ -22,7 +22,10 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { ServiceActorGuard } from '../auth/guards/service-actor.guard';
+import {
+  ServiceActorGuard,
+  StudentActor,
+} from '../auth/guards/service-actor.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '../common/enum/roles.enum';
 import {
@@ -31,6 +34,7 @@ import {
   Requester,
 } from './application-documents.service';
 import { CreateApplicationDocumentDto } from './dto/create-application-document.dto';
+import { CreateDocumentFromProfileDto } from './dto/create-document-from-profile.dto';
 import { UpdateApplicationDocumentStatusDto } from './dto/update-application-document-status.dto';
 import { ApplicationDocumentResponseDto } from './dto/application-document-response.dto';
 import { ApplicationRequirementsResponseDto } from './dto/application-requirements-response.dto';
@@ -38,18 +42,25 @@ import { InvalidDataException } from '../common/exceptions/app.exceptions';
 
 interface RequestWithUser extends Request {
   user: { userId: string; email: string; role: Role; [key: string]: any };
+  /** A student using their personal link (edu-crm acts for them). */
+  studentActor?: StudentActor;
 }
 
 @ApiTags('application-documents')
 @Controller('application-documents')
-// ServiceActorGuard: edu-crm reads and uploads documents for its partners.
+// ServiceActorGuard: edu-crm works documents for its staff, and for students
+// who open their personal link.
 @UseGuards(ServiceActorGuard, JwtAuthGuard, RolesGuard)
 @ApiBearerAuth('access-token')
 export class ApplicationDocumentsController {
   constructor(private readonly service: ApplicationDocumentsService) {}
 
   private requester(req: RequestWithUser): Requester {
-    return { userId: req.user.userId, role: req.user.role as Role };
+    return {
+      userId: req.user.userId,
+      role: req.user.role as Role,
+      student: req.studentActor,
+    };
   }
 
   private refFromQuery(
@@ -81,6 +92,19 @@ export class ApplicationDocumentsController {
     @Body() dto: CreateApplicationDocumentDto,
   ) {
     return this.service.create(this.requester(req), dto);
+  }
+
+  @Post('from-profile')
+  @Roles(Role.ADMIN)
+  @ApiOperation({
+    summary: "Attach a file from the applicant's profile to a requirement",
+  })
+  @ApiResponse({ status: 201, type: ApplicationDocumentResponseDto })
+  createFromProfile(
+    @Req() req: RequestWithUser,
+    @Body() dto: CreateDocumentFromProfileDto,
+  ) {
+    return this.service.createFromProfile(this.requester(req), dto);
   }
 
   @Get()

@@ -54,6 +54,15 @@ export class PartnerApplicationResponseDto {
   @ApiProperty()
   intakeYear: number;
 
+  @ApiPropertyOptional({ description: 'Exact intake, when known' })
+  intakeId?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Visa progress, set in edu-crm',
+    enum: ['PREPARING', 'SUBMITTED', 'APPROVED', 'REFUSED'],
+  })
+  visaStatus?: string | null;
+
   @ApiProperty({ enum: PartnerApplicationStatus })
   status: PartnerApplicationStatus;
 

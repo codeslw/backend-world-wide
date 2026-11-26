@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { AppThrottlerGuard } from './common/guards/app-throttler.guard';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { PrismaService } from './db/prisma.service';
@@ -53,6 +54,7 @@ import { MailModule } from './mail/mail.module';
 import { OurServicesModule } from './our-services/our-services.module';
 import { CatalogEventsModule } from './catalog-events/catalog-events.module';
 import { CrmEventsModule } from './crm-events/crm-events.module';
+import { CrmModule } from './crm/crm.module';
 
 @Module({
   imports: [
@@ -108,6 +110,7 @@ import { CrmEventsModule } from './crm-events/crm-events.module';
     OurServicesModule,
     CatalogEventsModule,
     CrmEventsModule,
+    CrmModule,
     DbModule,
   ],
 
@@ -117,7 +120,7 @@ import { CrmEventsModule } from './crm-events/crm-events.module';
     // guard the per-route @Throttle decorators on the auth OTP endpoints are
     // inert. Registering it activates the module's existing 100/min default
     // alongside the tighter per-route limits.
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: AppThrottlerGuard },
   ],
   controllers: [],
 })

@@ -29,6 +29,7 @@ import {
   PaginatedMiniApplicationResponseDto,
 } from './dto/mini-application-response.dto';
 import { UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -42,6 +43,8 @@ export class MiniApplicationsController {
   ) {}
 
   @Post()
+  // Public form: a person sends one or two, not dozens.
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Create a new mini application' })
   @ApiResponse({
     status: 201,

@@ -12,47 +12,13 @@ import {
 } from '../common/exceptions/app.exceptions';
 import { PartnerOrganizationsService } from '../partner-organizations/partner-organizations.service';
 import { normalizeStage } from '../crm-events/process-stage';
+import {
+  allowedNextStatuses,
+  checkStatusTransition,
+  resolveIntakeId,
+} from '../admissions/status';
 
-const FINAL_STATUSES = new Set<PartnerApplicationStatus>([
-  PartnerApplicationStatus.ENROLLED,
-  PartnerApplicationStatus.REJECTED,
-  PartnerApplicationStatus.WITHDRAWN,
-]);
-
-/**
- * Why a status change is not allowed, or null when it is. Same rule as
- * edu-crm's CheckTransition: final statuses stay final, nothing goes back to
- * draft, and a draft can only be submitted or withdrawn.
- */
-export function checkStatusTransition(
-  from: PartnerApplicationStatus,
-  to: PartnerApplicationStatus,
-): string | null {
-  if (from === to) return `The application is already ${to}`;
-  if (FINAL_STATUSES.has(from)) {
-    return `The application is ${from}, a final status`;
-  }
-  if (to === PartnerApplicationStatus.DRAFT) {
-    return 'An application cannot go back to DRAFT';
-  }
-  if (
-    from === PartnerApplicationStatus.DRAFT &&
-    to !== PartnerApplicationStatus.SUBMITTED &&
-    to !== PartnerApplicationStatus.WITHDRAWN
-  ) {
-    return 'A draft can only be submitted or withdrawn';
-  }
-  return null;
-}
-
-/** The statuses an admin can move an application to from `from`. */
-export function allowedNextStatuses(
-  from: PartnerApplicationStatus,
-): PartnerApplicationStatus[] {
-  return Object.values(PartnerApplicationStatus).filter(
-    (to) => checkStatusTransition(from, to) === null,
-  );
-}
+export { checkStatusTransition, allowedNextStatuses };
 
 @Injectable()
 export class PartnerApplicationsService {
@@ -204,6 +170,13 @@ export class PartnerApplicationsService {
         program: { connect: { id: universityProgram.id } },
         intakeSeason: dto.intakeSeason,
         intakeYear: dto.intakeYear,
+        intakeId: await resolveIntakeId(
+          this.prisma,
+          universityProgram.id,
+          dto.intakeSeason,
+          dto.intakeYear,
+          dto.intakeId,
+        ),
         englishProficiency: dto.englishProficiency,
         gpa: dto.gpa,
         prerequisites: dto.prerequisites,
@@ -418,6 +391,7 @@ export class PartnerApplicationsService {
       data: {
         ...(dto.intakeSeason && { intakeSeason: dto.intakeSeason }),
         ...(dto.intakeYear && { intakeYear: dto.intakeYear }),
+        ...(dto.intakeId !== undefined && { intakeId: dto.intakeId }),
         ...(dto.englishProficiency !== undefined && {
           englishProficiency: dto.englishProficiency,
         }),
@@ -547,10 +521,12 @@ export class PartnerApplicationsService {
       programName: application.program?.title || 'Unknown Program',
       intakeSeason: application.intakeSeason,
       intakeYear: application.intakeYear,
+      intakeId: application.intakeId ?? null,
       status: application.status,
       stage: normalizeStage(application.status, application.stage),
       allowedStatuses: allowedNextStatuses(application.status),
       rejectionReason: application.rejectionReason,
+      visaStatus: application.visaStatus ?? null,
       submittedAt: application.submittedAt,
       reviewedAt: application.reviewedAt,
       englishProficiency: application.englishProficiency,

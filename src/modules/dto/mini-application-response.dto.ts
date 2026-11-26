@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { MiniApplicationStatus, University } from '@prisma/client';
 
 // Basic University DTO for nested representation
@@ -25,6 +25,27 @@ export class MiniApplicationResponseDto {
 
   @ApiProperty({ enum: MiniApplicationStatus })
   status: MiniApplicationStatus;
+
+  @ApiProperty({ description: 'Which form it came from' })
+  source: string;
+
+  @ApiPropertyOptional()
+  service?: string | null;
+
+  @ApiPropertyOptional()
+  country?: string | null;
+
+  @ApiPropertyOptional()
+  notes?: string | null;
+
+  @ApiPropertyOptional()
+  universityId?: string | null;
+
+  @ApiPropertyOptional({ description: 'Who works it in edu-crm' })
+  crmAssigneeName?: string | null;
+
+  @ApiPropertyOptional({ description: 'When edu-crm last updated it' })
+  crmSyncedAt?: Date | null;
 
   @ApiProperty()
   createdAt: Date;

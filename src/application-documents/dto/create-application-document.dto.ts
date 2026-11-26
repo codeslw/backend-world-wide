@@ -5,12 +5,18 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  IsDateString,
+  Matches,
   ValidateIf,
 } from 'class-validator';
 import {
   ApplicationDocumentKind,
   ApplicationDocumentStatus,
 } from '@prisma/client';
+
+/** How the checklist names a requirement (see src/admissions/checklist.ts). */
+export const REQUIREMENT_KEY =
+  /^(kind:[A-Z_]{2,40}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
 
 /**
  * Record a document against an application. Exactly one of
@@ -33,10 +39,14 @@ export class CreateApplicationDocumentDto {
   applicationId?: string;
 
   @ApiPropertyOptional({
-    description: 'Optional requirement document type this upload fulfils.',
+    description:
+      'Optional requirement this upload fulfils, as the checklist names it: a ' +
+      'document type id, or kind:<KIND> for a document the program asks for.',
   })
   @IsOptional()
-  @IsUUID()
+  @Matches(REQUIREMENT_KEY, {
+    message: 'documentTypeId must be a UUID or kind:<KIND>',
+  })
   documentTypeId?: string;
 
   @ApiProperty({ description: 'Display name of the document.' })
@@ -81,4 +91,9 @@ export class CreateApplicationDocumentDto {
   @IsOptional()
   @IsString()
   comment?: string;
+
+  @ApiPropertyOptional({ description: 'When the document stops being valid.' })
+  @IsOptional()
+  @IsDateString()
+  expiresAt?: string;
 }

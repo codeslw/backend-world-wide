@@ -19,12 +19,16 @@ import { CrmEvent, CrmStudentsApplier } from './crm-students.applier';
 const STREAM = 'CRM_STUDENTS';
 const DURABLE = 'ww-students';
 const SUBJECT = 'crm.student.v1.>';
-const MAX_DELIVER = 10;
+/** An event that can't be applied yet is tried again for as long as it takes. */
+const RETRY_FOREVER = -1;
+const MAX_RETRY_DELAY_MS = 10 * 60_000;
+/** Tries after which a failing event is logged as an error. */
+const ALARM_AFTER = 10;
 
 /**
- * Consumes the applicants and applications edu-crm publishes (stream
- * `CRM_STUDENTS`, created by the CRM worker) and applies them to
- * partner_students and partner_applications.
+ * Consumes the applicants, applications and mini applications edu-crm
+ * publishes (stream `CRM_STUDENTS`, created by the CRM worker) and applies them
+ * here.
  *
  * The stream keeps the last message per entity and the durable consumer starts
  * from the beginning, so a fresh database catches up on everything.
@@ -77,7 +81,7 @@ export class CrmEventsConsumer
           ack_policy: AckPolicy.Explicit,
           deliver_policy: DeliverPolicy.All,
           ack_wait: nanos(30_000),
-          max_deliver: MAX_DELIVER,
+          max_deliver: RETRY_FOREVER,
           max_ack_pending: 1000,
         };
         try {
@@ -118,18 +122,12 @@ export class CrmEventsConsumer
       this.logger.debug(`${event.entity} ${event.id} applied=${applied}`);
       msg.ack();
     } catch (error) {
-      if (msg.info.redeliveryCount >= MAX_DELIVER) {
-        this.logger.error(
-          `Giving up on ${event.entity} ${event.id} after ${MAX_DELIVER} attempts: ${error}`,
-        );
-        msg.term();
-        return;
-      }
       const attempt = msg.info.redeliveryCount;
-      this.logger.warn(
-        `${event.entity} ${event.id} failed (attempt ${attempt}), retrying: ${error}`,
-      );
-      msg.nak(attempt * attempt * 1000);
+      const delay = Math.min(attempt * attempt * 1000, MAX_RETRY_DELAY_MS);
+      const text = `${event.entity} ${event.id} failed (attempt ${attempt}), retrying in ${delay / 1000}s: ${error}`;
+      if (attempt >= ALARM_AFTER) this.logger.error(text);
+      else this.logger.warn(text);
+      msg.nak(delay);
     }
   }
 }

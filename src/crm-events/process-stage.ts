@@ -46,3 +46,16 @@ export function normalizeStage(
   }
   return lo;
 }
+
+/**
+ * The stage a step of a process template belongs to, by the status the step
+ * maps to. Documents collected before submitting belong to Документы.
+ */
+export function stageForStatusKey(statusKey: string): number {
+  const status = (statusKey ?? '').trim().toUpperCase();
+  if (status === 'DRAFT') return 3;
+  if (status === 'APPROVED') return 5;
+  if (status === 'REJECTED' || status === 'WITHDRAWN') return 4;
+  const [lo, hi] = stageRange(status);
+  return lo === 1 && hi === STAGE_COUNT ? 4 : lo;
+}

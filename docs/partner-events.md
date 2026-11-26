@@ -1,67 +1,63 @@
-# Partner events (`ww.partner.v1`)
+# Partner and admin events (`ww.partner.v1`)
 
-edu-crm has no sign-up: partner organizations and logins are created here, in the
-admin panel, and published to NATS JetStream so the CRM can mirror them. Same
-mechanism as the catalog (see `catalog-events.md`): triggers write `catalog_outbox`
-rows in the same transaction as the change, `CatalogEventsRelay` publishes the
-current state, one message per entity, last message per subject kept.
+edu-crm is the internal tool of the admin team. This stream gives it the admin
+accounts that sign in to it, and the agencies and agency employees whose students it
+shows. Same mechanism as the catalog (see `catalog-events.md`): triggers write
+`catalog_outbox` rows in the same transaction as the change, `CatalogEventsRelay`
+publishes the current state, last message per subject kept. **No password or
+password hash is ever published.**
 
 ## Stream
 
 | Setting | Value |
 |---|---|
 | Stream | `WW_PARTNERS` (created by the relay) |
-| Subjects | `ww.partner.v1.partner_org.<orgId>`, `ww.partner.v1.partner_account.<userId>` |
+| Subjects | `ww.partner.v1.<partner_org\|partner_account\|admin_account>.<id>` |
+
+## `admin_account`
+
+One per `ADMIN` user, keyed by the user id:
+`id, email, firstName, lastName, phone, passwordChangedAt, createdAt, updatedAt`.
+
+The CRM creates the admin with these details. It signs them in by asking this service
+to check the password (below). `passwordChangedAt` (set by a trigger whenever the
+password changes) makes the CRM end sessions opened before it. A user who stops
+being an admin, or is deleted, is a tombstone (`deleted: true`).
 
 ## `partner_org`
 
 `id, ownerId, name, isActive, phone, email, country, city, updatedAt`
 
-`isActive` is the platform access switch (`PATCH /partner-organizations/:id/access`).
-
 ## `partner_account`
 
-One per `PARTNER` user, keyed by the **user** id:
+One per `PARTNER` user: `id, email, phone, firstName, lastName, organizationId,
+partnerRole, permissions, updatedAt`. The CRM uses it to name a student's agency
+manager; **partners can't sign in to the CRM**.
 
-```json
-{
-  "id": "user uuid",
-  "email": "owner@acme.test",
-  "passwordHash": "$2b$10$… (bcrypt)",
-  "phone": "+998901112233",
-  "firstName": "Olim",
-  "lastName": "Karimov",
-  "organizationId": "org uuid, or null for an owner whose organization doesn't exist yet",
-  "partnerRole": "OWNER | MANAGER | MEMBER",
-  "permissions": ["VIEW_APPLICATIONS"],
-  "updatedAt": "..."
-}
-```
+The internal "house" agency (organization `…c001`, owner `…c002`) holds the students
+that edu-crm creates; it exists only for that and its owner can't sign in.
 
-- Owners have no `partner_members` row; they own the organization, so they are `OWNER`.
-- `permissions` lists granted actions for members; owners and managers get `[]` because
-  they can do everything (same rule as `PartnerPermissionsGuard`).
-- `phone` is normalized to E.164 from `profiles.phoneNumber`, or `null` when it isn't a
-  valid number. The CRM cannot sign an account in without one.
-- `passwordHash` is the bcrypt hash of the password the admin set. The CRM signs the
-  partner in with it (phone + that password) and asks them to change it at first login.
-  A new hash (admin reset the password) replaces the CRM password; unchanged hashes
-  never overwrite a password the partner chose in the CRM. Plain passwords are never
-  published. Treat the `WW_PARTNERS` stream as secret: restrict who can read it.
-- A deleted user, or one who stops being a `PARTNER`, is published as a tombstone
-  (`deleted: true`); the CRM deactivates the login.
+## Admin sign-in for edu-crm (`/api/v1/crm/auth/*`)
 
-A change to the user, their profile, membership, permissions, or their organization
-enqueues the account.
+Service-only endpoints: header `X-Service-Token: <CRM_SERVICE_TOKEN>` (at least 32
+characters, compared in constant time; the endpoints are off when it is unset), and
+not rate limited. Only `ADMIN` users.
+
+| Endpoint | Body | Answer |
+|---|---|---|
+| `POST /crm/auth/verify` | `email, password` | `id, email, firstName, lastName, phone, passwordChangedAt`, or 401 |
+| `POST /crm/auth/change-password` | `userId, currentPassword, newPassword` | `passwordChangedAt` |
+| `POST /crm/auth/forgot-password` | `email` | emails a 6-digit code (the same answer for unknown emails; needs SMTP) |
+| `POST /crm/auth/reset-password` | `email, code, newPassword` | `passwordChangedAt` |
+
+A password changed this way also signs the account out of the admin panel (refresh
+tokens are revoked).
 
 ## Creating partners
 
-- `POST /users/admin/create` with `role: PARTNER` now **requires**
-  `profile.phoneNumber` in international format (`+998901234567`; spaces and dashes
-  are stripped) and creates the organization immediately, instead of at the owner's
-  first login.
-- `POST /partner-members` accepts an optional `phoneNumber`. Without one the member
-  cannot sign in to the CRM until an admin adds it to their profile.
+- `POST /users/admin/create` with `role: PARTNER` requires `profile.phoneNumber` in
+  international format and creates the organization immediately.
+- `POST /partner-members` accepts an optional `phoneNumber`.
 
 ## Operations
 

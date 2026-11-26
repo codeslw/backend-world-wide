@@ -17,6 +17,12 @@ import {
 } from '../common/exceptions/app.exceptions';
 import { Role } from '../common/enum/roles.enum';
 import { ApplicationResponseDto } from './dto/application-response.dto';
+import {
+  allowedNextStatuses,
+  canonicalStatus,
+  checkStatusTransition,
+} from '../admissions/status';
+import { normalizeStage } from '../crm-events/process-stage';
 
 @Injectable()
 export class ApplicationsService {
@@ -251,7 +257,7 @@ export class ApplicationsService {
 
   async updateStatus(
     id: string,
-    newStatus: ApplicationStatus,
+    newStatus: string,
     rejectionReason?: string,
   ): Promise<ApplicationResponseDto> {
     try {
@@ -261,35 +267,27 @@ export class ApplicationsService {
         throw new EntityNotFoundException('Application', id);
       }
 
+      // The same nine statuses and rules as partner applications and edu-crm.
+      const status = canonicalStatus(newStatus);
+      const transitionError = checkStatusTransition(
+        applicationEntity.status,
+        status,
+      );
+      if (transitionError) throw new InvalidDataException(transitionError);
+
       // Validate rejection reason is provided when status is REJECTED
-      if (newStatus === ApplicationStatus.REJECTED && !rejectionReason) {
+      if (status === 'REJECTED' && !rejectionReason?.trim()) {
         throw new InvalidDataException(
           'Rejection reason is required when status is REJECTED',
         );
       }
 
-      // Prepare the status update DTO
-      const statusUpdateDto: UpdateApplicationDto = {
-        applicationStatus: newStatus,
-      };
-
-      // Add rejection reason if provided
-      if (rejectionReason) {
-        (statusUpdateDto as any).rejectionReason = rejectionReason;
-      }
-
-      // If status is changing to APPROVED or REJECTED, handle reviewDate
-      if (
-        newStatus === ApplicationStatus.APPROVED ||
-        newStatus === ApplicationStatus.REJECTED
-      ) {
-        // The repository will handle setting reviewedAt timestamp
-      }
-
-      // Perform the update using the repository
-      const updatedApplication = await this.applicationsRepository.update(
+      // A trigger keeps the stage, the older applicationStatus, submittedAt and
+      // the change time in step (migration 20261125120000_admissions_model).
+      const updatedApplication = await this.applicationsRepository.updateStatus(
         applicationEntity.id,
-        statusUpdateDto,
+        status,
+        rejectionReason?.trim(),
       );
 
       // Map the updated entity back to DTO
@@ -456,8 +454,19 @@ export class ApplicationsService {
       intakeYear: application.intakeYear,
 
       // Status fields
+      status: application.status,
+      stage: application.status
+        ? normalizeStage(application.status, application.stage)
+        : undefined,
+      allowedStatuses: application.status
+        ? allowedNextStatuses(application.status)
+        : undefined,
+      visaStatus: application.visaStatus,
       applicationStatus: application.applicationStatus,
       rejectionReason: application.rejectionReason,
+      origin: application.origin,
+      crmSyncedAt: application.crmSyncedAt,
+      crmAssigneeName: application.crmAssigneeName,
       submittedAt: application.submittedAt,
       createdAt: application.createdAt,
       updatedAt: application.updatedAt,

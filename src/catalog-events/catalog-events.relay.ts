@@ -46,26 +46,36 @@ export const CATALOG_STREAM: StreamDef = {
   ]),
 };
 
-/** Latest state of every partner organization and partner login. */
+/** Latest state of every partner organization, partner account and admin account. */
 export const PARTNERS_STREAM: StreamDef = {
   name: 'WW_PARTNERS',
   prefix: 'ww.partner.v1',
   schema: 'ww.partner.v1',
-  entities: new Set(['partner_org', 'partner_account']),
+  entities: new Set(['partner_org', 'partner_account', 'admin_account']),
 };
 
-/** Latest state of every partner student and application (synced both ways with edu-crm). */
+/**
+ * Latest state of every applicant (partner students and client accounts),
+ * application and mini application (synced both ways with edu-crm).
+ */
 export const STUDENTS_STREAM: StreamDef = {
   name: 'WW_STUDENTS',
   prefix: 'ww.student.v1',
   schema: 'ww.student.v1',
-  entities: new Set(['partner_student', 'partner_application']),
+  entities: new Set([
+    'partner_student',
+    'client_applicant',
+    'partner_application',
+    'client_application',
+    'mini_application',
+  ]),
 };
 
 const STREAMS = [CATALOG_STREAM, PARTNERS_STREAM, STUDENTS_STREAM];
 
 const BATCH_SIZE = 200;
-const POLL_INTERVAL_MS = 1000;
+/** How soon a change leaves: new applications should show up in edu-crm at once. */
+const POLL_INTERVAL_MS = 250;
 const PUBLISHED_RETENTION_DAYS = 30;
 const SUBJECT_TOKEN = /^[A-Za-z0-9_-]+$/;
 
@@ -179,7 +189,13 @@ export class CatalogEventsRelay
   }
 
   /** Publishes one batch; returns the number of outbox rows handled. */
-  private publishBatch(): Promise<number> {
+  private async publishBatch(): Promise<number> {
+    // Polling is frequent, so look before opening a transaction.
+    const waiting = await this.prisma.catalogOutbox.findFirst({
+      where: { publishedAt: null },
+      select: { id: true },
+    });
+    if (!waiting) return 0;
     return this.prisma.$transaction(
       async (tx) => {
         // Only one relay (across replicas) publishes at a time, so snapshots
@@ -197,7 +213,8 @@ export class CatalogEventsRelay
         if (rows.length === 0) return 0;
 
         // Several changes to one entity collapse into one publish of its
-        // latest state.
+        // latest state. A Map keeps the order, so people leave before their
+        // applications.
         const pending = new Map<string, PendingChange>();
         for (const row of rows) {
           pending.set(`${row.entity}:${row.entityId}`, {
@@ -252,6 +269,22 @@ export class CatalogEventsRelay
       this.codec.encode(event),
       { msgID: `${entity}:${entityId}:${outboxId}` },
     );
+  }
+
+  /**
+   * Re-sends open applications once a day: a document checklist also changes
+   * when an admin edits a process template or a program's requirements, which
+   * queues nothing by itself.
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_4AM, { name: 'refresh-open-applications' })
+  async refreshOpenApplications() {
+    const queued = await this.prisma.$executeRaw`
+      INSERT INTO "catalog_outbox" ("entity", "entityId")
+                SELECT 'partner_application', "id" FROM "partner_applications"
+                WHERE "status" NOT IN ('ENROLLED', 'REJECTED', 'WITHDRAWN')
+      UNION ALL SELECT 'client_application', "id" FROM "applications"
+                WHERE "status" NOT IN ('ENROLLED', 'REJECTED', 'WITHDRAWN')`;
+    if (queued > 0) this.logger.log(`Queued ${queued} open applications`);
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_3AM, { name: 'prune-catalog-outbox' })

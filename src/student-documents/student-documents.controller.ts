@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
@@ -25,10 +26,11 @@ import { StudentDocumentsService } from './student-documents.service';
 import { PartnerOrganizationsService } from '../partner-organizations/partner-organizations.service';
 import { PartnerAuditService } from '../partner-audit/partner-audit.service';
 import { CreateStudentDocumentDto } from './dto/create-student-document.dto';
+import { UpdateStudentDocumentDto } from './dto/update-student-document.dto';
 
 @ApiTags('student-documents')
 @ApiBearerAuth()
-// ServiceActorGuard: edu-crm shows and uploads profile documents for its partners.
+// ServiceActorGuard: edu-crm shows and uploads profile documents for its staff.
 @UseGuards(ServiceActorGuard, JwtAuthGuard, RolesGuard)
 @Controller('student-documents')
 export class StudentDocumentsController {
@@ -85,6 +87,19 @@ export class StudentDocumentsController {
   ): Promise<any[]> {
     const partnerIds = await this.visiblePartnerIds(req);
     return this.service.findByStudent(partnerIds, studentId);
+  }
+
+  @Patch(':id')
+  @Roles(Role.PARTNER, Role.ADMIN)
+  @ApiOperation({ summary: "Change a student document's type or expiry" })
+  @ApiResponse({ status: 200, description: 'Document updated' })
+  async update(
+    @Req() req,
+    @Param('id') id: string,
+    @Body() dto: UpdateStudentDocumentDto,
+  ): Promise<any> {
+    const partnerIds = await this.visiblePartnerIds(req);
+    return this.service.update(partnerIds, id, dto);
   }
 
   @Delete(':id')

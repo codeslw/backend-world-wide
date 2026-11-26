@@ -13,6 +13,8 @@ model User {
   password      String
   role          Role           @default(CLIENT)
   isEmailVerified Boolean      @default(true)
+  /// Set by a trigger when the password changes; edu-crm ends older sessions.
+  passwordChangedAt DateTime?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   adminChats    Chat[]         @relation("AdminChats")
@@ -577,9 +579,27 @@ model Application {
   preferredProgram    String
   intakeSeason        IntakeSeason
   intakeYear          Int
+  /// The exact intake when known: a program can have two in one season.
+  intakeId            String?
+  /// The admission status shared with partner applications and edu-crm.
+  status              PartnerApplicationStatus @default(DRAFT)
+  /// Step of the admission process, 1 (Консультация) to 7 (Готово).
+  stage               Int?
+  /// Older five-value status, kept for existing API consumers. A trigger keeps
+  /// it in step with `status` (see migration 20261125120000_admissions_model).
   applicationStatus   ApplicationStatus @default(DRAFT)
   rejectionReason     String?
   submittedAt         DateTime?
+  /// When status/stage/reason and university/program/intake last changed: the
+  /// newest change wins between this service and edu-crm.
+  statusChangedAt     DateTime          @default(now())
+  detailsChangedAt    DateTime          @default(now())
+  /// PREPARING, SUBMITTED, APPROVED or REFUSED; set in edu-crm.
+  visaStatus          String?
+  /// Where it was created: SITE, ADMIN or CRM (edu-crm).
+  origin              String            @default("SITE")
+  crmSyncedAt         DateTime?
+  crmAssigneeName     String?
   createdAt           DateTime          @default(now())
   updatedAt           DateTime          @updatedAt
   profile             Profile           @relation(fields: [profileId], references: [id])
@@ -589,6 +609,8 @@ model Application {
   documents           ApplicationDocument[]
 
   @@index([profileId])
+  @@index([status])
+  @@index([stage])
   @@index([applicationStatus])
   @@index([profileId, applicationStatus])
   @@index([preferredUniversity])
@@ -600,13 +622,25 @@ model Application {
 model MiniApplication {
   id          String                @id @default(uuid())
   firstName   String
-  lastName    String
+  lastName    String                @default("")
   phoneNumber String
+  /// Which form it came from: QUICK_FORM or SERVICES.
+  source      String                @default("QUICK_FORM")
+  /// Service the person asked about (services page).
+  service     String?
+  country     String?
+  notes       String?
+  universityId String?
   createdAt   DateTime              @default(now())
   updatedAt   DateTime              @updatedAt
   status      MiniApplicationStatus @default(NEW)
+  statusChangedAt DateTime          @default(now())
+  /// When edu-crm last sent it, and who works it there.
+  crmSyncedAt     DateTime?
+  crmAssigneeName String?
 
   @@index([status])
+  @@index([createdAt])
   @@map("mini_applications")
 }
 
@@ -1183,6 +1217,9 @@ model ApplicationDocumentType {
   required    Boolean  @default(true)
   fileTypes   String[] @default(["pdf"])
   maxSizeMb   Int      @default(5)
+  /// What the document is, in the vocabulary of program requirements, so a
+  /// file on the applicant's profile can answer it.
+  kind        DocumentRequirementKind?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1220,6 +1257,10 @@ model ApplicationDocument {
   mimeType             String?
 
   kind                 ApplicationDocumentKind   @default(OTHER)
+  /// Fulfils a requirement of the program (no process-template document type).
+  requirementKind      DocumentRequirementKind?
+  /// When the document stops being valid (passport, bank statement, test).
+  expiresAt            DateTime?
   status               ApplicationDocumentStatus @default(PENDING)
   reviewNote           String?
   // Optional free-text comment attached to the file by the uploader (e.g. an
@@ -1230,6 +1271,8 @@ model ApplicationDocument {
   uploadedById         String?
   uploadedBy           User?    @relation("UploadedDocuments", fields: [uploadedById], references: [id], onDelete: SetNull)
   uploadedByRole       Role?
+  /// Name of an uploader without an account here (a student using their link).
+  uploadedByName       String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1237,6 +1280,7 @@ model ApplicationDocument {
   @@index([partnerApplicationId])
   @@index([applicationId])
   @@index([documentTypeId])
+  @@index([requirementKind])
   @@index([kind])
   @@index([status])
   @@map("application_documents")
@@ -1272,14 +1316,22 @@ model PartnerApplication {
   program          UniversityProgram      @relation(fields: [programId], references: [id])
   intakeSeason     IntakeSeason
   intakeYear       Int
+  /// The exact intake when known: a program can have two in one season.
+  intakeId         String?
 
   status           PartnerApplicationStatus @default(DRAFT)
   /// Step of the admission process, 1 (Консультация) to 7 (Готово); see src/crm-events/process-stage.ts.
-  /// Set by edu-crm. NULL until then: the status implies the stage.
+  /// A trigger keeps it in the range the status allows.
   stage            Int?
   rejectionReason  String?
   submittedAt      DateTime?
   reviewedAt       DateTime?
+  /// When status/stage/reason and university/program/intake last changed: the
+  /// newest change wins between this service and edu-crm.
+  statusChangedAt  DateTime @default(now())
+  detailsChangedAt DateTime @default(now())
+  /// PREPARING, SUBMITTED, APPROVED or REFUSED; set in edu-crm.
+  visaStatus       String?
 
   // Qualifications snapshot
   englishProficiency String?
@@ -1451,6 +1503,9 @@ model StudentDocument {
   uploadedById   String?
   uploadedBy     User?          @relation("UploadedStudentDocuments", fields: [uploadedById], references: [id], onDelete: SetNull)
   uploadedByRole Role?
+  uploadedByName String?
+  /// When the document stops being valid (passport, test, bank statement).
+  expiresAt      DateTime?
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 
@@ -1777,7 +1832,9 @@ model OurServicesPage {
 /// entity's current state and publishes it to NATS JetStream.
 model CatalogOutbox {
   id          BigInt    @id @default(autoincrement())
-  /// country | city | university | faculty | department | study_language | intake | program
+  /// country | city | university | faculty | department | study_language | intake | program |
+  /// partner_org | partner_account | admin_account | partner_student | client_applicant |
+  /// partner_application | client_application | mini_application
   entity      String
   entityId    String
   createdAt   DateTime  @default(now())

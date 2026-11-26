@@ -37,6 +37,13 @@ export class CreatePartnerApplicationDto {
   @Max(new Date().getFullYear() + 5)
   intakeYear: number;
 
+  @ApiPropertyOptional({
+    description: 'Exact intake, when the program has several in the season',
+  })
+  @IsOptional()
+  @IsUUID()
+  intakeId?: string;
+
   @ApiPropertyOptional({ description: 'English proficiency test & score' })
   @IsOptional()
   @IsString()

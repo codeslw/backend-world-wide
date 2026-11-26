@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../db/prisma.service';
 import { CreateApplicationDto } from './dto/create-application.dto';
 import { UpdateApplicationDto } from './dto/update-application.dto';
-import { Prisma, ApplicationStatus } from '@prisma/client';
+import { ApplicationStatus, PartnerApplicationStatus } from '@prisma/client';
+import { resolveIntakeId } from '../admissions/status';
 
 @Injectable()
 export class ApplicationsRepository {
@@ -10,12 +11,24 @@ export class ApplicationsRepository {
 
   async create(profileId: string, createApplicationDto: CreateApplicationDto) {
     // Only handle submittedAt date conversion, other date fields are now in Profile
-    const { submittedAt, preferredUniversity, preferredProgram, ...restData } =
-      createApplicationDto;
+    const {
+      submittedAt,
+      preferredUniversity,
+      preferredProgram,
+      intakeId,
+      ...restData
+    } = createApplicationDto;
 
     return this.prisma.application.create({
       data: {
         ...restData,
+        intakeId: await resolveIntakeId(
+          this.prisma,
+          preferredProgram,
+          restData.intakeSeason,
+          restData.intakeYear,
+          intakeId,
+        ),
         profile: { connect: { id: profileId } },
         university: { connect: { id: preferredUniversity } },
         program: { connect: { id: preferredProgram } },
@@ -114,6 +127,26 @@ export class ApplicationsRepository {
     return this.prisma.application.update({
       where: { id },
       data,
+      include: {
+        profile: true,
+        university: {
+          include: {
+            country: true,
+          },
+        },
+        program: true,
+      },
+    });
+  }
+
+  async updateStatus(
+    id: string,
+    status: PartnerApplicationStatus,
+    rejectionReason?: string,
+  ) {
+    return this.prisma.application.update({
+      where: { id },
+      data: { status, ...(rejectionReason && { rejectionReason }) },
       include: {
         profile: true,
         university: {

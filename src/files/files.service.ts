@@ -239,6 +239,53 @@ export class FilesService {
     return this.prisma.file.delete({ where: { id: file.id } });
   }
 
+  /**
+   * Deletes a stored file unless another document or a profile still points at
+   * it (a profile file can be attached to an application). Best effort: the
+   * record that used it is already gone.
+   */
+  async deleteIfUnused(url: string): Promise<void> {
+    try {
+      if (!(await this.isReferenced(url))) await this.deleteFileByUrl(url);
+    } catch (error) {
+      this.logger.warn(`Stored file was not deleted: ${error.message}`);
+    }
+  }
+
+  /** Whether a document or a profile points at the stored file. */
+  private async isReferenced(url: string): Promise<boolean> {
+    const key = this.toStorageKey(url);
+    const [onApplications, onStudents, file] = await Promise.all([
+      this.prisma.applicationDocument.count({
+        where: { fileUrl: { in: [key, url] } },
+      }),
+      this.prisma.studentDocument.count({ where: { url: { in: [key, url] } } }),
+      this.prisma.file.findFirst({ where: { url: key }, select: { id: true } }),
+    ]);
+    if (onApplications > 0 || onStudents > 0) return true;
+    if (!file) return false;
+    const onProfiles = await this.prisma.profile.count({
+      where: {
+        OR: [
+          { passportCopyGuid: file.id },
+          { cvGuid: file.id },
+          { motivationLetterGuid: file.id },
+          { recommendationLetterGuids: { has: file.id } },
+          {
+            educationHistory: {
+              some: {
+                OR: [{ transcriptGuid: file.id }, { diplomaGuid: file.id }],
+              },
+            },
+          },
+          { languageCertificates: { some: { certificateGuid: file.id } } },
+          { standardizedTests: { some: { certificateGuid: file.id } } },
+        ],
+      },
+    });
+    return onProfiles > 0;
+  }
+
   async downloadFileByUrl(url: string, res: Response): Promise<void> {
     if (!url || !url.trim()) {
       throw new BadRequestException('A file url is required');

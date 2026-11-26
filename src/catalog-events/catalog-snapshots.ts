@@ -1,5 +1,12 @@
 import { Prisma } from '@prisma/client';
-import { normalizeStage } from '../crm-events/process-stage';
+import {
+  loadAdminAccount,
+  loadClientApplicant,
+  loadClientApplication,
+  loadMiniApplication,
+  loadPartnerApplication,
+  loadPartnerStudent,
+} from './admission-snapshots';
 
 /**
  * Builds the published (contract) shape of each catalog entity: the
@@ -184,21 +191,28 @@ export async function loadCatalogSnapshot(
       });
     case 'partner_account':
       return loadPartnerAccount(db, id);
+    case 'admin_account':
+      return loadAdminAccount(db, id);
     case 'partner_student':
       return loadPartnerStudent(db, id);
+    case 'client_applicant':
+      return loadClientApplicant(db, id);
     case 'partner_application':
       return loadPartnerApplication(db, id);
+    case 'client_application':
+      return loadClientApplication(db, id);
+    case 'mini_application':
+      return loadMiniApplication(db, id);
     default:
       return undefined;
   }
 }
 
 /**
- * A partner login: a PARTNER user with the organization and role they act
- * under. Owners have no partner_members row, they own the organization
- * (which may not exist yet if they never logged in). Carries the bcrypt
- * password hash: the admin sets the password here, and edu-crm lets the
- * partner sign in with it (the CRM never sees plain passwords).
+ * A partner: a PARTNER user with the organization and role they act under.
+ * Owners have no partner_members row, they own the organization (which may not
+ * exist yet if they never logged in). edu-crm shows who at an agency made an
+ * application; partners don't sign in there, so no password is sent.
  */
 async function loadPartnerAccount(
   db: Prisma.TransactionClient,
@@ -209,7 +223,6 @@ async function loadPartnerAccount(
     select: {
       id: true,
       email: true,
-      password: true,
       role: true,
       updatedAt: true,
       profile: {
@@ -233,7 +246,6 @@ async function loadPartnerAccount(
   return {
     id: user.id,
     email: user.email,
-    passwordHash: user.password,
     phone: toE164(user.profile?.phoneNumber),
     firstName: user.profile?.firstName ?? null,
     lastName: user.profile?.lastName ?? null,
@@ -243,83 +255,6 @@ async function loadPartnerAccount(
     // Owners and managers can do everything; permissions only limit members.
     permissions: member ? member.permissions.map((p) => p.action) : [],
     updatedAt: user.updatedAt,
-  };
-}
-
-/** The organization a partner user acts under: owned, or joined as a member. */
-async function partnerOrganizationId(
-  db: Prisma.TransactionClient,
-  userId: string,
-): Promise<string | null> {
-  const owned = await db.partnerOrganization.findUnique({
-    where: { ownerId: userId },
-    select: { id: true },
-  });
-  if (owned) return owned.id;
-  const member = await db.partnerMember.findUnique({
-    where: { userId },
-    select: { organizationId: true },
-  });
-  return member?.organizationId ?? null;
-}
-
-/**
- * A student of a partner: the contact fields edu-crm shares (it keeps them as
- * an applicant) and the organization the owning partner acts under.
- */
-async function loadPartnerStudent(
-  db: Prisma.TransactionClient,
-  id: string,
-): Promise<Record<string, unknown> | null> {
-  const student = await db.partnerStudent.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      partnerId: true,
-      firstName: true,
-      lastName: true,
-      phone: true,
-      email: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
-  if (!student) return null;
-  return {
-    ...student,
-    organizationId: await partnerOrganizationId(db, student.partnerId),
-  };
-}
-
-/** A partner's university application, keyed like the CRM's application. */
-async function loadPartnerApplication(
-  db: Prisma.TransactionClient,
-  id: string,
-): Promise<Record<string, unknown> | null> {
-  const application = await db.partnerApplication.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      partnerId: true,
-      partnerStudentId: true,
-      universityId: true,
-      programId: true,
-      intakeSeason: true,
-      intakeYear: true,
-      status: true,
-      stage: true,
-      notes: true,
-      submittedAt: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
-  if (!application) return null;
-  return {
-    ...application,
-    // The stage always agrees with the status, even if the status changed here.
-    stage: normalizeStage(application.status, application.stage),
-    organizationId: await partnerOrganizationId(db, application.partnerId),
   };
 }
 

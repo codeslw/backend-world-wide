@@ -45,6 +45,14 @@ export class CreateApplicationDto {
   @Max(new Date().getFullYear() + 5)
   intakeYear: number;
 
+  @ApiProperty({
+    required: false,
+    description: 'Exact intake, when the program has several in the season',
+  })
+  @IsOptional()
+  @IsString()
+  intakeId?: string;
+
   // Meta
   @ApiProperty({
     enum: ApplicationStatus,

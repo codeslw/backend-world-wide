@@ -4,44 +4,55 @@ import { CreatePartnerStudentDto } from './dto/create-partner-student.dto';
 import { UpdatePartnerStudentDto } from './dto/update-partner-student.dto';
 import { PartnerApplicationStatus } from '@prisma/client';
 import { PartnerOrganizationsService } from '../partner-organizations/partner-organizations.service';
+import { normalizeStage } from '../crm-events/process-stage';
 
-const STAGE_BY_STATUS: Record<PartnerApplicationStatus, string> = {
-  DRAFT: 'Ready to Apply',
-  SUBMITTED: 'Offer Issued',
-  UNDER_REVIEW: 'Offer Issued',
-  DOCUMENTS_REQUIRED: 'Ready for Visa',
-  CONDITIONAL_OFFER: 'Ready for Enrollment',
-  ACCEPTED: 'Ready for Enrollment',
-  REJECTED: 'Created',
-  WITHDRAWN: 'Created',
-  ENROLLED: 'Done',
-};
+/**
+ * The student's place in the portal's pipeline, from the admission stage of the
+ * application that got furthest. Closed applications don't move a student on.
+ * The labels are the portal's; the stages are the ones edu-crm works with
+ * (src/crm-events/process-stage.ts).
+ */
+const PIPELINE = [
+  'Created',
+  'Ready to Apply',
+  'Offer Issued',
+  'Ready for Visa',
+  'Ready for Enrollment',
+  'Done',
+];
 
-const STAGE_RANK: Record<string, number> = {
-  Created: 0,
-  'Ready to Apply': 1,
-  'Offer Issued': 2,
-  'Ready for Visa': 3,
-  'Ready for Enrollment': 4,
-  Done: 5,
-};
-
-function deriveCurrentStage(
-  partnerApplications?: Array<{
-    status: PartnerApplicationStatus;
-    createdAt?: Date;
-  }>,
-) {
-  if (!partnerApplications || partnerApplications.length === 0) {
+export function pipelineLabel(application: {
+  status: PartnerApplicationStatus;
+  stage?: number | null;
+  visaStatus?: string | null;
+}): string {
+  if (application.status === 'REJECTED' || application.status === 'WITHDRAWN') {
     return 'Created';
   }
+  const stage = normalizeStage(application.status, application.stage);
+  if (stage >= 7) return 'Done';
+  if (stage === 6) {
+    return application.visaStatus === 'APPROVED'
+      ? 'Ready for Enrollment'
+      : 'Ready for Visa';
+  }
+  return stage === 5 ? 'Offer Issued' : 'Ready to Apply';
+}
 
-  const derivedStages = partnerApplications.map(
-    (app) => STAGE_BY_STATUS[app.status] ?? 'Ready to Apply',
-  );
-  return derivedStages.reduce((best, stage) => {
-    return STAGE_RANK[stage] > STAGE_RANK[best] ? stage : best;
-  }, 'Created');
+export function deriveCurrentStage(
+  partnerApplications?: Array<{
+    status: PartnerApplicationStatus;
+    stage?: number | null;
+    visaStatus?: string | null;
+  }>,
+) {
+  return (partnerApplications ?? [])
+    .map(pipelineLabel)
+    .reduce(
+      (best, label) =>
+        PIPELINE.indexOf(label) > PIPELINE.indexOf(best) ? label : best,
+      'Created',
+    );
 }
 
 @Injectable()
@@ -81,7 +92,14 @@ export class PartnerStudentsService {
           select: { partnerApplications: true, studentDocuments: true },
         },
         partnerApplications: {
-          select: { id: true, status: true, createdAt: true, updatedAt: true },
+          select: {
+            id: true,
+            status: true,
+            stage: true,
+            visaStatus: true,
+            createdAt: true,
+            updatedAt: true,
+          },
           orderBy: { createdAt: 'desc' },
         },
         partner: {
@@ -94,12 +112,7 @@ export class PartnerStudentsService {
 
     return students.map((student) => ({
       ...student,
-      currentStage: deriveCurrentStage(
-        student.partnerApplications as Array<{
-          status: PartnerApplicationStatus;
-          createdAt?: Date;
-        }>,
-      ),
+      currentStage: deriveCurrentStage(student.partnerApplications),
     }));
   }
 
@@ -160,6 +173,7 @@ export class PartnerStudentsService {
             id: true,
             status: true,
             stage: true,
+            visaStatus: true,
             origin: true,
             createdAt: true,
             university: { select: { name: true } },
@@ -191,12 +205,7 @@ export class PartnerStudentsService {
         null;
       return {
         ...student,
-        currentStage: deriveCurrentStage(
-          student.partnerApplications as Array<{
-            status: PartnerApplicationStatus;
-            createdAt?: Date;
-          }>,
-        ),
+        currentStage: deriveCurrentStage(student.partnerApplications),
         partnerOrganizationId: org?.id ?? null,
         partnerOrganizationName: org?.name ?? null,
       };
@@ -240,12 +249,7 @@ export class PartnerStudentsService {
     }
     return {
       ...student,
-      currentStage: deriveCurrentStage(
-        student.partnerApplications as Array<{
-          status: PartnerApplicationStatus;
-          createdAt?: Date;
-        }>,
-      ),
+      currentStage: deriveCurrentStage(student.partnerApplications),
     };
   }
 

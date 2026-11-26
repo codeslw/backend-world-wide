@@ -1,7 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProfileResponseDto } from '../../profiles/dto/profile-response.dto';
 import { PaginatedResponseDto } from '../../common/dto/pagination-response.dto';
-import { IntakeSeason, ApplicationStatus } from '@prisma/client';
+import {
+  ApplicationStatus,
+  IntakeSeason,
+  PartnerApplicationStatus,
+} from '@prisma/client';
 
 export class ApplicationResponseDto {
   @ApiProperty({ description: 'Application ID' })
@@ -48,10 +52,54 @@ export class ApplicationResponseDto {
   intakeYear: number;
 
   @ApiProperty({
+    enum: PartnerApplicationStatus,
+    description:
+      'Admission status, the same nine values as partner applications and edu-crm',
+  })
+  status: PartnerApplicationStatus;
+
+  @ApiProperty({
+    description:
+      'Step of the admission process, 1 Консультация to 7 Готово (always within the range the status allows)',
+  })
+  stage: number;
+
+  @ApiPropertyOptional({
+    description: 'Statuses an admin can move the application to next',
+    enum: PartnerApplicationStatus,
+    isArray: true,
+  })
+  allowedStatuses?: PartnerApplicationStatus[];
+
+  @ApiPropertyOptional({
+    description: 'Visa progress, set in edu-crm',
+    enum: ['PREPARING', 'SUBMITTED', 'APPROVED', 'REFUSED'],
+  })
+  visaStatus?: string | null;
+
+  @ApiProperty({
     enum: ApplicationStatus,
-    description: 'Status of the application',
+    description:
+      'Older five-value status, derived from `status`; prefer `status`',
   })
   applicationStatus: ApplicationStatus;
+
+  @ApiPropertyOptional({
+    description: 'Where it was created: SITE, ADMIN or CRM (edu-crm)',
+  })
+  origin?: string;
+
+  @ApiPropertyOptional({
+    description: 'When edu-crm last sent it',
+    nullable: true,
+  })
+  crmSyncedAt?: Date | null;
+
+  @ApiPropertyOptional({
+    description: 'Its manager in edu-crm',
+    nullable: true,
+  })
+  crmAssigneeName?: string | null;
 
   @ApiPropertyOptional({
     description: 'Rejection reason (only present when status is REJECTED)',

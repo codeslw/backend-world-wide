@@ -1,129 +1,114 @@
 # Student events (`ww.student.v1` and `crm.student.v1`)
 
-Applicants and applications are kept in sync **both ways** between edu-world-wide
-and edu-crm:
+edu-crm is the admin team's tool for admissions: **every** applicant, application and
+website request is mirrored there under the **same id**, over NATS JetStream, and what
+the team does in the CRM comes back.
 
-| edu-crm | edu-world-wide |
-|---|---|
-| `applicants` | `partner_students` |
-| `applications` | `partner_applications` |
-
-Both systems use the **same id** for a record, so an event is an upsert of the row
-with that id and no mapping table is needed. Each direction has its own stream and a
-single publisher.
+| edu-world-wide | edu-crm | WW_STUDENTS entity |
+|---|---|---|
+| client user + profile | applicant (`client`) | `client_applicant` (keyed by user id) |
+| `partner_students` | applicant (`partner`) | `partner_student` |
+| `applications` | application (`client`) | `client_application` |
+| `partner_applications` | application (`partner`) | `partner_application` |
+| `mini_applications` | website request | `mini_application` |
 
 ```
 edu-world-wide ──WW_STUDENTS──▶ edu-crm      (ww.student.v1.<entity>.<id>)
 edu-world-wide ◀─CRM_STUDENTS── edu-crm      (crm.student.v1.<entity>.<id>)
 ```
 
-## world-wide → CRM (`WW_STUDENTS`)
+## world-wide → CRM
 
-Same mechanism as the catalog (see `catalog-events.md`): triggers on `partner_students`
-and `partner_applications` write `catalog_outbox` rows, `CatalogEventsRelay` publishes
-the current state, last message per subject kept. Entities `partner_student` and
-`partner_application`; a deleted row is a tombstone (`deleted: true`).
+Triggers write `catalog_outbox` rows; `CatalogEventsRelay` publishes the current
+state within about a quarter second, last message per subject kept. A deleted row is a
+tombstone (`deleted: true`). Open applications are re-published nightly so their
+document counts and expiry dates stay current.
 
-`partner_student` data: `id, partnerId, organizationId, firstName, lastName, phone,
-email, createdAt, updatedAt`. `partner_application` data: `id, partnerId,
-organizationId, partnerStudentId, universityId, programId, intakeSeason, intakeYear,
-status, stage, notes, submittedAt, createdAt, updatedAt`.
+- **Applicants** (`client_applicant`, `partner_student`): `id, kind, partnerId?,
+  organizationId?, firstName, lastName, middleName, phone, email, accountEmail?,
+  dateOfBirth, gender, nationality, country, city, passportExpiryDate, hasPassport,
+  leadSource, profile {desiredLevel, education[], tests[]}, documentKinds[],
+  documentExpiries[], origin, createdAt, updatedAt`. Passport numbers and addresses
+  are not published; the CRM reads the full profile through `GET /crm/applicants/:kind/:id`.
+- **Applications**: `id, kind, applicantId, partnerId?, organizationId?,
+  universityId, programId, intakeSeason, intakeYear, intakeId, status, stage,
+  rejectionReason, submittedAt, reviewedAt, statusChangedAt, detailsChangedAt,
+  visaStatus, notes, adminNotes, englishProficiency, gpa, prerequisites,
+  backupPrograms, documents {required, uploaded, approved, rejected},
+  documentExpiries, origin, createdAt, updatedAt`.
+- **Mini applications**: `id, firstName, lastName, phone, source, service, country,
+  notes, universityId, status (NEW|CONTACTED|CLOSED), statusChangedAt, createdAt,
+  updatedAt`.
 
-`organizationId` is the organization the owning partner acts under (owned or joined);
-the CRM skips a student whose partner has none. Only the contact fields are shared:
-passport, education, documents and the rest of the student profile stay here.
-
-On first run the migration queues every existing student and application, so the CRM
-imports them. `npm run catalog:resync` republishes everything.
+On deploy, the migration queues every record. `npm run catalog:resync` republishes
+everything.
 
 ## CRM → world-wide (`CRM_STUDENTS`)
 
-The CRM creates the stream and publishes with a transactional outbox. Subjects
-`crm.student.v1.applicant.<id>` and `crm.student.v1.application.<id>`; the message is the
-whole entity (same envelope as the other contracts, `data` without null fields).
+Subjects `crm.student.v1.{applicant,application,mini_application}.<id>`, the whole
+record, `data` without null fields. `CrmEventsConsumer` (durable `ww-students`) and
+`CrmStudentsApplier` upsert it. Failed events are retried with backoff (up to 10
+minutes apart) for as long as it takes, with an error logged after 10 attempts.
 
-`CrmEventsConsumer` (`src/crm-events`) reads it with the durable `ww-students` and
-`CrmStudentsApplier` upserts:
+- **applicant**: contacts go to the client's profile (never their sign-in email), or to
+  the partner student. A student made in the CRM belongs to the internal house agency.
+- **application**: status, stage, rejection reason, submission, university, program,
+  intake and visa. The CRM's internal notes are never sent. A status change made by a
+  partner application's CRM user is written to the audit log under `changedByName`.
+  Applications need an intake.
+- **mini_application**: status and the CRM manager. The CRM's finer statuses map
+  onto ours: `qualified` arrives as `CONTACTED`, `converted` as `CLOSED`.
 
-- **applicant** → `partner_students`: `firstName`, `lastName`, `phone`, `email`. `phone`
-  and `email` are left out of the event when the CRM has none, and an absent key never
-  erases what is stored here. A new student belongs to the CRM user's partner account
-  (`partnerUserId`) when that is a partner, otherwise to the organization's owner; an
-  existing student keeps its partner.
-- **application** → `partner_applications`: `status`, `notes`, `submittedAt`, university,
-  program and intake (`intakeSeason` + `intakeYear`). world-wide needs an intake, so an
-  application without one is not created until the CRM sends it again with one.
-  The program must already be in the catalog (the event is retried until it is).
-- If an application arrives before its applicant, a stub student (`—`) is created and the
-  applicant event fills it in.
+## Statuses, stages and conflicts
 
-## Stage
+Client and partner applications use the same **nine statuses** (`applications.status`;
+the old five-value `applicationStatus` is derived from it by a trigger) and **seven
+stages** (1 Консультация, 2 Выбор вуза, 3 Документы, 4 Подача, 5 Оффер, 6 Виза,
+7 Готово). `admission_stage()` in SQL, `normalizeStage` here and `NormalizeStage` in
+edu-crm are the same rule.
 
-`stage` (1-7) is the step of the admission process: 1 Консультация, 2 Выбор вуза, 3 Документы,
-4 Подача, 5 Оффер, 6 Виза, 7 Готово. edu-crm sets it, `partner_applications.stage` stores it
-(NULL until then) and both directions carry it. The status limits it; `normalizeStage`
-(`src/crm-events/process-stage.ts`) is the same rule as edu-crm's `NormalizeStage`, and both are tested
-with the same vectors. The snapshot always sends a stage that agrees with the status, even when the
-status was changed here. These seven steps are the CRM's pipeline and are not the same thing as the
-admin-managed `application_process_steps` template, which is unchanged.
+Each application keeps two change times: `statusChangedAt` (status, stage, rejection
+reason, submission) and `detailsChangedAt` (university, program, intake). **The later
+change wins, group by group**, and both systems apply exactly this rule (`newerGroups`).
+When the CRM sends something older than what is here, we send ours back. In both
+systems, users can't reopen a closed application or return it to draft.
+
+`PUT /applications/:id/status` and `PUT /partner-applications/:id/status` enforce the
+same transition rule as edu-crm; responses carry `stage` and `allowedStatuses`.
 
 ## Documents
 
-Documents are not synced: they live here only (`application_documents`, files in DO Spaces).
-The CRM shows and uploads them by calling this service's API **on behalf of its user**:
+Documents stay here (`application_documents`, `student_documents`, profile files).
+Kinds are `DocumentRequirementKind`. An application's checklist merges the process
+template with the program's document requirements by kind; a requirement the program
+adds is addressed as `kind:<KIND>`. Matching profile files appear in the checklist and
+can be attached (`POST /application-documents/from-profile`, admins). The response's
+`documentTypeId` is the key to upload against.
 
-- Headers `X-Service-Token: <CRM_SERVICE_TOKEN>` and `X-Act-As-User: <world-wide user id>`
-  (the CRM login's `source_user_id`). `ServiceActorGuard` checks the token (timing-safe, at
-  least 32 characters, disabled when unset), loads the user and sets `req.user` as the JWT
-  strategy would. Only `PARTNER` and `ADMIN` users can be acted as, and not a partner of a
-  deactivated organization.
-- The guard is on `/application-documents/*`, `/student-documents/*` and `POST /files/upload` only. Everything
-  else still needs a JWT.
-- The endpoints' own rules apply to the acted-as user: a partner sees and uploads
-  documents only for applications of partners it can see (`resolveVisiblePartnerIds`).
-- Partners (and students) upload with status `PENDING` and cannot upload `OFFER_LETTER`
-  or `ADMIN_DOC`; when they fulfil a requirement the requirement's `fileTypes` and
-  `maxSizeMb` apply. They can delete their own uploads until approved, but not what the
-  admin side uploaded. Reviewing (`PATCH /application-documents/:id/status`) is admin-only.
-
-## Status changes here
-
-`PUT /partner-applications/:id/status` (admin) follows the same transition rule as the CRM's
-`CheckTransition`: final statuses (`ENROLLED`, `REJECTED`, `WITHDRAWN`) stay final, nothing
-goes back to `DRAFT`, and a draft can only be submitted or withdrawn. It stores the
-normalized stage and sets `submittedAt` the first time an application is submitted. The
-response carries `stage` and `allowedStatuses` for the admin panel.
+edu-crm calls these endpoints with `X-Service-Token: <CRM_SERVICE_TOKEN>` and either
+`X-Act-As-User: <admin id>` (the signed-in admin, or the configured one for CRM staff)
+or `X-Act-As-Student: partner:<id> | client:<user id>` (the student's own page in the
+CRM, which can only reach that student's applications). `ServiceActorGuard` covers
+`/application-documents/*`, `/student-documents/*`, `POST /files/upload` and
+`/crm/applicants/*`.
 
 ## Tracking in the admin panel
 
-`partner_students` and `partner_applications` carry what the admin team needs to follow CRM
-records (migration `20261117000000_crm_tracking`):
-
-- `origin`: `CRM` when the consumer created the row, `PORTAL` (partner portal) or `ADMIN`.
-  Existing rows were backfilled: a row without a creation entry in `partner_audit_logs` came
-  from the CRM.
-- `crmSyncedAt`: stamped on every CRM event applied to the row.
-- `crmAssigneeName`: the record's manager in the CRM (`assigneeName` in the event; absent means
-  nobody).
-- `stage` is now stored normalized for every application, so lists filter on it
-  (`GET /partner-applications?origin=CRM&stage=5`; `search` also matches the CRM manager).
-
-The CRM requires an intake to create an application when the program offers intakes, so its
-applications reach this service at once. `student_documents` rows store the storage key (reads
-resolve a stable public URL, also for older rows saved with an expiring link), plus `fileSize`,
-`mimeType` and the uploader; partners can't delete what an admin added.
+Records carry `origin` (where they were created), `crmSyncedAt` and `crmAssigneeName`
+(the CRM manager), and the admin panel shows them.
 
 ## Echo suppression
 
-A change applied from the other system must not be sent back. The consumer sets
-`ww.origin = 'crm'` for its transaction and the `student_outbox_*` triggers skip it; the
-CRM does the same with `crm.origin = 'sync'`. Consequently a record created in the CRM
-appears in `WW_STUDENTS` only after it changes here.
+The consumer sets `ww.origin = 'crm'` for its transaction, which the outbox triggers
+skip; edu-crm does the same with `crm.origin = 'sync'`. Documents are the exception:
+a change to an application's documents always republishes the application, because its
+counts must reach the CRM.
 
-## Conflicts
+## Deploy order
 
-Last event wins. Statuses are the same nine values on both sides (the CRM uses lower
-case). Retries: failed events are redelivered with backoff, up to 10 times.
+Deploy edu-crm first, then this service right after. This service's migrations queue
+everything the CRM needs; admins can't sign in to the new CRM until this version runs
+(it answers the password checks).
 
 ## Compatibility
 

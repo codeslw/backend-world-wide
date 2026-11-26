@@ -3,6 +3,8 @@ import { Role } from '@prisma/client';
 import { PrismaService } from '../db/prisma.service';
 import { FilesService } from '../files/files.service';
 import { CreateStudentDocumentDto } from './dto/create-student-document.dto';
+import { UpdateStudentDocumentDto } from './dto/update-student-document.dto';
+import { kindOfStudentDocument } from '../admissions/document-kinds';
 import {
   EntityNotFoundException,
   ForbiddenActionException,
@@ -45,8 +47,9 @@ export class StudentDocumentsService {
     const { uploadedBy, ...rest } = doc;
     return {
       ...rest,
+      kind: kindOfStudentDocument(doc.type),
       url: this.files.toPublicUrl(doc.url) ?? doc.url,
-      uploadedByName: name || uploadedBy?.email || null,
+      uploadedByName: name || uploadedBy?.email || rest.uploadedByName || null,
     };
   }
 
@@ -80,6 +83,7 @@ export class StudentDocumentsService {
         url: this.files.toStorageKey(dto.url),
         fileSize: dto.fileSize ?? null,
         mimeType: dto.mimeType ?? null,
+        expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
         uploadedById: requester.userId,
         uploadedByRole: requester.role,
       },
@@ -113,11 +117,33 @@ export class StudentDocumentsService {
       );
     }
     await this.prisma.studentDocument.delete({ where: { id } });
-    try {
-      await this.files.deleteFileByUrl(doc.url);
-    } catch {
-      // Best effort: the object may be gone already.
-    }
+    await this.files.deleteIfUnused(doc.url);
     return { id };
+  }
+
+  /** Changes what a document is or when it expires. */
+  async update(
+    partnerIds: string[] | undefined,
+    id: string,
+    dto: UpdateStudentDocumentDto,
+  ) {
+    const doc = await this.prisma.studentDocument.findUnique({
+      where: { id },
+      include: { student: { select: { partnerId: true } } },
+    });
+    if (!doc) throw new EntityNotFoundException('StudentDocument', id);
+    if (partnerIds && !partnerIds.includes(doc.student.partnerId))
+      throw new ForbiddenActionException('Access denied');
+    const updated = await this.prisma.studentDocument.update({
+      where: { id },
+      data: {
+        ...(dto.type?.trim() && { type: dto.type.trim() }),
+        ...(dto.expiresAt !== undefined && {
+          expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
+        }),
+      },
+      include: this.include,
+    });
+    return this.toDto(updated);
   }
 }

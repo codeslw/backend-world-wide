@@ -1,4 +1,11 @@
-import { IsString, IsNotEmpty, IsInt, IsOptional, Min } from 'class-validator';
+import {
+  IsDateString,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateStudentDocumentDto {
@@ -32,4 +39,9 @@ export class CreateStudentDocumentDto {
   @IsOptional()
   @IsString()
   mimeType?: string;
+
+  @ApiPropertyOptional({ description: 'When the document stops being valid' })
+  @IsOptional()
+  @IsDateString()
+  expiresAt?: string;
 }

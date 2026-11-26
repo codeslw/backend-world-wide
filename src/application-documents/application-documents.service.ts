@@ -6,8 +6,10 @@ import { UpdateApplicationDocumentStatusDto } from './dto/update-application-doc
 import { ApplicationDocumentResponseDto } from './dto/application-document-response.dto';
 import {
   ApplicationRequirementsResponseDto,
+  ProfileFileDto,
   RequirementItemDto,
 } from './dto/application-requirements-response.dto';
+import { CreateDocumentFromProfileDto } from './dto/create-document-from-profile.dto';
 import {
   EntityNotFoundException,
   ForbiddenActionException,
@@ -16,20 +18,43 @@ import {
 import { PartnerOrganizationsService } from '../partner-organizations/partner-organizations.service';
 import {
   ApplicationDocumentStatus,
+  DocumentRequirementKind,
   Prisma,
   Role,
 } from '@prisma/client';
+import { StudentActor } from '../auth/guards/service-actor.guard';
+import {
+  ChecklistItem,
+  PROGRAM_FILE_TYPES,
+  PROGRAM_MAX_SIZE_MB,
+  ProfileFile,
+} from '../admissions/checklist';
+import {
+  ApplicationRef,
+  loadChecklist,
+  LoadedDocument,
+} from '../admissions/load-checklist';
+import { DOCUMENT_KIND_LABELS, isDocumentKind } from '../admissions/document-kinds';
+
+export { ApplicationRef };
 
 /** Kinds only the admin side uploads. */
 const ADMIN_ONLY_KINDS = new Set<string>(['OFFER_LETTER', 'ADMIN_DOC']);
 
-export type ApplicationRef =
-  | { type: 'partner'; id: string }
-  | { type: 'user'; id: string };
-
 export interface Requester {
-  userId: string;
+  /** Null for a student acting through their personal link. */
+  userId: string | null;
   role: Role;
+  student?: StudentActor;
+}
+
+/** What an upload fulfils: a template document type, a kind the program asks for, or nothing. */
+interface Target {
+  documentTypeId: string | null;
+  requirementKind: DocumentRequirementKind | null;
+  name: string | null;
+  fileTypes: string[];
+  maxSizeMb: number;
 }
 
 @Injectable()
@@ -55,6 +80,10 @@ export class ApplicationDocumentsService {
     if (requester.role === Role.ADMIN) {
       // Still confirm the application exists so we return 404 not a silent ok.
       await this.loadApplicationOwner(ref);
+      return;
+    }
+    if (requester.student) {
+      await this.assertStudentAccess(requester.student, ref);
       return;
     }
 
@@ -90,6 +119,29 @@ export class ApplicationDocumentsService {
     }
   }
 
+  /** A student reaches their own applications only. */
+  private async assertStudentAccess(
+    student: StudentActor,
+    ref: ApplicationRef,
+  ): Promise<void> {
+    if (ref.type === 'partner') {
+      const app = await this.prisma.partnerApplication.findUnique({
+        where: { id: ref.id },
+        select: { partnerStudentId: true },
+      });
+      if (!app) throw new EntityNotFoundException('PartnerApplication', ref.id);
+      if (student.kind === 'partner' && app.partnerStudentId === student.id) return;
+    } else {
+      const app = await this.prisma.application.findUnique({
+        where: { id: ref.id },
+        select: { profile: { select: { userId: true } } },
+      });
+      if (!app) throw new EntityNotFoundException('Application', ref.id);
+      if (student.kind === 'client' && app.profile?.userId === student.id) return;
+    }
+    throw new ForbiddenActionException('Access denied');
+  }
+
   private async loadApplicationOwner(ref: ApplicationRef): Promise<void> {
     if (ref.type === 'partner') {
       const app = await this.prisma.partnerApplication.findUnique({
@@ -106,7 +158,10 @@ export class ApplicationDocumentsService {
     }
   }
 
-  private refFromDto(dto: CreateApplicationDocumentDto): ApplicationRef {
+  private refFromDto(dto: {
+    partnerApplicationId?: string;
+    applicationId?: string;
+  }): ApplicationRef {
     if (dto.partnerApplicationId && dto.applicationId) {
       throw new InvalidDataException(
         'Provide exactly one of partnerApplicationId or applicationId',
@@ -134,7 +189,7 @@ export class ApplicationDocumentsService {
 
   private mapToDto(doc: any): ApplicationDocumentResponseDto {
     const profile = doc.uploadedBy?.profile;
-    const uploadedByName = profile
+    const accountName = profile
       ? [profile.firstName, profile.lastName].filter(Boolean).join(' ').trim() ||
         doc.uploadedBy?.email
       : doc.uploadedBy?.email || null;
@@ -145,6 +200,7 @@ export class ApplicationDocumentsService {
       applicationId: doc.applicationId,
       documentTypeId: doc.documentTypeId,
       documentTypeName: doc.documentType?.name ?? null,
+      requirementKind: doc.requirementKind ?? null,
       name: doc.name,
       fileUrl: this.files.toPublicUrl(doc.fileUrl) ?? doc.fileUrl,
       fileSize: doc.fileSize,
@@ -153,11 +209,27 @@ export class ApplicationDocumentsService {
       status: doc.status,
       reviewNote: doc.reviewNote,
       comment: doc.comment,
+      expiresAt: doc.expiresAt ?? null,
       uploadedById: doc.uploadedById,
       uploadedByRole: doc.uploadedByRole,
-      uploadedByName,
+      uploadedByName: accountName ?? doc.uploadedByName ?? null,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
+    };
+  }
+
+  private mapProfileFile(file: ProfileFile): ProfileFileDto {
+    return {
+      id: file.id,
+      source: file.source,
+      kind: file.kind,
+      type: file.type,
+      name: file.name,
+      fileUrl: this.files.toPublicUrl(file.url) ?? file.url,
+      fileSize: file.fileSize,
+      mimeType: file.mimeType,
+      expiresAt: file.expiresAt,
+      createdAt: file.createdAt,
     };
   }
 
@@ -183,28 +255,18 @@ export class ApplicationDocumentsService {
         `Only an admin can upload a ${dto.kind} document`,
       );
     }
-    if (dto.documentTypeId) {
-      const type = await this.prisma.applicationDocumentType.findUnique({
-        where: { id: dto.documentTypeId },
-        select: { id: true, name: true, fileTypes: true, maxSizeMb: true },
-      });
-      if (!type) {
+    const target = await this.resolveTarget(dto.documentTypeId);
+    // The requirement's own limits; admins may attach anything.
+    if (target && !isAdmin) {
+      if (dto.fileSize && target.maxSizeMb > 0 && dto.fileSize > target.maxSizeMb * 1024 * 1024) {
         throw new InvalidDataException(
-          `Document type ${dto.documentTypeId} does not exist`,
+          `"${target.name}" accepts files up to ${target.maxSizeMb} MB`,
         );
       }
-      // The requirement's own limits; admins may attach anything.
-      if (!isAdmin) {
-        if (dto.fileSize && type.maxSizeMb > 0 && dto.fileSize > type.maxSizeMb * 1024 * 1024) {
-          throw new InvalidDataException(
-            `"${type.name}" accepts files up to ${type.maxSizeMb} MB`,
-          );
-        }
-        if (!matchesFileTypes(type.fileTypes, dto.name, dto.mimeType)) {
-          throw new InvalidDataException(
-            `"${type.name}" accepts ${type.fileTypes.join(', ')} files`,
-          );
-        }
+      if (!matchesFileTypes(target.fileTypes, dto.name, dto.mimeType)) {
+        throw new InvalidDataException(
+          `"${target.name}" accepts ${target.fileTypes.join(', ')} files`,
+        );
       }
     }
     const name = dto.name?.trim();
@@ -213,32 +275,132 @@ export class ApplicationDocumentsService {
       throw new InvalidDataException('fileUrl is required');
     }
 
-    // Persist the storage key (not a resolved URL), consistent with chat files.
-    const fileKey = this.files.toStorageKey(dto.fileUrl);
-
     const doc = await this.prisma.applicationDocument.create({
       data: {
-        ...(ref.type === 'partner'
-          ? { partnerApplication: { connect: { id: ref.id } } }
-          : { application: { connect: { id: ref.id } } }),
-        ...(dto.documentTypeId && {
-          documentType: { connect: { id: dto.documentTypeId } },
-        }),
+        ...this.ownerOf(ref),
+        ...this.fulfils(target),
         name,
-        fileUrl: fileKey,
+        // Persist the storage key (not a resolved URL), consistent with chat files.
+        fileUrl: this.files.toStorageKey(dto.fileUrl),
         fileSize: dto.fileSize,
         mimeType: dto.mimeType,
-        kind: dto.kind ?? (dto.documentTypeId ? 'REQUIREMENT' : 'OTHER'),
+        kind: dto.kind ?? (target ? 'REQUIREMENT' : 'OTHER'),
         status: isAdmin
           ? (dto.status ?? ApplicationDocumentStatus.PENDING)
           : ApplicationDocumentStatus.PENDING,
         comment: dto.comment ?? null,
-        uploadedBy: { connect: { id: requester.userId } },
-        uploadedByRole: requester.role,
+        expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
+        ...this.uploader(requester),
       },
       include: this.include,
     });
 
+    return this.mapToDto(doc);
+  }
+
+  private ownerOf(ref: ApplicationRef) {
+    return ref.type === 'partner'
+      ? { partnerApplication: { connect: { id: ref.id } } }
+      : { application: { connect: { id: ref.id } } };
+  }
+
+  private fulfils(target: Target | null) {
+    if (!target) return {};
+    return target.documentTypeId
+      ? { documentType: { connect: { id: target.documentTypeId } } }
+      : { requirementKind: target.requirementKind };
+  }
+
+  private uploader(requester: Requester) {
+    return {
+      ...(requester.userId && {
+        uploadedBy: { connect: { id: requester.userId } },
+      }),
+      uploadedByRole: requester.role,
+      ...(requester.student && { uploadedByName: requester.student.name }),
+    };
+  }
+
+  /**
+   * What `documentTypeId` names: a document type of the process template, or
+   * `kind:<KIND>` for a document the program itself asks for.
+   */
+  private async resolveTarget(
+    key: string | null | undefined,
+  ): Promise<Target | null> {
+    if (!key) return null;
+    if (key.startsWith('kind:')) {
+      const kind = key.slice('kind:'.length);
+      if (!isDocumentKind(kind)) {
+        throw new InvalidDataException(`Unknown document kind ${kind}`);
+      }
+      return {
+        documentTypeId: null,
+        requirementKind: kind,
+        name: DOCUMENT_KIND_LABELS[kind].en,
+        fileTypes: PROGRAM_FILE_TYPES,
+        maxSizeMb: PROGRAM_MAX_SIZE_MB,
+      };
+    }
+    const type = await this.prisma.applicationDocumentType.findUnique({
+      where: { id: key },
+      select: { id: true, name: true, fileTypes: true, maxSizeMb: true, kind: true },
+    });
+    if (!type) {
+      throw new InvalidDataException(`Document type ${key} does not exist`);
+    }
+    return {
+      documentTypeId: type.id,
+      requirementKind: type.kind,
+      name: type.name,
+      fileTypes: type.fileTypes,
+      maxSizeMb: type.maxSizeMb,
+    };
+  }
+
+  /**
+   * Puts a file from the applicant's profile on the application, for one of its
+   * requirements (admins; used when reviewing a requirement the profile
+   * answers). The file itself is shared, not copied.
+   */
+  async createFromProfile(
+    requester: Requester,
+    dto: CreateDocumentFromProfileDto,
+  ): Promise<ApplicationDocumentResponseDto> {
+    if (requester.role !== Role.ADMIN) {
+      throw new ForbiddenActionException('Only an admin can attach a profile file');
+    }
+    const ref = this.refFromDto(dto);
+    const loaded = await loadChecklist(this.prisma, ref);
+    if (!loaded) throw new EntityNotFoundException('Application', ref.id);
+    const item = loaded.checklist.steps
+      .flatMap((s) => s.requirements)
+      .find((r) => r.key === dto.documentTypeId);
+    if (!item) {
+      throw new InvalidDataException('This requirement is not on the checklist');
+    }
+    const file = item.profileFiles.find((f) => f.id === dto.profileFileId);
+    if (!file) {
+      throw new InvalidDataException('This file is not on the profile');
+    }
+    const doc = await this.prisma.applicationDocument.create({
+      data: {
+        ...this.ownerOf(ref),
+        ...(item.documentTypeId
+          ? { documentType: { connect: { id: item.documentTypeId } } }
+          : { requirementKind: item.kind }),
+        name: file.name,
+        fileUrl: this.files.toStorageKey(file.url),
+        fileSize: file.fileSize,
+        mimeType: file.mimeType,
+        kind: 'REQUIREMENT',
+        status: dto.status ?? ApplicationDocumentStatus.PENDING,
+        reviewNote: dto.reviewNote ?? null,
+        expiresAt: file.expiresAt,
+        ...this.uploader(requester),
+      },
+      include: this.include,
+    });
     return this.mapToDto(doc);
   }
 
@@ -279,7 +441,13 @@ export class ApplicationDocumentsService {
 
     const updated = await this.prisma.applicationDocument.update({
       where: { id },
-      data: { status: dto.status, reviewNote: dto.reviewNote },
+      data: {
+        status: dto.status,
+        reviewNote: dto.reviewNote,
+        ...(dto.expiresAt !== undefined && {
+          expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
+        }),
+      },
       include: this.include,
     });
     return this.mapToDto(updated);
@@ -304,6 +472,9 @@ export class ApplicationDocumentsService {
       : { type: 'user', id: existing.applicationId! };
     await this.assertAccess(requester, ref);
 
+    if (requester.student && existing.uploadedByRole !== Role.CLIENT) {
+      throw new ForbiddenActionException('You can only delete files you uploaded');
+    }
     // Partners and students can take back their own uploads until they are
     // approved; approved documents and what the admin side sent stay.
     if (requester.role !== Role.ADMIN) {
@@ -321,12 +492,9 @@ export class ApplicationDocumentsService {
 
     await this.prisma.applicationDocument.delete({ where: { id } });
 
-    // Best-effort storage cleanup; do not fail the request if it errors.
-    try {
-      await this.files.deleteFileByUrl(existing.fileUrl);
-    } catch {
-      // Object may already be gone, or be shared; ignore.
-    }
+    // Best-effort storage cleanup; do not fail the request if it errors. A file
+    // also used elsewhere (the profile, another application) stays.
+    await this.files.deleteIfUnused(existing.fileUrl);
 
     return { id };
   }
@@ -334,135 +502,54 @@ export class ApplicationDocumentsService {
   // ── Requirements checklist ───────────────────────────────────────────────────
 
   /**
-   * Resolve the ApplyBoard-style requirements checklist for an application:
-   * the program's process template (or default) cross-referenced with the
-   * documents already uploaded against this application.
+   * The application's documents checklist: the process template and the
+   * program's own requirements merged, with what was uploaded for each and the
+   * profile files that answer it (see src/admissions/checklist.ts).
    */
   async getRequirements(
     requester: Requester,
     ref: ApplicationRef,
   ): Promise<ApplicationRequirementsResponseDto> {
     await this.assertAccess(requester, ref);
-
-    // Resolve the program for this application.
-    const programId = await this.resolveProgramId(ref);
-
-    const template = programId
-      ? await this.resolveTemplateForProgram(programId)
-      : await this.resolveDefaultTemplate();
-
-    const docs = await this.prisma.applicationDocument.findMany({
-      where:
-        ref.type === 'partner'
-          ? { partnerApplicationId: ref.id }
-          : { applicationId: ref.id },
-      include: this.include,
-      orderBy: { createdAt: 'desc' },
-    });
-
-    const docsByType = new Map<string, any[]>();
-    const otherDocs: any[] = [];
-    for (const doc of docs) {
-      if (doc.documentTypeId) {
-        const list = docsByType.get(doc.documentTypeId) ?? [];
-        list.push(doc);
-        docsByType.set(doc.documentTypeId, list);
-      } else {
-        otherDocs.push(doc);
-      }
-    }
-
-    const steps = (template?.steps ?? []).map((step: any) => ({
-      stepId: step.id,
-      name: step.name,
-      description: step.description,
-      order: step.order,
-      statusKey: step.statusKey,
-      requirements: (step.requiredDocuments ?? []).map((dt: any) =>
-        this.buildRequirementItem(dt, docsByType.get(dt.id) ?? []),
-      ),
-    }));
-
+    const loaded = await loadChecklist(this.prisma, ref);
+    if (!loaded) throw new EntityNotFoundException('Application', ref.id);
+    const { checklist } = loaded;
     return {
-      templateId: template?.id ?? null,
-      templateName: template?.name ?? null,
-      steps,
-      otherDocuments: otherDocs.map((d) => this.mapToDto(d)),
+      templateId: loaded.templateId,
+      templateName: loaded.templateName,
+      interviewRequired: checklist.interviewRequired,
+      summary: checklist.summary,
+      steps: checklist.steps.map((step) => ({
+        stepId: step.stepId,
+        name: step.name,
+        description: step.description,
+        order: step.order,
+        statusKey: step.statusKey,
+        stage: step.stage,
+        requirements: step.requirements.map((r) => this.mapRequirement(r)),
+      })),
+      otherDocuments: checklist.otherDocuments.map((d) => this.mapToDto(d)),
     };
   }
 
-  private buildRequirementItem(
-    documentType: any,
-    docs: any[],
-  ): RequirementItemDto {
-    let status: RequirementItemDto['status'];
-    if (!docs.length) {
-      status = 'MISSING';
-    } else if (docs.some((d) => d.status === ApplicationDocumentStatus.APPROVED)) {
-      status = 'APPROVED';
-    } else if (
-      docs.every((d) => d.status === ApplicationDocumentStatus.REJECTED)
-    ) {
-      status = 'REJECTED';
-    } else if (
-      docs.some((d) => d.status === ApplicationDocumentStatus.IN_REVIEW)
-    ) {
-      status = 'IN_REVIEW';
-    } else {
-      status = 'PENDING';
-    }
-
+  private mapRequirement(item: ChecklistItem<LoadedDocument>): RequirementItemDto {
     return {
-      documentTypeId: documentType.id,
-      name: documentType.name,
-      description: documentType.description,
-      required: documentType.required,
-      fileTypes: documentType.fileTypes ?? [],
-      maxSizeMb: documentType.maxSizeMb,
-      status,
-      documents: docs.map((d) => this.mapToDto(d)),
+      // Also accepted back as `documentTypeId` when uploading for this item.
+      documentTypeId: item.key,
+      name: item.name,
+      description: item.description,
+      required: item.required,
+      fileTypes: item.fileTypes,
+      maxSizeMb: item.maxSizeMb,
+      status: item.status,
+      kind: item.kind,
+      askedBy: item.askedBy,
+      label: item.label,
+      notes: item.notes,
+      quantity: item.quantity,
+      documents: item.documents.map((d) => this.mapToDto(d)),
+      profileFiles: item.profileFiles.map((f) => this.mapProfileFile(f)),
     };
-  }
-
-  private async resolveProgramId(ref: ApplicationRef): Promise<string | null> {
-    if (ref.type === 'partner') {
-      const app = await this.prisma.partnerApplication.findUnique({
-        where: { id: ref.id },
-        select: { programId: true },
-      });
-      return app?.programId ?? null;
-    }
-    const app = await this.prisma.application.findUnique({
-      where: { id: ref.id },
-      select: { preferredProgram: true },
-    });
-    return app?.preferredProgram ?? null;
-  }
-
-  private async resolveTemplateForProgram(programId: string) {
-    const specific = await this.prisma.applicationProcessTemplate.findUnique({
-      where: { programId },
-      include: {
-        steps: {
-          include: { requiredDocuments: true },
-          orderBy: { order: 'asc' },
-        },
-      },
-    });
-    if (specific) return specific;
-    return this.resolveDefaultTemplate();
-  }
-
-  private resolveDefaultTemplate() {
-    return this.prisma.applicationProcessTemplate.findFirst({
-      where: { isDefault: true },
-      include: {
-        steps: {
-          include: { requiredDocuments: true },
-          orderBy: { order: 'asc' },
-        },
-      },
-    });
   }
 }
 

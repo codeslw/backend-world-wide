@@ -1,22 +1,24 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString, ValidateIf } from 'class-validator';
-import { ApplicationStatus } from '../../common/enums/application.enum';
+import { IsIn, IsOptional, IsString, ValidateIf } from 'class-validator';
+import { ACCEPTED_STATUS_VALUES } from '../../admissions/status';
 
 export class UpdateApplicationStatusDto {
   @ApiProperty({
-    description: 'Application status',
-    enum: ApplicationStatus,
-    example: ApplicationStatus.APPROVED,
+    description:
+      'Admission status: the nine shared with partner applications and edu-crm. ' +
+      'APPROVED is accepted as the older name of ACCEPTED.',
+    enum: ACCEPTED_STATUS_VALUES,
+    example: 'ACCEPTED',
   })
-  @IsEnum(ApplicationStatus)
-  status: ApplicationStatus;
+  @IsIn(ACCEPTED_STATUS_VALUES)
+  status: string;
 
   @ApiPropertyOptional({
     description: 'Rejection reason (required when status is REJECTED)',
     example: 'Insufficient academic qualifications',
   })
   @IsOptional()
-  @ValidateIf((o) => o.status === ApplicationStatus.REJECTED)
+  @ValidateIf((o) => o.status === 'REJECTED')
   @IsString()
   reason?: string;
 }
