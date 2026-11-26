@@ -116,6 +116,20 @@ jobs:
             # Tag it for docker-compose
             docker tag ${{ secrets.DOCKER_USERNAME }}/backend-world-wide:latest backend-world-wide-api:latest
             
+            # Back up the database before anything changes: the migrations come next.
+            # The deploy stops if the backup fails or can't be read back. It stays on
+            # this server, readable by the deploy user only.
+            (
+              set -e
+              umask 077
+              mkdir -p "$HOME/db-backups"
+              FILE="$HOME/db-backups/world-wide-$(date -u +%Y%m%dT%H%M%SZ).dump"
+              docker exec world-wide-postgres sh -c 'exec pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > "$FILE.part"
+              docker exec -i world-wide-postgres pg_restore -f /dev/null < "$FILE.part"
+              mv "$FILE.part" "$FILE"
+              echo "Database backup: $FILE ($(wc -c < "$FILE") bytes)"
+            )
+
             # Run migrations
             echo "=== Running Database Migrations ==="
             docker compose run --rm api npx prisma migrate deploy
